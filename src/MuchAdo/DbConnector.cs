@@ -1010,7 +1010,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		DoCreateCommand(connectorCommand, out var needsPrepare);
 		if (needsPrepare)
 			PrepareCommandCore();
-		return new DbCommandDisposer(connectorCommand.Connector);
+		return new DbCommandDisposer(this);
 	}
 
 	private async ValueTask<DbCommandDisposer> CreateCommandAsync(DbConnectorCommand connectorCommand, CancellationToken cancellationToken = default)
@@ -1019,7 +1019,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		DoCreateCommand(connectorCommand, out var needsPrepare);
 		if (needsPrepare)
 			await PrepareCommandCoreAsync(cancellationToken).ConfigureAwait(false);
-		return new DbCommandDisposer(connectorCommand.Connector);
+		return new DbCommandDisposer(this);
 	}
 
 	private void DoCreateCommand(DbConnectorCommand connectorCommand, out bool needsPrepare)
@@ -1030,11 +1030,11 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		var parameters = connectorCommand.Parameters;
 
 		IDbCommand? command;
-		var transaction = connectorCommand.Connector.Transaction;
+		var transaction = Transaction;
 
 		var wasCached = false;
 		var isCached = false;
-		var cache = connectorCommand.IsCached ? connectorCommand.Connector.CommandCache : null;
+		var cache = connectorCommand.IsCached ? CommandCache : null;
 		if (cache is not null)
 		{
 			if (cache.TryGetCommand(commandText, out command))
@@ -1053,29 +1053,23 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			command = CreateNewCommand();
 		}
 
-		connectorCommand.Connector.SetActiveCommand(command, isCached);
+		SetActiveCommand(command, isCached);
 
 		if (wasCached)
 		{
 			command.Transaction = transaction;
-
-			var oldParameterCount = command.Parameters.Count;
-			var newParameterCount = parameters.Reapply(connectorCommand.Connector, startIndex: 0);
-			if (oldParameterCount != newParameterCount)
-				throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters (was {oldParameterCount}, now {newParameterCount}).");
-
+			((IDbParameterSource) parameters).SubmitParameters(new ReapplyParameterTarget(this));
 			needsPrepare = false;
 		}
 		else
 		{
-			parameters.Apply(connectorCommand.Connector);
-
+			((IDbParameterSource) parameters).SubmitParameters(new ApplyParameterTarget(this));
 			needsPrepare = connectorCommand.IsPrepared;
 		}
 
 		IDbCommand CreateNewCommand()
 		{
-			var newCommand = connectorCommand.Connector.CreateCommandCore();
+			var newCommand = CreateCommandCore();
 
 			newCommand.CommandText = commandText;
 
@@ -1090,6 +1084,46 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 			return newCommand;
 		}
+	}
+
+	private sealed class ApplyParameterTarget(DbConnector connector) : IDbParameterTarget
+	{
+		public void AcceptParameter<T>(string name, T value)
+		{
+			if (value is IDataParameter dbParameter)
+				dbParameter.ParameterName = name;
+			else
+				dbParameter = connector.CreateParameter(name, value);
+
+			connector.ActiveCommand!.Parameters.Add(dbParameter);
+		}
+	}
+
+	private sealed class ReapplyParameterTarget(DbConnector connector) : IDbParameterTarget
+	{
+		public void AcceptParameter<T>(string name, T value)
+		{
+			var command = connector.ActiveCommand!;
+			var dbParameter = command.Parameters[m_index] as IDataParameter;
+			if (dbParameter is null || dbParameter.ParameterName != name)
+			{
+				try
+				{
+					dbParameter = command.Parameters[name] as IDataParameter;
+				}
+				catch (Exception exception)
+				{
+					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').", exception);
+				}
+				if (dbParameter is null)
+					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').");
+			}
+
+			connector.SetParameterValue(dbParameter, value);
+			m_index++;
+		}
+
+		private int m_index;
 	}
 
 	private void DisposeCachedCommands()

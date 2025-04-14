@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using MuchAdo.Parameters;
 
@@ -6,17 +7,38 @@ namespace MuchAdo;
 /// <summary>
 /// A set of database parameters.
 /// </summary>
-public abstract class DbParameters
+public abstract class DbParameters : IDbParameterSource
 {
-	/// <summary>
-	/// The number of parameters.
-	/// </summary>
-	public int Count => CountCore(filterName: null, transformName: null);
+	public int Count
+	{
+		get
+		{
+			var target = new CountParameterTarget();
+			((IDbParameterSource) this).SubmitParameters(target);
+			return target.Count;
+		}
+	}
 
-	/// <summary>
-	/// Enumerates the names and values of the parameters.
-	/// </summary>
-	public IEnumerable<(string Name, object? Value)> Enumerate() => EnumerateCore(filterName: null, transformName: null);
+	private sealed class CountParameterTarget : IDbParameterTarget
+	{
+		public int Count { get; private set; }
+
+		public void AcceptParameter<T>(string name, T value) => Count++;
+	}
+
+	public IEnumerable<(string Name, object? Value)> Enumerate()
+	{
+		var target = new EnumerateParameterTarget();
+		((IDbParameterSource) this).SubmitParameters(target);
+		return target.Items;
+	}
+
+	private sealed class EnumerateParameterTarget : IDbParameterTarget
+	{
+		public Collection<(string Name, object? Value)> Items { get; } = new();
+
+		public void AcceptParameter<T>(string name, T value) => Items.Add((name, value));
+	}
 
 	/// <summary>
 	/// An empty list of parameters.
@@ -79,6 +101,7 @@ public abstract class DbParameters
 		return new RenamedDbParameters(this, transform);
 	}
 
+#if false
 	internal void Apply(DbConnector connector) =>
 		ApplyCore(connector, filterName: null, transformName: null);
 
@@ -92,17 +115,16 @@ public abstract class DbParameters
 	internal abstract void ApplyCore(DbConnector connector, Func<string, bool>? filterName, Func<string, string>? transformName);
 
 	internal abstract int ReapplyCore(DbConnector connector, int startIndex, Func<string, bool>? filterName, Func<string, string>? transformName);
+#endif
+
+	void IDbParameterSource.SubmitParameters(IDbParameterTarget target) => SubmitParametersCore(target, null, null);
+
+	internal abstract void SubmitParametersCore(IDbParameterTarget target, Func<string, bool>? filterName, Func<string, string>? transformName);
 
 	private sealed class EmptyDbParameters : DbParameters
 	{
-		internal override int CountCore(Func<string, bool>? filterName, Func<string, string>? transformName) => 0;
-
-		internal override IEnumerable<(string Name, object? Value)> EnumerateCore(Func<string, bool>? filterName, Func<string, string>? transformName) => [];
-
-		internal override void ApplyCore(DbConnector connector, Func<string, bool>? filterName, Func<string, string>? transformName)
+		internal override void SubmitParametersCore(IDbParameterTarget target, Func<string, bool>? filterName, Func<string, string>? transformName)
 		{
 		}
-
-		internal override int ReapplyCore(DbConnector connector, int startIndex, Func<string, bool>? filterName, Func<string, string>? transformName) => 0;
 	}
 }

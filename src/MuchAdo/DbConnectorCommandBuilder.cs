@@ -1,5 +1,6 @@
 using System.Data;
 using System.Text;
+using MuchAdo.Parameters;
 using MuchAdo.SqlFormatting;
 using static System.FormattableString;
 
@@ -60,7 +61,7 @@ internal sealed class DbConnectorCommandBuilder
 		if (key is null || m_parameterNames is null || !m_parameterNames.TryGetValue(key, out var name))
 		{
 			name = Invariant($"{Syntax.UnnamedParameterPrefix}{++m_parameterCount}");
-			m_parametersList.Add(valueProperty.CreateParameter(name, valueSource));
+			m_parametersList.Add(new PropertyDbParameter<T>(name, valueSource, valueProperty));
 			if (key is not null)
 				(m_parameterNames ??= new()).Add(key, name);
 		}
