@@ -20,6 +20,8 @@ internal sealed class SqliteTests
 		var insertSql = Sql.Format($"insert into {tableName} (Name) values (@itemA); insert into {tableName} (Name) values (@itemB);");
 		connector.Command(insertSql).WithParameter("itemA", "one").WithParameter("itemB", "two").Prepare().Cache().Execute().Should().Be(2);
 		connector.Command(insertSql).WithParameter("itemA", "three").WithParameter("itemB", "four").Prepare().Cache().Execute().Should().Be(2);
+
+		// allow named parameters in different order
 		connector.Command(insertSql).WithParameter("itemB", "six").WithParameter("itemA", "five").Prepare().Cache().Execute().Should().Be(2);
 
 		// fails if parameters aren't reused properly

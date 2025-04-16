@@ -1,13 +1,6 @@
 namespace MuchAdo.Parameters;
 
-internal sealed class SingleDbParameter<T>(string name, T value) : DbParameters
+internal sealed class SingleDbParameter<T>(string name, T value) : IDbParameterSource
 {
-	internal override void SubmitParametersCore(IDbParameterTarget target, Func<string, bool>? filterName, Func<string, string>? transformName)
-	{
-		if (filterName is null || filterName(name))
-		{
-			var transformedName = transformName is null ? name : transformName(name);
-			target.AcceptParameter(transformedName, value);
-		}
-	}
+	public void SubmitParameters(IDbParameterTarget target) => target.AcceptParameter(name, value);
 }

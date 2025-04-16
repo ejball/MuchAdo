@@ -1,6 +1,6 @@
 namespace MuchAdo;
 
-internal interface IDbParameterSource
+public interface IDbParameterSource
 {
 	void SubmitParameters(IDbParameterTarget target);
 }

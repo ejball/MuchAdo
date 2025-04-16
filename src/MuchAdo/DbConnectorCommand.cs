@@ -20,7 +20,7 @@ public sealed class DbConnectorCommand
 	/// <summary>
 	/// The parameters of the command.
 	/// </summary>
-	public DbParameters Parameters => m_parameters;
+	public IDbParameterSource Parameters => m_parameterSources;
 
 	/// <summary>
 	/// The timeout of the command.
@@ -272,26 +272,37 @@ public sealed class DbConnectorCommand
 	}
 
 	public DbConnectorCommand WithParameter<T>(string key, T value) =>
-		WithParameters(DbParameters.Create(key, value));
+		WithParameters(DbParameterSource.Create(key, value));
 
-	public DbConnectorCommand WithParameters(DbParameters parameters)
+	public DbConnectorCommand WithParameters(IDbParameterSource source)
 	{
-		m_parameters.Add(parameters);
+		m_parameterSources.Add(source);
 		return this;
 	}
 
-	public DbConnectorCommand WithParameters(params IEnumerable<DbParameters> parameters) =>
-		WithParameters(DbParameters.Create(parameters));
+	public DbConnectorCommand WithParameters(params IEnumerable<IDbParameterSource> sources)
+	{
+		foreach (var source in sources)
+			m_parameterSources.Add(source);
+		return this;
+	}
+
+	public DbConnectorCommand WithParameters(params ReadOnlySpan<IDbParameterSource> sources)
+	{
+		foreach (var source in sources)
+			m_parameterSources.Add(source);
+		return this;
+	}
 
 	public DbConnectorCommand WithParameters<T>(params IEnumerable<(string Name, T Value)> parameters) =>
-		WithParameters(DbParameters.Create(parameters));
+		WithParameters(DbParameterSource.Create(parameters));
 
 	public DbConnectorCommand WithParameters<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		WithParameters(DbParameters.Create(parameters));
+		WithParameters(DbParameterSource.Create(parameters));
 
 	public DbConnectorCommand WithParametersFromDto<T>(T dto, Func<string, bool>? where = null, Func<string, string>? renamed = null)
 	{
-		var parameters = DbParameters.FromDto(dto);
+		var parameters = DbParameterSource.FromDto(dto);
 		if (where is not null)
 			parameters = parameters.Where(where);
 		if (renamed is not null)
@@ -320,10 +331,10 @@ public sealed class DbConnectorCommand
 	/// <summary>
 	/// Sets the command text and parameters.
 	/// </summary>
-	public DbConnectorCommand Transform(string text, DbParameters parameters)
+	public DbConnectorCommand Transform(string text, IDbParameterSource parameters)
 	{
 		m_text = text;
-		m_parameters = new(parameters);
+		m_parameterSources = new(parameters);
 		return this;
 	}
 
@@ -332,9 +343,9 @@ public sealed class DbConnectorCommand
 		Connector = connector;
 		CommandType = commandType;
 		m_text = text;
-		m_parameters = new DbParametersList();
+		m_parameterSources = new DbParameterSources();
 	}
 
 	private string m_text;
-	private DbParametersList m_parameters;
+	private DbParameterSources m_parameterSources;
 }

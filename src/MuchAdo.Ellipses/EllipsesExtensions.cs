@@ -51,7 +51,7 @@ public static class EllipsesExtensions
 					// if special syntax wasn't found, leave the parameter alone, for databases that support collections directly
 					if (itemCount != -1)
 					{
-						parameters = DbParameters.Create(nameValuePairs.Take(index).Concat(replacements).Concat(nameValuePairs.Skip(index + 1)));
+						parameters = DbParameterSource.Create(nameValuePairs.Take(index).Concat(replacements).Concat(nameValuePairs.Skip(index + 1)));
 						index += replacements.Count;
 					}
 					else

@@ -19,7 +19,7 @@ internal sealed class SqlSyntaxTests
 		var sql = Sql.Empty;
 		var (text, parameters) = Render(sql);
 		text.Should().Be("");
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 		sql.ToString().Should().Be("");
 	}
 
@@ -30,7 +30,7 @@ internal sealed class SqlSyntaxTests
 		var sql = Sql.Raw(raw);
 		var (text, parameters) = Render(sql);
 		text.Should().Be(raw);
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 		sql.ToString().Should().Be(raw);
 	}
 
@@ -168,7 +168,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Format($""));
 		text.Should().Be("");
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 	}
 
 	[Test]
@@ -176,7 +176,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Format($"select * from widgets"));
 		text.Should().Be("select * from widgets");
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 	}
 
 	[Test]
@@ -252,7 +252,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Join("/", Sql.Raw("one"), Sql.Empty, Sql.Raw("two")));
 		text.Should().Be("one/two");
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 	}
 
 	[Test]
@@ -405,7 +405,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.And(values.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 	}
 
 	[TestCase("", "")]
@@ -417,7 +417,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.Or(values.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 	}
 
 	[Test]
@@ -425,7 +425,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.And(Sql.Raw("one"), Sql.Or(Sql.Raw("two"), Sql.And(Sql.Raw("three")))));
 		text.Should().Be("(one AND (two OR three))");
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 	}
 
 	[TestCase("", "")]
@@ -436,7 +436,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.Where(Sql.Raw(condition)), syntax);
 		text.Should().Be(sql);
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 	}
 
 	[TestCase("", "")]
@@ -447,7 +447,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.OrderBy(columns.Split([';'], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 	}
 
 	[TestCase("", "")]
@@ -458,7 +458,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.GroupBy(columns.Split([';'], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 	}
 
 	[TestCase("", "")]
@@ -469,7 +469,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.Having(Sql.Raw(condition)), syntax);
 		text.Should().Be(sql);
-		parameters.Count.Should().Be(0);
+		parameters.Count().Should().Be(0);
 	}
 
 	[Test]
@@ -479,7 +479,7 @@ internal sealed class SqlSyntaxTests
 		sql.ToString().Should().Be("select *\nfrom Widgets");
 	}
 
-	private static (string Text, DbParameters Parameters) Render(Sql sql, SqlSyntax? syntax = null)
+	private static (string Text, IDbParameterSource Parameters) Render(Sql sql, SqlSyntax? syntax = null)
 	{
 		var commandBuilder = new DbConnectorCommandBuilder(syntax ?? SqlSyntax.Default);
 		sql.Render(commandBuilder);

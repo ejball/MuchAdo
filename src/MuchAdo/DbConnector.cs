@@ -760,7 +760,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		OnCommandExecuting(connectorCommand);
 		using var commandScope = CreateCommand(connectorCommand);
 		SetActiveReader(ExecuteReaderCore());
-		using var readerScope = new DbReaderDisposer(this);
+		using var readerScope = new DbActiveReaderDisposer(this);
 		var record = new DbConnectorRecord(this, new DbConnectorRecordState());
 
 		var list = new List<T>();
@@ -780,7 +780,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		OnCommandExecuting(connectorCommand);
 		await using var commandScope = (await CreateCommandAsync(connectorCommand, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
 		SetActiveReader(await ExecuteReaderCoreAsync(cancellationToken).ConfigureAwait(false));
-		await using var readerScope = new DbReaderDisposer(this).ConfigureAwait(false);
+		await using var readerScope = new DbActiveReaderDisposer(this).ConfigureAwait(false);
 		var record = new DbConnectorRecord(this, new DbConnectorRecordState());
 
 		var list = new List<T>();
@@ -800,7 +800,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		OnCommandExecuting(connectorCommand);
 		using var commandScope = CreateCommand(connectorCommand);
 		SetActiveReader(single ? ExecuteReaderCore() : ExecuteReaderCore(CommandBehavior.SingleRow));
-		using var readerScope = new DbReaderDisposer(this);
+		using var readerScope = new DbActiveReaderDisposer(this);
 
 		while (!ReadReaderCore())
 		{
@@ -825,7 +825,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		OnCommandExecuting(connectorCommand);
 		await using var commandScope = (await CreateCommandAsync(connectorCommand, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
 		SetActiveReader(single ? await ExecuteReaderCoreAsync(cancellationToken).ConfigureAwait(false) : await ExecuteReaderCoreAsync(CommandBehavior.SingleRow, cancellationToken).ConfigureAwait(false));
-		await using var readerScope = new DbReaderDisposer(this).ConfigureAwait(false);
+		await using var readerScope = new DbActiveReaderDisposer(this).ConfigureAwait(false);
 
 		while (!await ReadReaderCoreAsync(cancellationToken).ConfigureAwait(false))
 		{
@@ -849,7 +849,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	{
 		using var commandScope = CreateCommand(connectorCommand);
 		SetActiveReader(ExecuteReaderCore());
-		using var readerScope = new DbReaderDisposer(this);
+		using var readerScope = new DbActiveReaderDisposer(this);
 		var record = new DbConnectorRecord(this, new DbConnectorRecordState());
 
 		do
@@ -865,7 +865,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		OnCommandExecuting(connectorCommand);
 		await using var commandScope = (await CreateCommandAsync(connectorCommand, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
 		SetActiveReader(await ExecuteReaderCoreAsync(cancellationToken).ConfigureAwait(false));
-		await using var readerScope = new DbReaderDisposer(this).ConfigureAwait(false);
+		await using var readerScope = new DbActiveReaderDisposer(this).ConfigureAwait(false);
 		var record = new DbConnectorRecord(this, new DbConnectorRecordState());
 
 		do
@@ -1004,22 +1004,22 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		}
 	}
 
-	private DbCommandDisposer CreateCommand(DbConnectorCommand connectorCommand)
+	private DbActiveCommandDisposer CreateCommand(DbConnectorCommand connectorCommand)
 	{
 		OpenConnection();
 		DoCreateCommand(connectorCommand, out var needsPrepare);
 		if (needsPrepare)
 			PrepareCommandCore();
-		return new DbCommandDisposer(this);
+		return new DbActiveCommandDisposer(this);
 	}
 
-	private async ValueTask<DbCommandDisposer> CreateCommandAsync(DbConnectorCommand connectorCommand, CancellationToken cancellationToken = default)
+	private async ValueTask<DbActiveCommandDisposer> CreateCommandAsync(DbConnectorCommand connectorCommand, CancellationToken cancellationToken = default)
 	{
 		await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
 		DoCreateCommand(connectorCommand, out var needsPrepare);
 		if (needsPrepare)
 			await PrepareCommandCoreAsync(cancellationToken).ConfigureAwait(false);
-		return new DbCommandDisposer(this);
+		return new DbActiveCommandDisposer(this);
 	}
 
 	private void DoCreateCommand(DbConnectorCommand connectorCommand, out bool needsPrepare)
@@ -1058,12 +1058,12 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		if (wasCached)
 		{
 			command.Transaction = transaction;
-			((IDbParameterSource) parameters).SubmitParameters(new ReapplyParameterTarget(this));
+			parameters.SubmitParameters(new ReapplyParameterTarget(this));
 			needsPrepare = false;
 		}
 		else
 		{
-			((IDbParameterSource) parameters).SubmitParameters(new ApplyParameterTarget(this));
+			parameters.SubmitParameters(new ApplyParameterTarget(this));
 			needsPrepare = connectorCommand.IsPrepared;
 		}
 
@@ -1077,7 +1077,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 				newCommand.CommandType = commandType;
 
 			if (timeout is not null)
-				newCommand.CommandTimeout = timeout == System.Threading.Timeout.InfiniteTimeSpan ? 0 : (int) Math.Ceiling(timeout.Value.TotalSeconds);
+				newCommand.CommandTimeout = timeout == Timeout.InfiniteTimeSpan ? 0 : (int) Math.Ceiling(timeout.Value.TotalSeconds);
 
 			if (transaction is not null)
 				newCommand.Transaction = transaction;

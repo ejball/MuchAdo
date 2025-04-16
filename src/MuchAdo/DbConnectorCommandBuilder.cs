@@ -12,7 +12,7 @@ internal sealed class DbConnectorCommandBuilder
 	{
 		Syntax = syntax;
 		m_textBuilder = new StringBuilder();
-		m_parametersList = new DbParametersList();
+		m_parameterSources = new DbParameterSources();
 	}
 
 	public SqlSyntax Syntax { get; }
@@ -21,7 +21,7 @@ internal sealed class DbConnectorCommandBuilder
 
 	public int TextLength => m_textBuilder.Length;
 
-	public DbParameters Parameters => m_parametersList;
+	public IDbParameterSource Parameters => m_parameterSources;
 
 	public void AppendText(string text)
 	{
@@ -45,7 +45,7 @@ internal sealed class DbConnectorCommandBuilder
 		if (key is null || m_parameterNames is null || !m_parameterNames.TryGetValue(key, out var name))
 		{
 			name = Invariant($"{Syntax.UnnamedParameterPrefix}{++m_parameterCount}");
-			m_parametersList.Add(DbParameters.Create(name, value));
+			m_parameterSources.Add(DbParameterSource.Create(name, value));
 			if (key is not null)
 				(m_parameterNames ??= new()).Add(key, name);
 		}
@@ -61,7 +61,7 @@ internal sealed class DbConnectorCommandBuilder
 		if (key is null || m_parameterNames is null || !m_parameterNames.TryGetValue(key, out var name))
 		{
 			name = Invariant($"{Syntax.UnnamedParameterPrefix}{++m_parameterCount}");
-			m_parametersList.Add(new PropertyDbParameter<T>(name, valueSource, valueProperty));
+			m_parameterSources.Add(new PropertyDbParameter<T>(name, valueSource, valueProperty));
 			if (key is not null)
 				(m_parameterNames ??= new()).Add(key, name);
 		}
@@ -86,7 +86,7 @@ internal sealed class DbConnectorCommandBuilder
 		}
 	}
 
-	public void AddParameters(DbParameters parameters) => m_parametersList.Add(parameters);
+	public void AddParameters(IDbParameterSource parameters) => m_parameterSources.Add(parameters);
 
 	public DbConnectorBracketScope Prefix(string prefix) => Bracket(prefix, "");
 
@@ -106,10 +106,10 @@ internal sealed class DbConnectorCommandBuilder
 		m_suffixes!.RemoveAt(index);
 	}
 
-	public DbConnectorCommand Build(DbConnector connector) => new DbConnectorCommand(connector, m_textBuilder.ToString(), CommandType.Text).WithParameters(m_parametersList);
+	public DbConnectorCommand Build(DbConnector connector) => new DbConnectorCommand(connector, m_textBuilder.ToString(), CommandType.Text).WithParameters(m_parameterSources);
 
 	private readonly StringBuilder m_textBuilder;
-	private readonly DbParametersList m_parametersList;
+	private readonly DbParameterSources m_parameterSources;
 	private int m_parameterCount;
 	private List<string?>? m_prefixes;
 	private List<string?>? m_suffixes;

@@ -90,7 +90,7 @@ public abstract class BulkInsertBenchmark : IDisposable
 
 	public void Dispose() => m_connector.Dispose();
 
-	private IEnumerable<DbParameters> Params() => Enumerable.Range(0, m_recordCount).Select(x => DbParameters.Create("Value", Param(x)));
+	private IEnumerable<IDbParameterSource> Params() => Enumerable.Range(0, m_recordCount).Select(x => DbParameterSource.Create("Value", Param(x)));
 
 	private object Param(int x) => m_createParameter is null ? x : m_createParameter(x);
 

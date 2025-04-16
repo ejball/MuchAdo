@@ -1,6 +1,6 @@
 namespace MuchAdo;
 
-internal interface IDbParameterTarget
+public interface IDbParameterTarget
 {
 	void AcceptParameter<T>(string name, T value);
 }

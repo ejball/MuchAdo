@@ -47,13 +47,13 @@ public abstract class Sql
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
 	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
+	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameterSource"/>.</remarks>
 	public static DtoParamNamesSql<T> DtoParamNames<T>() => new();
 
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
 	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameters"/>.</remarks>
+	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameterSource"/>.</remarks>
 	public static DtoParamNamesSql<T> DtoParamNames<T>(T dto) => new();
 
 	/// <summary>
@@ -262,14 +262,16 @@ public abstract class Sql
 		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, value);
 	}
 
-	private sealed class NamedParamSql<T>(string name, T value) : Sql
+	private sealed class NamedParamSql<T>(string name, T value) : Sql, IDbParameterSource
 	{
 		internal override void Render(DbConnectorCommandBuilder builder)
 		{
 			builder.AppendText(builder.Syntax.ParameterStart);
 			builder.AppendText(name);
-			builder.AddParameters(DbParameters.Create(name, value));
+			builder.AddParameters(this);
 		}
+
+		public void SubmitParameters(IDbParameterTarget target) => target.AcceptParameter(name, value);
 	}
 
 	private sealed class RawSql(string text) : Sql
