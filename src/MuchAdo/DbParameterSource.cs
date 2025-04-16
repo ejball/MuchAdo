@@ -19,26 +19,42 @@ public static class DbParameterSource
 	/// <summary>
 	/// Creates parameters from a sequence of parameters.
 	/// </summary>
-	public static IDbParameterSource Create(params IEnumerable<IDbParameterSource> parameters) =>
+	public static IDbParameterSource Create(params ReadOnlySpan<IDbParameterSource> parameters) =>
+		parameters.Length switch
+		{
+			0 => Empty,
+			1 => parameters[0],
+			_ => new DbParameterSources(parameters),
+		};
+
+	/// <summary>
+	/// Creates parameters from a sequence of parameters.
+	/// </summary>
+	public static IDbParameterSource Create(IEnumerable<IDbParameterSource> parameters) =>
 		new DbParameterSources(parameters ?? throw new ArgumentNullException(nameof(parameters)));
 
 	/// <summary>
 	/// Creates parameters from a sequence of parameters.
 	/// </summary>
-	public static IDbParameterSource Create(params ReadOnlySpan<IDbParameterSource> parameters) =>
-		new DbParameterSources(parameters);
+	public static IDbParameterSource Create<T>(params ReadOnlySpan<(string Name, T Value)> parameters) =>
+		parameters.Length switch
+		{
+			0 => Empty,
+			1 => Create(parameters[0].Name, parameters[0].Value),
+			_ => new TuplesDbParameterSource<T>(parameters.ToArray()),
+		};
 
 	/// <summary>
 	/// Creates parameters from a sequence of name/value pairs.
 	/// </summary>
-	public static IDbParameterSource Create<T>(params IEnumerable<(string Name, T Value)> parameters) =>
-		Create((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => Create(x.Name, x.Value)));
+	public static IDbParameterSource Create<T>(IEnumerable<(string Name, T Value)> parameters) =>
+		new TuplesDbParameterSource<T>(parameters ?? throw new ArgumentNullException(nameof(parameters)));
 
 	/// <summary>
 	/// Creates parameters from a dictionary.
 	/// </summary>
 	public static IDbParameterSource Create<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		Create((parameters ?? throw new ArgumentNullException(nameof(parameters))).Select(x => Create(x.Key, x.Value)));
+		new TuplesDbParameterSource<T>(parameters.Select(x => (x.Key, x.Value)).ToList());
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO.

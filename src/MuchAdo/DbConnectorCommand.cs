@@ -280,13 +280,6 @@ public sealed class DbConnectorCommand
 		return this;
 	}
 
-	public DbConnectorCommand WithParameters(params IEnumerable<IDbParameterSource> sources)
-	{
-		foreach (var source in sources)
-			m_parameterSources.Add(source);
-		return this;
-	}
-
 	public DbConnectorCommand WithParameters(params ReadOnlySpan<IDbParameterSource> sources)
 	{
 		foreach (var source in sources)
@@ -294,7 +287,17 @@ public sealed class DbConnectorCommand
 		return this;
 	}
 
-	public DbConnectorCommand WithParameters<T>(params IEnumerable<(string Name, T Value)> parameters) =>
+	public DbConnectorCommand WithParameters(IEnumerable<IDbParameterSource> sources)
+	{
+		foreach (var source in sources)
+			m_parameterSources.Add(source);
+		return this;
+	}
+
+	public DbConnectorCommand WithParameters<T>(params ReadOnlySpan<(string Name, T Value)> parameters) =>
+		WithParameters(DbParameterSource.Create(parameters));
+
+	public DbConnectorCommand WithParameters<T>(IEnumerable<(string Name, T Value)> parameters) =>
 		WithParameters(DbParameterSource.Create(parameters));
 
 	public DbConnectorCommand WithParameters<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>

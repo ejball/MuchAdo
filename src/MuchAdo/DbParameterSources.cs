@@ -13,12 +13,12 @@ public sealed class DbParameterSources : IDbParameterSource
 	/// <summary>
 	/// Creates a list from the specified sets of parameters.
 	/// </summary>
-	public DbParameterSources(params IEnumerable<IDbParameterSource> items) => m_sources = [.. items];
+	public DbParameterSources(params ReadOnlySpan<IDbParameterSource> items) => m_sources = [.. items];
 
 	/// <summary>
 	/// Creates a list from the specified sets of parameters.
 	/// </summary>
-	public DbParameterSources(params ReadOnlySpan<IDbParameterSource> items) => m_sources = [.. items];
+	public DbParameterSources(IEnumerable<IDbParameterSource> items) => m_sources = [.. items];
 
 	public void Add(IDbParameterSource source) => m_sources.Add(source);
 
