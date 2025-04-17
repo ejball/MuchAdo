@@ -280,6 +280,12 @@ public sealed class DbConnectorCommand
 		return this;
 	}
 
+	public DbConnectorCommand WithParameters(DbParameterSources sources)
+	{
+		m_parameterSources.Add(sources);
+		return this;
+	}
+
 	public DbConnectorCommand WithParameters(params ReadOnlySpan<IDbParameterSource> sources)
 	{
 		foreach (var source in sources)
