@@ -28,6 +28,19 @@ internal sealed class NpgsqlTests
 			.Query<string>().Should().Equal("one", "two", "three", "four", "five", "six");
 	}
 
+	[Test]
+	public void UnnamedParameterTest()
+	{
+		var tableName = Sql.Name(nameof(UnnamedParameterTest) + c_suffix);
+
+		using var connector = CreateConnector();
+		connector.Command(Sql.Format($"drop table if exists {tableName};")).Execute();
+		connector.Command(Sql.Format($"create table {tableName} (ItemId serial primary key, Name varchar not null);")).Execute();
+		connector.Command(Sql.Format($"insert into {tableName} (Name) values ($1), ($2);")).WithParameter("", "one").WithParameter("", "two").Execute();
+
+		connector.Command(Sql.Format($"select Name from {tableName} order by ItemId;")).Query<string>().Should().Equal("one", "two");
+	}
+
 	private static DbConnector CreateConnector() => new(
 		new NpgsqlConnection("host=localhost;user id=root;password=test;database=test"),
 		new DbConnectorSettings { SqlSyntax = SqlSyntax.Postgres });

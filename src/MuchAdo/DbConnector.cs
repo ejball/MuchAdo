@@ -686,7 +686,8 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	protected virtual IDataParameter CreateParameterCore<T>(string name, T value)
 	{
 		var parameter = ActiveCommand!.CreateParameter();
-		parameter.ParameterName = name;
+		if (name.Length != 0)
+			parameter.ParameterName = name;
 		parameter.Value = value is null ? DBNull.Value : value;
 		return parameter;
 	}

@@ -53,6 +53,19 @@ internal sealed class MySqlTests
 		connector.StoredProcedure(sprocName).WithParameter("Value", 11).QuerySingle<(int, long)>().Should().Be((11, 121));
 	}
 
+	[Test]
+	public void UnnamedParameterTest()
+	{
+		var tableName = Sql.Name(nameof(UnnamedParameterTest) + c_suffix);
+
+		using var connector = CreateConnector();
+		connector.Command(Sql.Format($"drop table if exists {tableName};")).Execute();
+		connector.Command(Sql.Format($"create table {tableName} (Id int not null auto_increment primary key, Name varchar(100) not null);")).Execute();
+		connector.Command(Sql.Format($"insert into {tableName} (Name) values (?), (?);")).WithParameter("", "one").WithParameter("", "two").Execute();
+
+		connector.Command(Sql.Format($"select Name from {tableName} order by Id;")).Query<string>().Should().Equal("one", "two");
+	}
+
 	private static DbConnector CreateConnector() => new(
 		new MySqlConnection("Server=localhost;User Id=root;Password=test;SSL Mode=none;Database=test;Ignore Prepare=false;AllowPublicKeyRetrieval=true"),
 		new DbConnectorSettings { SqlSyntax = SqlSyntax.MySql });
