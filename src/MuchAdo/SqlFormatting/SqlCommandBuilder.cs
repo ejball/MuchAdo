@@ -56,12 +56,24 @@ internal sealed class SqlCommandBuilder
 
 		if (key is null || m_parameterNames is null || !m_parameterNames.TryGetValue(key, out var tuple))
 		{
-			if (Syntax.PositionalParameterStrategy.NamedPositionalParameterNamePrefix is { } namedPositionalParameterNamePrefix)
+			if (Syntax.PositionalParameterStrategy.NamedParameterNamePrefix is { } namedPrefix)
 			{
-				tuple.ParameterName = Invariant($"{namedPositionalParameterNamePrefix}{++m_parameterCount}");
+				tuple.ParameterName = Invariant($"{namedPrefix}{++m_parameterCount}");
 				tuple.SqlPlaceholder = Invariant($"{Syntax.NamedParameterChar}{tuple.ParameterName}");
 				if (key is not null)
 					(m_parameterNames ??= new()).Add(key, tuple);
+			}
+			else if (Syntax.PositionalParameterStrategy.NumberedParameterPlaceholderPrefix is { } numberedPrefix)
+			{
+				tuple.ParameterName = "";
+				tuple.SqlPlaceholder = Invariant($"{numberedPrefix}{++m_parameterCount}");
+				if (key is not null)
+					(m_parameterNames ??= new()).Add(key, tuple);
+			}
+			else if (Syntax.PositionalParameterStrategy.UnnumberedParameterPlaceholder is { } unnumberedPlaceholder)
+			{
+				tuple.ParameterName = "";
+				tuple.SqlPlaceholder = unnumberedPlaceholder;
 			}
 			else
 			{

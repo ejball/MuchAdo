@@ -58,17 +58,24 @@ internal sealed class MySqlTests
 	{
 		var tableName = Sql.Name(nameof(UnnamedParameterTest) + c_suffix);
 
-		using var connector = CreateConnector();
+		using var connector = CreateConnector(SqlSyntax.MySql.WithPositionalParameterStrategy(SqlPositionalParameterStrategy.Unnumbered("?")));
+
+		var lastCommandText = "";
+		connector.CommandExecuting += (s, e) => lastCommandText = e.ConnectorCommand.Text;
+
 		connector.Command(Sql.Format($"drop table if exists {tableName};")).Execute();
 		connector.Command(Sql.Format($"create table {tableName} (Id int not null auto_increment primary key, Name varchar(100) not null);")).Execute();
 		connector.Command(Sql.Format($"insert into {tableName} (Name) values (?), (?);")).WithParameter("", "one").WithParameter("", "two").Execute();
 
-		connector.Command(Sql.Format($"select Name from {tableName} order by Id;")).Query<string>().Should().Equal("one", "two");
+		connector.CommandFormat($"insert into {tableName} (Name) values ({"three"}), ({"four"});").Execute();
+		lastCommandText.Should().Contain("(Name) values (?), (?);");
+
+		connector.Command(Sql.Format($"select Name from {tableName} order by Id;")).Query<string>().Should().Equal("one", "two", "three", "four");
 	}
 
-	private static DbConnector CreateConnector() => new(
+	private static DbConnector CreateConnector(SqlSyntax? sqlSyntax = null) => new(
 		new MySqlConnection("Server=localhost;User Id=root;Password=test;SSL Mode=none;Database=test;Ignore Prepare=false;AllowPublicKeyRetrieval=true"),
-		new DbConnectorSettings { SqlSyntax = SqlSyntax.MySql });
+		new DbConnectorSettings { SqlSyntax = sqlSyntax ?? SqlSyntax.MySql });
 
 #if NET9_0
 	private const string c_suffix = "_net9";

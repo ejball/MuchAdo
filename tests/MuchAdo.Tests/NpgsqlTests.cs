@@ -34,16 +34,25 @@ internal sealed class NpgsqlTests
 		var tableName = Sql.Name(nameof(UnnamedParameterTest) + c_suffix);
 
 		using var connector = CreateConnector();
+
+		var lastCommandText = "";
+		connector.CommandExecuting += (s, e) => lastCommandText = e.ConnectorCommand.Text;
+
 		connector.Command(Sql.Format($"drop table if exists {tableName};")).Execute();
 		connector.Command(Sql.Format($"create table {tableName} (ItemId serial primary key, Name varchar not null);")).Execute();
 		connector.Command(Sql.Format($"insert into {tableName} (Name) values ($1), ($2);")).WithParameter("", "one").WithParameter("", "two").Execute();
 
-		connector.Command(Sql.Format($"select Name from {tableName} order by ItemId;")).Query<string>().Should().Equal("one", "two");
+		var three = Sql.Param("three");
+		var four = "four";
+		connector.CommandFormat($"insert into {tableName} (Name) values ({three}), ({four}), ({three}), ({four});").Execute();
+		lastCommandText.Should().Contain("(Name) values ($1), ($2), ($1), ($3);");
+
+		connector.Command(Sql.Format($"select Name from {tableName} order by ItemId;")).Query<string>().Should().Equal("one", "two", "three", "four", "three", "four");
 	}
 
 	private static DbConnector CreateConnector() => new(
 		new NpgsqlConnection("host=localhost;user id=root;password=test;database=test"),
-		new DbConnectorSettings { SqlSyntax = SqlSyntax.Postgres });
+		new DbConnectorSettings { SqlSyntax = SqlSyntax.Postgres.WithPositionalParameterStrategy(SqlPositionalParameterStrategy.Numbered("$")) });
 
 #if NET9_0
 	private const string c_suffix = "_net9";

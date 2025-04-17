@@ -2,14 +2,20 @@ namespace MuchAdo.SqlFormatting;
 
 public sealed class SqlPositionalParameterStrategy
 {
-	public static SqlPositionalParameterStrategy Named(string namePrefix)
-	{
-		if (string.IsNullOrEmpty(namePrefix))
-			throw new ArgumentException("The name prefix cannot be null or empty.", nameof(namePrefix));
-		return new() { NamedPositionalParameterNamePrefix = namePrefix };
-	}
+	public static SqlPositionalParameterStrategy Named(string namePrefix) =>
+		new() { NamedParameterNamePrefix = namePrefix };
 
-	internal string? NamedPositionalParameterNamePrefix { get; init; }
+	public static SqlPositionalParameterStrategy Numbered(string placeholderPrefix) =>
+		new() { NumberedParameterPlaceholderPrefix = placeholderPrefix };
+
+	public static SqlPositionalParameterStrategy Unnumbered(string placeholder) =>
+		new() { UnnumberedParameterPlaceholder = placeholder };
+
+	internal string? NamedParameterNamePrefix { get; init; }
+
+	internal string? NumberedParameterPlaceholderPrefix { get; init; }
+
+	internal string? UnnumberedParameterPlaceholder { get; init; }
 
 	private SqlPositionalParameterStrategy()
 	{
