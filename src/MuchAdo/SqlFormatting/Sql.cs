@@ -266,7 +266,7 @@ public abstract class Sql
 	{
 		internal override void Render(SqlCommandBuilder builder)
 		{
-			builder.AppendText(builder.Syntax.ParameterStart);
+			builder.AppendText(builder.Syntax.NamedParameterChar);
 			builder.AppendText(name);
 			builder.AddParameters(this);
 		}

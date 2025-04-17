@@ -38,34 +38,44 @@ internal sealed class SqlCommandBuilder
 
 	public void AppendParameterValue<T>(object? key, T value)
 	{
-		ApplyPrefixes();
-
-		if (key is null || m_parameterNames is null || !m_parameterNames.TryGetValue(key, out var name))
-		{
-			name = Invariant($"{Syntax.UnnamedParameterPrefix}{++m_parameterCount}");
-			m_parameterSources.Add(DbParameterSource.Create(name, value));
-			if (key is not null)
-				(m_parameterNames ??= new()).Add(key, name);
-		}
-
-		m_textBuilder.Append(Syntax.ParameterStart);
-		m_textBuilder.Append(name);
+		DoAppendParameter(key, out var needsParameterNamed);
+		if (needsParameterNamed is not null)
+			m_parameterSources.Add(DbParameterSource.Create(needsParameterNamed, value));
 	}
 
 	public void AppendParameterValue<T>(object? key, T valueSource, DbDtoProperty<T> valueProperty)
 	{
+		DoAppendParameter(key, out var needsParameterNamed);
+		if (needsParameterNamed is not null)
+			m_parameterSources.Add(new PropertyDbParameter<T>(needsParameterNamed, valueSource, valueProperty));
+	}
+
+	private void DoAppendParameter(object? key, out string? needsParameterNamed)
+	{
 		ApplyPrefixes();
 
-		if (key is null || m_parameterNames is null || !m_parameterNames.TryGetValue(key, out var name))
+		if (key is null || m_parameterNames is null || !m_parameterNames.TryGetValue(key, out var tuple))
 		{
-			name = Invariant($"{Syntax.UnnamedParameterPrefix}{++m_parameterCount}");
-			m_parameterSources.Add(new PropertyDbParameter<T>(name, valueSource, valueProperty));
-			if (key is not null)
-				(m_parameterNames ??= new()).Add(key, name);
+			if (Syntax.PositionalParameterStrategy.NamedPositionalParameterNamePrefix is { } namedPositionalParameterNamePrefix)
+			{
+				tuple.ParameterName = Invariant($"{namedPositionalParameterNamePrefix}{++m_parameterCount}");
+				tuple.SqlPlaceholder = Invariant($"{Syntax.NamedParameterChar}{tuple.ParameterName}");
+				if (key is not null)
+					(m_parameterNames ??= new()).Add(key, tuple);
+			}
+			else
+			{
+				throw new InvalidOperationException($"Unexpected {nameof(Syntax.PositionalParameterStrategy)}.");
+			}
+
+			needsParameterNamed = tuple.ParameterName;
+		}
+		else
+		{
+			needsParameterNamed = null;
 		}
 
-		m_textBuilder.Append(Syntax.ParameterStart);
-		m_textBuilder.Append(name);
+		m_textBuilder.Append(tuple.SqlPlaceholder);
 	}
 
 	private void ApplyPrefixes()
@@ -111,5 +121,5 @@ internal sealed class SqlCommandBuilder
 	private int m_parameterCount;
 	private List<string?>? m_prefixes;
 	private List<string?>? m_suffixes;
-	private Dictionary<object, string>? m_parameterNames;
+	private Dictionary<object, (string ParameterName, string SqlPlaceholder)>? m_parameterNames;
 }

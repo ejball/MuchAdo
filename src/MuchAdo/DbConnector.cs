@@ -715,7 +715,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 	internal DbConnectorPool? ConnectorPool { get; set; }
 
-	internal IDataParameter CreateParameter<T>(string name, T value) => CreateParameterCore<T>(name, value);
+	internal IDataParameter CreateParameter<T>(string name, T value) => CreateParameterCore(name, value);
 
 	internal void SetParameterValue<T>(IDataParameter parameter, T value) => SetParameterValueCore(parameter, value);
 

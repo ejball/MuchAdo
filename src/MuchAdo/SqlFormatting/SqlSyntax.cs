@@ -70,24 +70,24 @@ public sealed class SqlSyntax
 	public SqlSyntax WithLowercaseKeywords(bool value = true) => new(this) { LowercaseKeywords = value };
 
 	/// <summary>
-	/// The start character used to indicate a parameter.
+	/// The character used to start a named parameter.
 	/// </summary>
-	public char ParameterStart { get; private init; }
+	public char NamedParameterChar { get; private init; }
 
 	/// <summary>
-	/// Creates a new syntax with the specified parameter start character.
+	/// Creates a new syntax with the specified named parameter character.
 	/// </summary>
-	public SqlSyntax WithParameterStart(char value) => new(this) { ParameterStart = value };
+	public SqlSyntax WithNamedParameterChar(char value) => new(this) { NamedParameterChar = value };
 
 	/// <summary>
-	/// The prefix for unnamed parameters.
+	/// The prefix for positional parameters.
 	/// </summary>
-	public string UnnamedParameterPrefix { get; private init; }
+	public SqlPositionalParameterStrategy PositionalParameterStrategy { get; private init; }
 
 	/// <summary>
 	/// Creates a new syntax with the specified prefix for unnamed parameters.
 	/// </summary>
-	public SqlSyntax WithUnnamedParameterPrefix(string value) => new(this) { UnnamedParameterPrefix = value };
+	public SqlSyntax WithPositionalParameterStrategy(SqlPositionalParameterStrategy value) => new(this) { PositionalParameterStrategy = value };
 
 	/// <summary>
 	/// Escapes a fragment of a LIKE pattern.
@@ -121,10 +121,10 @@ public sealed class SqlSyntax
 	private SqlSyntax()
 	{
 		IdentifierQuoting = SqlIdentifierQuoting.Throw;
-		ParameterStart = '@';
 		SnakeCaseColumnNames = false;
 		LowercaseKeywords = false;
-		UnnamedParameterPrefix = "ado";
+		NamedParameterChar = '@';
+		PositionalParameterStrategy = SqlPositionalParameterStrategy.Named("ado");
 	}
 
 	private SqlSyntax(SqlSyntax source)
@@ -132,8 +132,8 @@ public sealed class SqlSyntax
 		IdentifierQuoting = source.IdentifierQuoting;
 		SnakeCaseColumnNames = source.SnakeCaseColumnNames;
 		LowercaseKeywords = source.LowercaseKeywords;
-		ParameterStart = source.ParameterStart;
-		UnnamedParameterPrefix = source.UnnamedParameterPrefix;
+		NamedParameterChar = source.NamedParameterChar;
+		PositionalParameterStrategy = source.PositionalParameterStrategy;
 	}
 
 	private static string QuoteName(string name, char nameQuoteStart, char nameQuoteEnd) =>
