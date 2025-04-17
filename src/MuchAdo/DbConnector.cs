@@ -320,13 +320,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// Attaches a disposable to the connector, which is disposed when the connector is disposed.
 	/// </summary>
-	public void AttachDisposable(object disposable)
-	{
-		if (m_disposable is not null)
-			throw new InvalidOperationException("A disposable is already attached.");
-
-		m_disposable = disposable;
-	}
+	public void AttachDisposable(object disposable) => (m_disposables ??= []).Add(disposable);
 
 	/// <summary>
 	/// Disposes the connector.
@@ -349,7 +343,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		if (!m_noDisposeConnection)
 			m_connection.Dispose();
 		DisposeConnectionCore();
-		DisposeDisposable();
+		DisposeDisposables();
 		m_isDisposed = true;
 	}
 
@@ -374,7 +368,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			await DisposeCachedCommandsAsync().ConfigureAwait(false);
 			if (!m_noDisposeConnection)
 				await DisposeConnectionCoreAsync().ConfigureAwait(false);
-			await DisposeDisposableAsync().ConfigureAwait(false);
+			await DisposeDisposablesAsync().ConfigureAwait(false);
 			m_isDisposed = true;
 		}
 	}
@@ -1181,23 +1175,40 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			throw new InvalidOperationException("No transaction available; call BeginTransaction first.");
 	}
 
-	private void DisposeDisposable()
+	private void DisposeDisposables()
 	{
-		if (m_disposable is IDisposable disposable)
-			disposable.Dispose();
-		else if (m_disposable is IAsyncDisposable asyncDisposable)
-			asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+		if (m_disposables is not null)
+		{
+			m_disposables.Reverse();
+
+			foreach (var disposable in m_disposables)
+			{
+				if (disposable is IDisposable syncDisposable)
+					syncDisposable.Dispose();
+				else if (disposable is IAsyncDisposable asyncDisposable)
+					asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+			}
+
+			m_disposables = null;
+		}
 	}
 
-	private ValueTask DisposeDisposableAsync()
+	private async ValueTask DisposeDisposablesAsync()
 	{
-		if (m_disposable is IAsyncDisposable asyncDisposable)
-			return asyncDisposable.DisposeAsync();
+		if (m_disposables is not null)
+		{
+			m_disposables.Reverse();
 
-		if (m_disposable is IDisposable disposable)
-			disposable.Dispose();
+			foreach (var disposable in m_disposables)
+			{
+				if (disposable is IAsyncDisposable asyncDisposable)
+					await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+				else if (disposable is IDisposable syncDisposable)
+					syncDisposable.Dispose();
+			}
 
-		return default;
+			m_disposables = null;
+		}
 	}
 
 	private static InvalidOperationException CreateNoRecordsException() => new("No records were found; use 'OrDefault' to permit this.");
@@ -1214,7 +1225,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	private IDbCommand? m_activeCommand;
 	private IDataReader? m_activeReader;
 	private DbCommandCache? m_commandCache;
-	private object? m_disposable;
+	private List<object?>? m_disposables;
 	private bool m_isConnectionOpen;
 	private bool m_isDisposed;
 	private bool m_noDisposeTransaction;

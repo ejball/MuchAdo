@@ -17,15 +17,15 @@ public class DbDataMapper
 	/// <summary>
 	/// Creates a new data mapper.
 	/// </summary>
-	public DbDataMapper(params IEnumerable<DbTypeMapperFactory> factories)
+	public DbDataMapper(params IEnumerable<DbTypeMapperFactory> typeMapperFactories)
 	{
-		Factories = factories.ToList().AsReadOnly();
+		TypeMapperFactories = typeMapperFactories.ToList().AsReadOnly();
 	}
 
 	/// <summary>
 	/// The type mapper factories used by this data mapper.
 	/// </summary>
-	public IReadOnlyList<DbTypeMapperFactory> Factories { get; }
+	public IReadOnlyList<DbTypeMapperFactory> TypeMapperFactories { get; }
 
 	/// <summary>
 	/// Gets a type mapper for the specified type.
@@ -51,7 +51,7 @@ public class DbDataMapper
 
 	private DbTypeMapper<T> CreateTypeMapper<T>()
 	{
-		foreach (var factory in Factories)
+		foreach (var factory in TypeMapperFactories)
 		{
 			if (factory.TryCreateTypeMapper<T>(this) is { } mapper)
 				return mapper;
