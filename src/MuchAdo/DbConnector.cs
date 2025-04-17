@@ -1087,9 +1087,14 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		public void AcceptParameter<T>(string name, T value)
 		{
 			if (value is IDataParameter dbParameter)
-				dbParameter.ParameterName = name;
+			{
+				if (name.Length != 0)
+					dbParameter.ParameterName = name;
+			}
 			else
+			{
 				dbParameter = connector.CreateParameter(name, value);
+			}
 
 			connector.ActiveCommand!.Parameters.Add(dbParameter);
 		}
@@ -1101,7 +1106,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		{
 			var command = connector.ActiveCommand!;
 			var dbParameter = command.Parameters[m_index] as IDataParameter;
-			if (dbParameter is null || dbParameter.ParameterName != name)
+			if (dbParameter is null || (dbParameter.ParameterName ?? "") != name)
 			{
 				try
 				{
@@ -1109,10 +1114,13 @@ public class DbConnector : IDisposable, IAsyncDisposable
 				}
 				catch (Exception exception)
 				{
-					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').", exception);
+					throw new InvalidOperationException(GetExceptionMessage(), exception);
 				}
 				if (dbParameter is null)
-					throw new InvalidOperationException($"Cached commands must always be executed with the same parameters (missing '{name}').");
+					throw new InvalidOperationException(GetExceptionMessage());
+
+				string GetExceptionMessage() =>
+					$"Cached commands must always be executed with the same parameters (missing '{name}').";
 			}
 
 			connector.SetParameterValue(dbParameter, value);
