@@ -30,7 +30,7 @@ public sealed class DtoParamNamesSql<T> : Sql
 		m_transformName = transformName;
 	}
 
-	internal override void Render(DbConnectorCommandBuilder builder)
+	internal override void Render(SqlCommandBuilder builder)
 	{
 		var properties = DbDtoInfo.GetInfo<T>().Properties;
 		if (properties.Count == 0)

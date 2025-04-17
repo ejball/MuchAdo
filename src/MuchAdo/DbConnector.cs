@@ -264,9 +264,10 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// <param name="sql">The parameterized SQL.</param>
 	public DbConnectorCommand Command(Sql sql)
 	{
-		var builder = new DbConnectorCommandBuilder(SqlSyntax);
+		var builder = new SqlCommandBuilder(SqlSyntax);
 		sql.Render(builder);
-		return builder.Build(this);
+		var (text, parameters) = builder.Build();
+		return new DbConnectorCommand(this, text, CommandType.Text).WithParameters(parameters);
 	}
 
 	/// <summary>

@@ -11,7 +11,7 @@ public sealed class ColumnParamsSql<T> : Sql
 		m_filter = filter;
 	}
 
-	internal override void Render(DbConnectorCommandBuilder builder)
+	internal override void Render(SqlCommandBuilder builder)
 	{
 		var properties = DbDtoInfo.GetInfo<T>().Properties;
 		if (properties.Count == 0)

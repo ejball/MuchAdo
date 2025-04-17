@@ -19,7 +19,7 @@ public sealed class ColumnNamesSql<T> : Sql
 		m_filterName = filterName;
 	}
 
-	internal override void Render(DbConnectorCommandBuilder builder)
+	internal override void Render(SqlCommandBuilder builder)
 	{
 		var properties = DbDtoInfo.GetInfo<T>().Properties;
 		if (properties.Count == 0)
