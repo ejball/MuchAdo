@@ -1,6 +1,6 @@
 namespace MuchAdo;
 
-public sealed class CommandExecutingEventArgs(DbConnectorCommand connectorCommand) : EventArgs
+public sealed class CommandExecutingEventArgs(DbConnectorCommandBatch connectorCommandBatch) : EventArgs
 {
-	public DbConnectorCommand ConnectorCommand { get; } = connectorCommand;
+	public DbConnectorCommandBatch ConnectorCommandBatch { get; } = connectorCommandBatch;
 }

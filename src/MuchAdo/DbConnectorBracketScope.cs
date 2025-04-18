@@ -2,7 +2,7 @@ using MuchAdo.SqlFormatting;
 
 namespace MuchAdo;
 
-internal readonly struct DbConnectorBracketScope(DbConnectorQueryBuilder commandBuilder) : IDisposable
+internal readonly struct DbConnectorBracketScope(DbConnectorCommandBuilder commandBuilder) : IDisposable
 {
 	public void Dispose() => commandBuilder.EndBracket();
 }

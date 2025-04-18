@@ -256,18 +256,18 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// Creates a new command.
 	/// </summary>
 	/// <param name="text">The text of the command.</param>
-	public DbConnectorCommand Command(string text) => new(this, CommandType.Text, text);
+	public DbConnectorCommandBatch Command(string text) => new(this, CommandType.Text, text);
 
 	/// <summary>
 	/// Creates a new command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
-	public DbConnectorCommand Command(Sql sql)
+	public DbConnectorCommandBatch Command(Sql sql)
 	{
-		var builder = new DbConnectorQueryBuilder(SqlSyntax);
+		var builder = new DbConnectorCommandBuilder(SqlSyntax);
 		sql.Render(builder);
 		var query = builder.Build(CommandType.Text);
-		return new DbConnectorCommand(this, query.CommandType, query.CommandText, query.ParameterSource);
+		return new DbConnectorCommandBatch(this, query.Type, query.Text, query.Parameters);
 	}
 
 	/// <summary>
@@ -275,13 +275,13 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// </summary>
 	/// <param name="sql">The formatted SQL string.</param>
 	/// <remarks>Shorthand for <c>Command(Sql.Format($"..."))</c>.</remarks>
-	public DbConnectorCommand CommandFormat(SqlFormatStringHandler sql) => Command(Sql.Format(sql));
+	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql) => Command(Sql.Format(sql));
 
 	/// <summary>
 	/// Creates a new command to access a stored procedure.
 	/// </summary>
 	/// <param name="name">The name of the stored procedure.</param>
-	public DbConnectorCommand StoredProcedure(string name) => new(this, CommandType.StoredProcedure, name);
+	public DbConnectorCommandBatch StoredProcedure(string name) => new(this, CommandType.StoredProcedure, name);
 
 	/// <summary>
 	/// Closes the connection.
@@ -706,8 +706,8 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		};
 	}
 
-	protected virtual void OnCommandExecuting(DbConnectorCommand connectorCommand) =>
-		CommandExecuting?.Invoke(this, new CommandExecutingEventArgs(connectorCommand));
+	protected virtual void OnCommandExecuting(DbConnectorCommandBatch connectorCommandBatch) =>
+		CommandExecuting?.Invoke(this, new CommandExecutingEventArgs(connectorCommandBatch));
 
 	internal DbDataMapper DataMapper { get; }
 
@@ -719,42 +719,42 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 	internal void SetParameterValue<T>(IDataParameter parameter, T value) => SetParameterValueCore(parameter, value);
 
-	internal int ExecuteCommand(DbConnectorCommand connectorCommand)
+	internal int ExecuteCommand(DbConnectorCommandBatch connectorCommandBatch)
 	{
-		OnCommandExecuting(connectorCommand);
-		using var commandScope = CreateCommand(connectorCommand);
+		OnCommandExecuting(connectorCommandBatch);
+		using var commandScope = CreateCommand(connectorCommandBatch);
 		return ExecuteNonQueryCore();
 	}
 
-	internal async ValueTask<int> ExecuteCommandAsync(DbConnectorCommand connectorCommand, CancellationToken cancellationToken)
+	internal async ValueTask<int> ExecuteCommandAsync(DbConnectorCommandBatch connectorCommandBatch, CancellationToken cancellationToken)
 	{
-		OnCommandExecuting(connectorCommand);
-		await using var commandScope = (await CreateCommandAsync(connectorCommand, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+		OnCommandExecuting(connectorCommandBatch);
+		await using var commandScope = (await CreateCommandAsync(connectorCommandBatch, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
 		return await ExecuteNonQueryCoreAsync(cancellationToken).ConfigureAwait(false);
 	}
 
-	internal DbConnectorResultSets QueryMultiple(DbConnectorCommand connectorCommand)
+	internal DbConnectorResultSets QueryMultiple(DbConnectorCommandBatch connectorCommandBatch)
 	{
-		OnCommandExecuting(connectorCommand);
+		OnCommandExecuting(connectorCommandBatch);
 		m_hasReadFirstResultSet = false;
-		CreateCommand(connectorCommand);
+		CreateCommand(connectorCommandBatch);
 		SetActiveReader(ExecuteReaderCore());
 		return new DbConnectorResultSets(this);
 	}
 
-	internal async ValueTask<DbConnectorResultSets> QueryMultipleAsync(DbConnectorCommand connectorCommand, CancellationToken cancellationToken = default)
+	internal async ValueTask<DbConnectorResultSets> QueryMultipleAsync(DbConnectorCommandBatch connectorCommandBatch, CancellationToken cancellationToken = default)
 	{
-		OnCommandExecuting(connectorCommand);
+		OnCommandExecuting(connectorCommandBatch);
 		m_hasReadFirstResultSet = false;
-		await CreateCommandAsync(connectorCommand, cancellationToken).ConfigureAwait(false);
+		await CreateCommandAsync(connectorCommandBatch, cancellationToken).ConfigureAwait(false);
 		SetActiveReader(await ExecuteReaderCoreAsync(cancellationToken).ConfigureAwait(false));
 		return new DbConnectorResultSets(this);
 	}
 
-	internal IReadOnlyList<T> Query<T>(DbConnectorCommand connectorCommand, Func<DbConnectorRecord, T>? map)
+	internal IReadOnlyList<T> Query<T>(DbConnectorCommandBatch connectorCommandBatch, Func<DbConnectorRecord, T>? map)
 	{
-		OnCommandExecuting(connectorCommand);
-		using var commandScope = CreateCommand(connectorCommand);
+		OnCommandExecuting(connectorCommandBatch);
+		using var commandScope = CreateCommand(connectorCommandBatch);
 		SetActiveReader(ExecuteReaderCore());
 		using var readerScope = new DbActiveReaderDisposer(this);
 		var record = new DbConnectorRecord(this, new DbConnectorRecordState());
@@ -771,10 +771,10 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		return list;
 	}
 
-	internal async ValueTask<IReadOnlyList<T>> QueryAsync<T>(DbConnectorCommand connectorCommand, Func<DbConnectorRecord, T>? map, CancellationToken cancellationToken)
+	internal async ValueTask<IReadOnlyList<T>> QueryAsync<T>(DbConnectorCommandBatch connectorCommandBatch, Func<DbConnectorRecord, T>? map, CancellationToken cancellationToken)
 	{
-		OnCommandExecuting(connectorCommand);
-		await using var commandScope = (await CreateCommandAsync(connectorCommand, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+		OnCommandExecuting(connectorCommandBatch);
+		await using var commandScope = (await CreateCommandAsync(connectorCommandBatch, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
 		SetActiveReader(await ExecuteReaderCoreAsync(cancellationToken).ConfigureAwait(false));
 		await using var readerScope = new DbActiveReaderDisposer(this).ConfigureAwait(false);
 		var record = new DbConnectorRecord(this, new DbConnectorRecordState());
@@ -791,10 +791,10 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		return list;
 	}
 
-	internal T QueryFirst<T>(DbConnectorCommand connectorCommand, Func<DbConnectorRecord, T>? map, bool single, bool orDefault)
+	internal T QueryFirst<T>(DbConnectorCommandBatch connectorCommandBatch, Func<DbConnectorRecord, T>? map, bool single, bool orDefault)
 	{
-		OnCommandExecuting(connectorCommand);
-		using var commandScope = CreateCommand(connectorCommand);
+		OnCommandExecuting(connectorCommandBatch);
+		using var commandScope = CreateCommand(connectorCommandBatch);
 		SetActiveReader(single ? ExecuteReaderCore() : ExecuteReaderCore(CommandBehavior.SingleRow));
 		using var readerScope = new DbActiveReaderDisposer(this);
 
@@ -816,10 +816,10 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		return value;
 	}
 
-	internal async ValueTask<T> QueryFirstAsync<T>(DbConnectorCommand connectorCommand, Func<DbConnectorRecord, T>? map, bool single, bool orDefault, CancellationToken cancellationToken)
+	internal async ValueTask<T> QueryFirstAsync<T>(DbConnectorCommandBatch connectorCommandBatch, Func<DbConnectorRecord, T>? map, bool single, bool orDefault, CancellationToken cancellationToken)
 	{
-		OnCommandExecuting(connectorCommand);
-		await using var commandScope = (await CreateCommandAsync(connectorCommand, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+		OnCommandExecuting(connectorCommandBatch);
+		await using var commandScope = (await CreateCommandAsync(connectorCommandBatch, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
 		SetActiveReader(single ? await ExecuteReaderCoreAsync(cancellationToken).ConfigureAwait(false) : await ExecuteReaderCoreAsync(CommandBehavior.SingleRow, cancellationToken).ConfigureAwait(false));
 		await using var readerScope = new DbActiveReaderDisposer(this).ConfigureAwait(false);
 
@@ -841,9 +841,9 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		return value;
 	}
 
-	internal IEnumerable<T> Enumerate<T>(DbConnectorCommand connectorCommand, Func<DbConnectorRecord, T>? map)
+	internal IEnumerable<T> Enumerate<T>(DbConnectorCommandBatch connectorCommandBatch, Func<DbConnectorRecord, T>? map)
 	{
-		using var commandScope = CreateCommand(connectorCommand);
+		using var commandScope = CreateCommand(connectorCommandBatch);
 		SetActiveReader(ExecuteReaderCore());
 		using var readerScope = new DbActiveReaderDisposer(this);
 		var record = new DbConnectorRecord(this, new DbConnectorRecordState());
@@ -856,10 +856,10 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		while (NextReaderResultCore());
 	}
 
-	internal async IAsyncEnumerable<T> EnumerateAsync<T>(DbConnectorCommand connectorCommand, Func<DbConnectorRecord, T>? map, [EnumeratorCancellation] CancellationToken cancellationToken)
+	internal async IAsyncEnumerable<T> EnumerateAsync<T>(DbConnectorCommandBatch connectorCommandBatch, Func<DbConnectorRecord, T>? map, [EnumeratorCancellation] CancellationToken cancellationToken)
 	{
-		OnCommandExecuting(connectorCommand);
-		await using var commandScope = (await CreateCommandAsync(connectorCommand, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+		OnCommandExecuting(connectorCommandBatch);
+		await using var commandScope = (await CreateCommandAsync(connectorCommandBatch, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
 		SetActiveReader(await ExecuteReaderCoreAsync(cancellationToken).ConfigureAwait(false));
 		await using var readerScope = new DbActiveReaderDisposer(this).ConfigureAwait(false);
 		var record = new DbConnectorRecord(this, new DbConnectorRecordState());
@@ -1000,41 +1000,41 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		}
 	}
 
-	private DbActiveCommandDisposer CreateCommand(DbConnectorCommand connectorCommand)
+	private DbActiveCommandDisposer CreateCommand(DbConnectorCommandBatch connectorCommandBatch)
 	{
 		OpenConnection();
-		DoCreateCommand(connectorCommand, out var needsPrepare);
+		DoCreateCommand(connectorCommandBatch, out var needsPrepare);
 		if (needsPrepare)
 			PrepareCommandCore();
 		return new DbActiveCommandDisposer(this);
 	}
 
-	private async ValueTask<DbActiveCommandDisposer> CreateCommandAsync(DbConnectorCommand connectorCommand, CancellationToken cancellationToken = default)
+	private async ValueTask<DbActiveCommandDisposer> CreateCommandAsync(DbConnectorCommandBatch connectorCommandBatch, CancellationToken cancellationToken = default)
 	{
 		await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
-		DoCreateCommand(connectorCommand, out var needsPrepare);
+		DoCreateCommand(connectorCommandBatch, out var needsPrepare);
 		if (needsPrepare)
 			await PrepareCommandCoreAsync(cancellationToken).ConfigureAwait(false);
 		return new DbActiveCommandDisposer(this);
 	}
 
-	private void DoCreateCommand(DbConnectorCommand connectorCommand, out bool needsPrepare)
+	private void DoCreateCommand(DbConnectorCommandBatch connectorCommandBatch, out bool needsPrepare)
 	{
-		if (connectorCommand.QueryCount != 1)
+		if (connectorCommandBatch.QueryCount != 1)
 			throw new InvalidOperationException("Only one query is supported.");
 
-		var commandQuery = connectorCommand.GetQuery(0);
-		var commandType = commandQuery.CommandType;
-		var commandText = commandQuery.CommandText;
-		var parameters = commandQuery.ParameterSource;
-		var timeout = connectorCommand.Timeout;
+		var commandQuery = connectorCommandBatch.GetCommand(0);
+		var commandType = commandQuery.Type;
+		var commandText = commandQuery.Text;
+		var parameters = commandQuery.Parameters;
+		var timeout = connectorCommandBatch.Timeout;
 
 		IDbCommand? command;
 		var transaction = Transaction;
 
 		var wasCached = false;
 		var isCached = false;
-		var cache = connectorCommand.IsCached ? CommandCache : null;
+		var cache = connectorCommandBatch.IsCached ? CommandCache : null;
 		if (cache is not null)
 		{
 			if (cache.TryGetCommand(commandText, out command))
@@ -1064,7 +1064,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		else
 		{
 			parameters.SubmitParameters(new ApplyParameterTarget(this));
-			needsPrepare = connectorCommand.IsPrepared;
+			needsPrepare = connectorCommandBatch.IsPrepared;
 		}
 
 		IDbCommand CreateNewCommand()

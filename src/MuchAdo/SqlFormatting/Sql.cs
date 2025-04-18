@@ -167,12 +167,12 @@ public abstract class Sql
 	/// <inheritdoc />
 	public override string ToString()
 	{
-		var commandBuilder = new DbConnectorQueryBuilder(SqlSyntax.Ansi);
+		var commandBuilder = new DbConnectorCommandBuilder(SqlSyntax.Ansi);
 		Render(commandBuilder);
 		return commandBuilder.Text;
 	}
 
-	internal abstract void Render(DbConnectorQueryBuilder builder);
+	internal abstract void Render(DbConnectorCommandBuilder builder);
 
 	private static JoinSql JoinOrThrow(string separator, IEnumerable<Sql> sqls, string throwMessageIfEmpty) =>
 		new(separator ?? throw new ArgumentNullException(nameof(separator)), AsReadOnlyList(sqls ?? throw new ArgumentNullException(nameof(sqls))), throwMessageIfEmpty);
@@ -181,7 +181,7 @@ public abstract class Sql
 
 	private sealed class AddSql(Sql a, Sql b) : Sql
 	{
-		internal override void Render(DbConnectorQueryBuilder builder)
+		internal override void Render(DbConnectorCommandBuilder builder)
 		{
 			a.Render(builder);
 			b.Render(builder);
@@ -190,7 +190,7 @@ public abstract class Sql
 
 	private sealed class BinaryOperatorSql(string lowercase, string uppercase, IReadOnlyList<Sql> sqls) : Sql
 	{
-		internal override void Render(DbConnectorQueryBuilder builder)
+		internal override void Render(DbConnectorCommandBuilder builder)
 		{
 			if (sqls.Count == 0)
 				return;
@@ -214,7 +214,7 @@ public abstract class Sql
 
 	private sealed class ConcatSql(IReadOnlyList<Sql> sqls) : Sql
 	{
-		internal override void Render(DbConnectorQueryBuilder builder)
+		internal override void Render(DbConnectorCommandBuilder builder)
 		{
 			foreach (var sql in sqls)
 				sql.Render(builder);
@@ -223,7 +223,7 @@ public abstract class Sql
 
 	private sealed class JoinSql(string separator, IReadOnlyList<Sql> sqls, string? throwMessageIfEmpty = null) : Sql
 	{
-		internal override void Render(DbConnectorQueryBuilder builder)
+		internal override void Render(DbConnectorCommandBuilder builder)
 		{
 			var oldTextLength = builder.TextLength;
 
@@ -240,17 +240,17 @@ public abstract class Sql
 
 	private sealed class LikeParamStartsWithSql(string prefix) : Sql
 	{
-		internal override void Render(DbConnectorQueryBuilder builder) => builder.AppendParameterValue(this, builder.Syntax.EscapeLikeFragment(prefix) + "%");
+		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, builder.Syntax.EscapeLikeFragment(prefix) + "%");
 	}
 
 	private sealed class NameSql(string identifier) : Sql
 	{
-		internal override void Render(DbConnectorQueryBuilder builder) => builder.AppendText(builder.Syntax.QuoteName(identifier));
+		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendText(builder.Syntax.QuoteName(identifier));
 	}
 
 	private sealed class OptionalClauseSql(string lowercase, string uppercase, Sql sql) : Sql
 	{
-		internal override void Render(DbConnectorQueryBuilder builder)
+		internal override void Render(DbConnectorCommandBuilder builder)
 		{
 			using var scope = builder.Prefix(builder.Syntax.LowercaseKeywords ? lowercase : uppercase);
 			sql.Render(builder);
@@ -259,12 +259,12 @@ public abstract class Sql
 
 	private sealed class ParamSql<T>(T value) : Sql
 	{
-		internal override void Render(DbConnectorQueryBuilder builder) => builder.AppendParameterValue(this, value);
+		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, value);
 	}
 
 	private sealed class NamedParamSql<T>(string name, T value) : Sql, IDbParameterSource
 	{
-		internal override void Render(DbConnectorQueryBuilder builder)
+		internal override void Render(DbConnectorCommandBuilder builder)
 		{
 			builder.AppendText(builder.Syntax.NamedParameterChar);
 			builder.AppendText(name);
@@ -276,6 +276,6 @@ public abstract class Sql
 
 	private sealed class RawSql(string text) : Sql
 	{
-		internal override void Render(DbConnectorQueryBuilder builder) => builder.AppendText(text);
+		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendText(text);
 	}
 }

@@ -5,9 +5,9 @@ using static System.FormattableString;
 
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class DbConnectorQueryBuilder
+internal sealed class DbConnectorCommandBuilder
 {
-	public DbConnectorQueryBuilder(SqlSyntax syntax)
+	public DbConnectorCommandBuilder(SqlSyntax syntax)
 	{
 		Syntax = syntax;
 		m_textBuilder = new StringBuilder();
@@ -127,7 +127,7 @@ internal sealed class DbConnectorQueryBuilder
 		m_suffixes!.RemoveAt(index);
 	}
 
-	public DbConnectorQuery Build(CommandType commandType) => new(commandType, m_textBuilder.ToString(), m_parameterSources);
+	public DbConnectorCommand Build(CommandType commandType) => new(commandType, m_textBuilder.ToString(), m_parameterSources);
 
 	private readonly StringBuilder m_textBuilder;
 	private readonly DbParameterSources m_parameterSources;

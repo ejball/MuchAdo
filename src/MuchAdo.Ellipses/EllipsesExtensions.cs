@@ -8,11 +8,11 @@ namespace MuchAdo.Ellipses;
 /// </summary>
 public static class EllipsesExtensions
 {
-	public static DbConnectorCommand ExpandEllipses(this DbConnectorCommand connectorCommand)
+	public static DbConnectorCommandBatch ExpandEllipses(this DbConnectorCommandBatch connectorCommandBatch)
 	{
-		var currentQuery = connectorCommand.CurrentQuery;
-		var commandText = currentQuery.CommandText;
-		var parameters = currentQuery.ParameterSource;
+		var currentQuery = connectorCommandBatch.CurrentCommand;
+		var commandText = currentQuery.Text;
+		var parameters = currentQuery.Parameters;
 
 		if (commandText.ContainsOrdinal("..."))
 		{
@@ -67,6 +67,6 @@ public static class EllipsesExtensions
 			}
 		}
 
-		return connectorCommand.ReplaceQuery(new(currentQuery.CommandType, commandText, parameters));
+		return connectorCommandBatch.SetCurrentCommand(new(currentQuery.Type, commandText, parameters));
 	}
 }
