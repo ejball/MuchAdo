@@ -22,12 +22,16 @@ public sealed class SqlSyntax
 	/// <summary>
 	/// The syntax for MySQL.
 	/// </summary>
-	public static SqlSyntax MySql { get; } = Default.WithIdentifierQuoting(SqlIdentifierQuoting.Backticks);
+	public static SqlSyntax MySql { get; } = Default
+		.WithIdentifierQuoting(SqlIdentifierQuoting.Backticks)
+		.WithPositionalParameterStrategy(SqlPositionalParameterStrategy.Unnumbered("?"));
 
 	/// <summary>
 	/// The syntax for PostgreSQL.
 	/// </summary>
-	public static SqlSyntax Postgres { get; } = Default.WithIdentifierQuoting(SqlIdentifierQuoting.DoubleQuotes);
+	public static SqlSyntax Postgres { get; } = Default
+		.WithIdentifierQuoting(SqlIdentifierQuoting.DoubleQuotes)
+		.WithPositionalParameterStrategy(SqlPositionalParameterStrategy.Numbered("$"));
 
 	/// <summary>
 	/// The syntax for Microsoft SQL Server.
