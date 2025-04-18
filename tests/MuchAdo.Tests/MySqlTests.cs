@@ -61,7 +61,7 @@ internal sealed class MySqlTests
 		using var connector = CreateConnector();
 
 		var lastCommandText = "";
-		connector.CommandExecuting += (s, e) => lastCommandText = e.ConnectorCommand.Text;
+		connector.CommandExecuting += (s, e) => lastCommandText = e.ConnectorCommand.CurrentQuery.CommandText;
 
 		connector.Command(Sql.Format($"drop table if exists {tableName};")).Execute();
 		connector.Command(Sql.Format($"create table {tableName} (Id int not null auto_increment primary key, Name varchar(100) not null);")).Execute();

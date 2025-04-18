@@ -13,7 +13,7 @@ public static class BulkInsertUtility
 	public static int BulkInsert(this DbConnectorCommand command, IEnumerable<IDbParameterSource> rows, BulkInsertSettings? settings = null)
 	{
 		var rowCount = 0;
-		foreach (var (sql, parameters) in GetBulkInsertCommands(command.Text, command.Parameters, rows, settings))
+		foreach (var (sql, parameters) in GetBulkInsertCommands(command.CurrentQuery.CommandText, command.CurrentQuery.ParameterSource, rows, settings))
 			rowCount += CreateBatchCommand(command, sql, parameters).Execute();
 		return rowCount;
 	}
@@ -30,7 +30,7 @@ public static class BulkInsertUtility
 	public static async Task<int> BulkInsertAsync(this DbConnectorCommand command, IEnumerable<IDbParameterSource> rows, BulkInsertSettings? settings = null, CancellationToken cancellationToken = default)
 	{
 		var rowCount = 0;
-		foreach (var (sql, parameters) in GetBulkInsertCommands(command.Text, command.Parameters, rows, settings))
+		foreach (var (sql, parameters) in GetBulkInsertCommands(command.CurrentQuery.CommandText, command.CurrentQuery.ParameterSource, rows, settings))
 			rowCount += await CreateBatchCommand(command, sql, parameters).ExecuteAsync(cancellationToken).ConfigureAwait(false);
 		return rowCount;
 	}

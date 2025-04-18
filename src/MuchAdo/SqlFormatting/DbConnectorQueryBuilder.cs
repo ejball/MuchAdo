@@ -1,12 +1,13 @@
+using System.Data;
 using System.Text;
 using MuchAdo.Parameters;
 using static System.FormattableString;
 
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class SqlCommandBuilder
+internal sealed class DbConnectorQueryBuilder
 {
-	public SqlCommandBuilder(SqlSyntax syntax)
+	public DbConnectorQueryBuilder(SqlSyntax syntax)
 	{
 		Syntax = syntax;
 		m_textBuilder = new StringBuilder();
@@ -126,7 +127,7 @@ internal sealed class SqlCommandBuilder
 		m_suffixes!.RemoveAt(index);
 	}
 
-	public (string Text, IDbParameterSource Parameters) Build() => (m_textBuilder.ToString(), m_parameterSources);
+	public DbConnectorQuery Build(CommandType commandType) => new(commandType, m_textBuilder.ToString(), m_parameterSources);
 
 	private readonly StringBuilder m_textBuilder;
 	private readonly DbParameterSources m_parameterSources;

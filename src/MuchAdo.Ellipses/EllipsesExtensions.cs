@@ -10,8 +10,9 @@ public static class EllipsesExtensions
 {
 	public static DbConnectorCommand ExpandEllipses(this DbConnectorCommand connectorCommand)
 	{
-		var commandText = connectorCommand.Text;
-		var parameters = connectorCommand.Parameters;
+		var currentQuery = connectorCommand.CurrentQuery;
+		var commandText = currentQuery.CommandText;
+		var parameters = currentQuery.ParameterSource;
 
 		if (commandText.ContainsOrdinal("..."))
 		{
@@ -66,6 +67,6 @@ public static class EllipsesExtensions
 			}
 		}
 
-		return connectorCommand.Transform(commandText, parameters);
+		return connectorCommand.ReplaceQuery(new(currentQuery.CommandType, commandText, parameters));
 	}
 }

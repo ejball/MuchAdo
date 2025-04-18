@@ -256,7 +256,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// Creates a new command.
 	/// </summary>
 	/// <param name="text">The text of the command.</param>
-	public DbConnectorCommand Command(string text) => new(this, text, CommandType.Text);
+	public DbConnectorCommand Command(string text) => new(this, CommandType.Text, text);
 
 	/// <summary>
 	/// Creates a new command from parameterized SQL.
@@ -264,10 +264,10 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// <param name="sql">The parameterized SQL.</param>
 	public DbConnectorCommand Command(Sql sql)
 	{
-		var builder = new SqlCommandBuilder(SqlSyntax);
+		var builder = new DbConnectorQueryBuilder(SqlSyntax);
 		sql.Render(builder);
-		var (text, parameters) = builder.Build();
-		return new DbConnectorCommand(this, text, CommandType.Text).WithParameters(parameters);
+		var query = builder.Build(CommandType.Text);
+		return new DbConnectorCommand(this, query.CommandType, query.CommandText, query.ParameterSource);
 	}
 
 	/// <summary>
@@ -281,7 +281,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// Creates a new command to access a stored procedure.
 	/// </summary>
 	/// <param name="name">The name of the stored procedure.</param>
-	public DbConnectorCommand StoredProcedure(string name) => new(this, name, CommandType.StoredProcedure);
+	public DbConnectorCommand StoredProcedure(string name) => new(this, CommandType.StoredProcedure, name);
 
 	/// <summary>
 	/// Closes the connection.
@@ -1020,10 +1020,14 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 	private void DoCreateCommand(DbConnectorCommand connectorCommand, out bool needsPrepare)
 	{
-		var commandText = connectorCommand.Text;
-		var commandType = connectorCommand.CommandType;
+		if (connectorCommand.QueryCount != 1)
+			throw new InvalidOperationException("Only one query is supported.");
+
+		var commandQuery = connectorCommand.GetQuery(0);
+		var commandType = commandQuery.CommandType;
+		var commandText = commandQuery.CommandText;
+		var parameters = commandQuery.ParameterSource;
 		var timeout = connectorCommand.Timeout;
-		var parameters = connectorCommand.Parameters;
 
 		IDbCommand? command;
 		var transaction = Transaction;

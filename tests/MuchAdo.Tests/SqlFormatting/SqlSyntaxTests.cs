@@ -483,7 +483,7 @@ internal sealed class SqlSyntaxTests
 
 	private static (string Text, IDbParameterSource Parameters) Render(Sql sql, SqlSyntax? syntax = null)
 	{
-		var commandBuilder = new SqlCommandBuilder(syntax ?? SqlSyntax.Default);
+		var commandBuilder = new DbConnectorQueryBuilder(syntax ?? SqlSyntax.Default);
 		sql.Render(commandBuilder);
 		return (commandBuilder.Text, commandBuilder.Parameters);
 	}

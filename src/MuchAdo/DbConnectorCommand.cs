@@ -1,4 +1,5 @@
 using System.Data;
+using MuchAdo.SqlFormatting;
 
 namespace MuchAdo;
 
@@ -7,21 +8,6 @@ namespace MuchAdo;
 /// </summary>
 public sealed class DbConnectorCommand
 {
-	/// <summary>
-	/// The <see cref="CommandType"/> of the command.
-	/// </summary>
-	public CommandType CommandType { get; }
-
-	/// <summary>
-	/// The text of the command.
-	/// </summary>
-	public string Text => m_text;
-
-	/// <summary>
-	/// The parameters of the command.
-	/// </summary>
-	public IDbParameterSource Parameters => m_parameterSources;
-
 	/// <summary>
 	/// The timeout of the command.
 	/// </summary>
@@ -42,6 +28,11 @@ public sealed class DbConnectorCommand
 	/// The connector of the command.
 	/// </summary>
 	public DbConnector Connector { get; }
+
+	/// <summary>
+	/// The number of queries in the command.
+	/// </summary>
+	public int QueryCount => 1 + (m_batchedQueries?.Count ?? 0);
 
 	/// <summary>
 	/// Executes the command, returning the number of rows affected.
@@ -276,27 +267,27 @@ public sealed class DbConnectorCommand
 
 	public DbConnectorCommand WithParameters(IDbParameterSource source)
 	{
-		m_parameterSources.Add(source);
+		ParameterSources.Add(source);
 		return this;
 	}
 
 	public DbConnectorCommand WithParameters(DbParameterSources sources)
 	{
-		m_parameterSources.Add(sources);
+		ParameterSources.Add(sources);
 		return this;
 	}
 
 	public DbConnectorCommand WithParameters(params ReadOnlySpan<IDbParameterSource> sources)
 	{
 		foreach (var source in sources)
-			m_parameterSources.Add(source);
+			ParameterSources.Add(source);
 		return this;
 	}
 
 	public DbConnectorCommand WithParameters(IEnumerable<IDbParameterSource> sources)
 	{
 		foreach (var source in sources)
-			m_parameterSources.Add(source);
+			ParameterSources.Add(source);
 		return this;
 	}
 
@@ -338,23 +329,105 @@ public sealed class DbConnectorCommand
 	}
 
 	/// <summary>
-	/// Sets the command text and parameters.
+	/// Creates a new command.
 	/// </summary>
-	public DbConnectorCommand Transform(string text, IDbParameterSource parameters)
+	/// <param name="text">The text of the command.</param>
+	public DbConnectorCommand Command(string text) => StartNextCommand(CommandType.Text, text);
+
+	/// <summary>
+	/// Creates a new command from parameterized SQL.
+	/// </summary>
+	/// <param name="sql">The parameterized SQL.</param>
+	public DbConnectorCommand Command(Sql sql)
 	{
-		m_text = text;
-		m_parameterSources = new(parameters);
+		var builder = new DbConnectorQueryBuilder(Connector.SqlSyntax);
+		sql.Render(builder);
+		var query = builder.Build(CommandType.Text);
+		return StartNextCommand(query.CommandType, query.CommandText, query.ParameterSource);
+	}
+
+	/// <summary>
+	/// Creates a new command from a formatted SQL string.
+	/// </summary>
+	/// <param name="sql">The formatted SQL string.</param>
+	/// <remarks>Shorthand for <c>Command(Sql.Format($"..."))</c>.</remarks>
+	public DbConnectorCommand CommandFormat(SqlFormatStringHandler sql) => Command(Sql.Format(sql));
+
+	/// <summary>
+	/// Creates a new command to access a stored procedure.
+	/// </summary>
+	/// <param name="name">The name of the stored procedure.</param>
+	public DbConnectorCommand StoredProcedure(string name) => StartNextCommand(CommandType.StoredProcedure, name);
+
+	/// <summary>
+	/// Gets the query at the specified index.
+	/// </summary>
+	public DbConnectorQuery GetQuery(int index)
+	{
+		if (index == (m_batchedQueries?.Count ?? 0))
+			return CurrentQuery;
+
+		if (m_batchedQueries is null)
+			throw new ArgumentOutOfRangeException(nameof(index));
+
+		return m_batchedQueries[index];
+	}
+
+	/// <summary>
+	/// Gets the current query.
+	/// </summary>
+	public DbConnectorQuery CurrentQuery => new(m_commandType, m_text, m_parameterSource ?? m_parameterSources ?? DbParameterSource.Empty);
+
+	/// <summary>
+	/// Replaces the most recent query with the specified text and parameters.
+	/// </summary>
+	public DbConnectorCommand ReplaceQuery(DbConnectorQuery query)
+	{
+		m_commandType = query.CommandType;
+		m_text = query.CommandText;
+		m_parameterSource = query.ParameterSource;
+		m_parameterSources = null;
 		return this;
 	}
 
-	internal DbConnectorCommand(DbConnector connector, string text, CommandType commandType)
+	internal DbConnectorCommand(DbConnector connector, CommandType commandType, string commandText, IDbParameterSource? parameterSource = null)
 	{
 		Connector = connector;
-		CommandType = commandType;
-		m_text = text;
-		m_parameterSources = new DbParameterSources();
+		m_commandType = commandType;
+		m_text = commandText;
+		m_parameterSource = parameterSource;
 	}
 
+	private DbParameterSources ParameterSources
+	{
+		get
+		{
+			if (m_parameterSources is null)
+			{
+				m_parameterSources = m_parameterSource is not null ? [m_parameterSource] : [];
+				m_parameterSource = null;
+			}
+
+			return m_parameterSources;
+		}
+	}
+
+	private DbConnectorCommand StartNextCommand(CommandType commandType, string commandText, IDbParameterSource? parameterSource = null)
+	{
+		m_batchedQueries ??= [];
+		m_batchedQueries.Add(CurrentQuery);
+
+		m_commandType = commandType;
+		m_text = commandText;
+		m_parameterSource = parameterSource;
+		m_parameterSources = null;
+
+		return this;
+	}
+
+	private CommandType m_commandType;
 	private string m_text;
-	private DbParameterSources m_parameterSources;
+	private IDbParameterSource? m_parameterSource;
+	private DbParameterSources? m_parameterSources;
+	private List<DbConnectorQuery>? m_batchedQueries;
 }
