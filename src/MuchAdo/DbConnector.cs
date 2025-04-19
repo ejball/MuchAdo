@@ -1214,19 +1214,37 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	private DbActiveCommandDisposer CreateCommand(DbConnectorCommandBatch commandBatch)
 	{
 		OpenConnection();
-		DoCreateCommand(commandBatch, out var needsPrepare);
-		if (needsPrepare)
-			PrepareCore();
-		return new DbActiveCommandDisposer(this);
+
+		try
+		{
+			DoCreateCommand(commandBatch, out var needsPrepare);
+			if (needsPrepare)
+				PrepareCore();
+			return new DbActiveCommandDisposer(this);
+		}
+		catch
+		{
+			DisposeActiveCommandOrBatch();
+			throw;
+		}
 	}
 
 	private async ValueTask<DbActiveCommandDisposer> CreateCommandAsync(DbConnectorCommandBatch commandBatch, CancellationToken cancellationToken = default)
 	{
 		await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
-		DoCreateCommand(commandBatch, out var needsPrepare);
-		if (needsPrepare)
-			await PrepareCoreAsync(cancellationToken).ConfigureAwait(false);
-		return new DbActiveCommandDisposer(this);
+
+		try
+		{
+			DoCreateCommand(commandBatch, out var needsPrepare);
+			if (needsPrepare)
+				await PrepareCoreAsync(cancellationToken).ConfigureAwait(false);
+			return new DbActiveCommandDisposer(this);
+		}
+		catch
+		{
+			await DisposeActiveCommandOrBatchAsync().ConfigureAwait(false);
+			throw;
+		}
 	}
 
 	private void DoCreateCommand(DbConnectorCommandBatch commandBatch, out bool needsPrepare)
