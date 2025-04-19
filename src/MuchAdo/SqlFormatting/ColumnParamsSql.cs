@@ -26,7 +26,7 @@ public sealed class ColumnParamsSql<T> : Sql
 		foreach (var filteredProperty in filteredProperties)
 		{
 			using var scope = builder.Prefix(builder.TextLength != oldTextLength ? ", " : "");
-			builder.AppendParameterValue(null, m_dto, filteredProperty);
+			builder.AppendParameterValue(null, m_dto, filteredProperty, type: null);
 		}
 
 		if (builder.TextLength == oldTextLength)

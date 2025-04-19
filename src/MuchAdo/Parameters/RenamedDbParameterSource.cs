@@ -6,6 +6,6 @@ internal sealed class RenamedDbParameterSource(IDbParameterSource source, Func<s
 
 	private sealed class RenamedDbParameterTarget(IDbParameterTarget target, Func<string, string> rename) : IDbParameterTarget
 	{
-		public void AcceptParameter<T>(string name, T value) => target.AcceptParameter(rename(name), value);
+		public void AcceptParameter<T>(string name, T value, IDbParameterType? type) => target.AcceptParameter(rename(name), value, type);
 	}
 }

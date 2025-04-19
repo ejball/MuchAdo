@@ -13,8 +13,12 @@ public static class DbParameterSource
 	/// <summary>
 	/// Creates one parameter.
 	/// </summary>
-	public static IDbParameterSource Create<T>(string name, T value) =>
-		new SingleDbParameter<T>(name, value);
+	public static SingleDbParameter<T> Create<T>(string name, T value) => new(name, value, null);
+
+	/// <summary>
+	/// Creates one parameter.
+	/// </summary>
+	public static SingleDbParameter<T> Create<T>(string name, T value, IDbParameterType? type) => new(name, value, type);
 
 	/// <summary>
 	/// Creates parameters from a sequence of parameters.
@@ -78,7 +82,7 @@ public static class DbParameterSource
 	{
 		public int Count { get; private set; }
 
-		public void AcceptParameter<T>(string name, T value) => Count++;
+		public void AcceptParameter<T>(string name, T value, IDbParameterType? type) => Count++;
 	}
 
 	public static IEnumerable<(string Name, object? Value)> Enumerate(this IDbParameterSource source)
@@ -92,7 +96,7 @@ public static class DbParameterSource
 	{
 		public Collection<(string Name, object? Value)> Items { get; } = new();
 
-		public void AcceptParameter<T>(string name, T value) => Items.Add((name, value));
+		public void AcceptParameter<T>(string name, T value, IDbParameterType? type) => Items.Add((name, value));
 	}
 
 	/// <summary>

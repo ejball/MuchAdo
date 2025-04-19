@@ -1,4 +1,5 @@
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
@@ -480,6 +481,15 @@ internal sealed class DbConnectorTests
 		connector.Command("select Name, Number from Items order by ItemId limit 1;").QuerySingle<(string, string)>().Should().Be(("A", "A"));
 		connector.Command("insert into Items (Name, Number) values (@Name, @Number);").WithParameter("Name", new SqliteParameter { Value = 'A', SqliteType = SqliteType.Text }).WithParameter("Number", new SqliteParameter { Value = 'A', SqliteType = SqliteType.Integer }).Execute();
 		connector.Command("select Name, Number from Items order by ItemId limit 1 offset 1;").QuerySingle<(string, long)>().Should().Be(("A", 65L));
+	}
+
+	[Test]
+	public void ParameterSizeTests()
+	{
+		using var connector = CreateConnector();
+		connector.Command("create table Items (ItemId integer primary key, Name text null);").Execute();
+		connector.Command("insert into Items (Name) values (@Name);").WithParameter("Name", "1234567890", DbParameterType.FromAction(x => ((DbParameter) x).Size = 5)).Execute();
+		connector.Command("select Name from Items order by ItemId limit 1;").QuerySingle<string>().Should().Be("12345");
 	}
 
 	[Test]

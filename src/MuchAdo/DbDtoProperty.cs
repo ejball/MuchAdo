@@ -35,13 +35,14 @@ internal sealed class DbDtoProperty<T>
 
 	public string? ColumnName { get; }
 
-	public void SubmitParameter(IDbParameterTarget target, string name, T source) => m_lazySubmitParameter.Value(target, name, source);
+	public void SubmitParameter(IDbParameterTarget target, string name, T source, IDbParameterType? type) => m_lazySubmitParameter.Value(target, name, source, type);
 
-	private Action<IDbParameterTarget, string, T> CreateSubmitParameter()
+	private Action<IDbParameterTarget, string, T, IDbParameterType?> CreateSubmitParameter()
 	{
 		var targetParam = Expression.Parameter(typeof(IDbParameterTarget), "target");
 		var nameParam = Expression.Parameter(typeof(string), "name");
 		var sourceParam = Expression.Parameter(typeof(T), "source");
+		var typeParam = Expression.Parameter(typeof(IDbParameterType), "type");
 
 		var getValue = MemberInfo is PropertyInfo propertyInfo
 			? Expression.Property(sourceParam, propertyInfo)
@@ -51,13 +52,14 @@ internal sealed class DbDtoProperty<T>
 			.GetMethods(BindingFlags.Public | BindingFlags.Instance)
 			.Single(x => x is { Name: "AcceptParameter", IsGenericMethod: true } &&
 				x.GetGenericArguments().Length == 1 &&
-				x.GetParameters() is [var p0, var p1] &&
+				x.GetParameters() is [var p0, var p1, var p2] &&
 				p0.ParameterType == typeof(string) &&
-				p1.ParameterType.IsGenericParameter).MakeGenericMethod(ValueType);
+				p1.ParameterType.IsGenericParameter &&
+				p2.ParameterType == typeof(IDbParameterType)).MakeGenericMethod(ValueType);
 
-		return Expression.Lambda<Action<IDbParameterTarget, string, T>>(
-			Expression.Call(targetParam, acceptMethod, nameParam, getValue), targetParam, nameParam, sourceParam).Compile();
+		return Expression.Lambda<Action<IDbParameterTarget, string, T, IDbParameterType?>>(
+			Expression.Call(targetParam, acceptMethod, nameParam, getValue, typeParam), targetParam, nameParam, sourceParam, typeParam).Compile();
 	}
 
-	private readonly Lazy<Action<IDbParameterTarget, string, T>> m_lazySubmitParameter;
+	private readonly Lazy<Action<IDbParameterTarget, string, T, IDbParameterType?>> m_lazySubmitParameter;
 }

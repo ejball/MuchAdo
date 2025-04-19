@@ -265,6 +265,15 @@ public sealed class DbConnectorCommandBatch
 	public DbConnectorCommandBatch WithParameter<T>(string key, T value) =>
 		WithParameters(DbParameterSource.Create(key, value));
 
+	public DbConnectorCommandBatch WithParameter<T>(string key, T value, IDbParameterType? type) =>
+		WithParameters(DbParameterSource.Create(key, value, type));
+
+	public DbConnectorCommandBatch WithParameter(IDataParameter parameter) =>
+		WithParameters(DbParameterSource.Create("", parameter));
+
+	public DbConnectorCommandBatch WithParameterValue<T>(T value) =>
+		WithParameters(DbParameterSource.Create("", value));
+
 	public DbConnectorCommandBatch WithParameters(IDbParameterSource source)
 	{
 		ParameterSources.Add(source);

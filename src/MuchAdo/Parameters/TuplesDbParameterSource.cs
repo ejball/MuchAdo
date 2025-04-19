@@ -5,6 +5,6 @@ internal sealed class TuplesDbParameterSource<T>(IEnumerable<(string Name, T Val
 	public void SubmitParameters(IDbParameterTarget target)
 	{
 		foreach (var tuple in tuples)
-			target.AcceptParameter(tuple.Name, tuple.Value);
+			target.AcceptParameter(tuple.Name, tuple.Value, type: null);
 	}
 }

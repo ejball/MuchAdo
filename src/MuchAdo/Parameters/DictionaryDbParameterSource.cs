@@ -5,6 +5,6 @@ internal sealed class DictionaryDbParameterSource<T>(IEnumerable<KeyValuePair<st
 	public void SubmitParameters(IDbParameterTarget target)
 	{
 		foreach (var pair in pairs)
-			target.AcceptParameter(pair.Key, pair.Value);
+			target.AcceptParameter(pair.Key, pair.Value, type: null);
 	}
 }

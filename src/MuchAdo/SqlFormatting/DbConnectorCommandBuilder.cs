@@ -37,18 +37,18 @@ internal sealed class DbConnectorCommandBuilder
 		m_textBuilder.Append(ch);
 	}
 
-	public void AppendParameterValue<T>(object? key, T value)
+	public void AppendParameterValue<T>(object? key, T value, IDbParameterType? type)
 	{
 		DoAppendParameter(key, out var needsParameterNamed);
 		if (needsParameterNamed is not null)
-			m_parameterSources.Add(DbParameterSource.Create(needsParameterNamed, value));
+			m_parameterSources.Add(DbParameterSource.Create(needsParameterNamed, value, type));
 	}
 
-	public void AppendParameterValue<T>(object? key, T valueSource, DbDtoProperty<T> valueProperty)
+	public void AppendParameterValue<T>(object? key, T valueSource, DbDtoProperty<T> valueProperty, IDbParameterType? type)
 	{
 		DoAppendParameter(key, out var needsParameterNamed);
 		if (needsParameterNamed is not null)
-			m_parameterSources.Add(new PropertyDbParameter<T>(needsParameterNamed, valueSource, valueProperty));
+			m_parameterSources.Add(new PropertyDbParameter<T>(needsParameterNamed, valueSource, valueProperty, type));
 	}
 
 	private void DoAppendParameter(object? key, out string? needsParameterNamed)

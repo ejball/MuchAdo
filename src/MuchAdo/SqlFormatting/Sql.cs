@@ -110,21 +110,31 @@ public abstract class Sql
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified value.
 	/// </summary>
-	public static Sql Param<T>(T value)
+	public static Sql Param<T>(T value) => Param(value, null);
+
+	/// <summary>
+	/// Creates SQL for an arbitrarily-named parameter with the specified value.
+	/// </summary>
+	public static Sql Param<T>(T value, IDbParameterType? type)
 	{
 		if (value is Sql)
 			throw new ArgumentException("Parameters should not be created from Sql instances.", nameof(value));
-		return new ParamSql<T>(value);
+		return new ParamSql<T>(value, type);
 	}
 
 	/// <summary>
 	/// Creates SQL for a named parameter with the specified value.
 	/// </summary>
-	public static Sql NamedParam<T>(string name, T value)
+	public static Sql NamedParam<T>(string name, T value) => NamedParam(name, value, null);
+
+	/// <summary>
+	/// Creates SQL for a named parameter with the specified value.
+	/// </summary>
+	public static Sql NamedParam<T>(string name, T value, IDbParameterType? type)
 	{
 		if (value is Sql)
 			throw new ArgumentException("Parameters should not be created from Sql instances.", nameof(value));
-		return new NamedParamSql<T>(name, value);
+		return new NamedParamSql<T>(name, value, type);
 	}
 
 	/// <summary>
@@ -240,7 +250,7 @@ public abstract class Sql
 
 	private sealed class LikeParamStartsWithSql(string prefix) : Sql
 	{
-		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, builder.Syntax.EscapeLikeFragment(prefix) + "%");
+		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, builder.Syntax.EscapeLikeFragment(prefix) + "%", type: null);
 	}
 
 	private sealed class NameSql(string identifier) : Sql
@@ -257,12 +267,12 @@ public abstract class Sql
 		}
 	}
 
-	private sealed class ParamSql<T>(T value) : Sql
+	private sealed class ParamSql<T>(T value, IDbParameterType? type) : Sql
 	{
-		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, value);
+		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, value, type);
 	}
 
-	private sealed class NamedParamSql<T>(string name, T value) : Sql, IDbParameterSource
+	private sealed class NamedParamSql<T>(string name, T value, IDbParameterType? type) : Sql, IDbParameterSource
 	{
 		internal override void Render(DbConnectorCommandBuilder builder)
 		{
@@ -271,7 +281,7 @@ public abstract class Sql
 			builder.AddParameters(this);
 		}
 
-		public void SubmitParameters(IDbParameterTarget target) => target.AcceptParameter(name, value);
+		public void SubmitParameters(IDbParameterTarget target) => target.AcceptParameter(name, value, type);
 	}
 
 	private sealed class RawSql(string text) : Sql

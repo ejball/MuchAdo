@@ -1315,7 +1315,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 	private sealed class ApplyParameterTarget(DbConnector connector, IDataParameterCollection parameters) : IDbParameterTarget
 	{
-		public void AcceptParameter<T>(string name, T value)
+		public void AcceptParameter<T>(string name, T value, IDbParameterType? type)
 		{
 			if (value is IDataParameter dbParameter)
 			{
@@ -1327,13 +1327,15 @@ public class DbConnector : IDisposable, IAsyncDisposable
 				dbParameter = connector.CreateParameter(name, value);
 			}
 
+			type?.ApplyToParameter(dbParameter);
+
 			parameters.Add(dbParameter);
 		}
 	}
 
 	private sealed class ReapplyParameterTarget(DbConnector connector, IDataParameterCollection parameters) : IDbParameterTarget
 	{
-		public void AcceptParameter<T>(string name, T value)
+		public void AcceptParameter<T>(string name, T value, IDbParameterType? type)
 		{
 			var dbParameter = parameters[m_index] as IDataParameter;
 			if (dbParameter is null || (dbParameter.ParameterName ?? "") != name)
@@ -1354,6 +1356,9 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			}
 
 			connector.SetParameterValue(dbParameter, value);
+
+			type?.ApplyToParameter(dbParameter);
+
 			m_index++;
 		}
 
