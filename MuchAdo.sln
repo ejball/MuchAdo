@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuchAdo.Ellipses", "src\Muc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuchAdo.Ellipses.Tests", "tests\MuchAdo.Ellipses.Tests\MuchAdo.Ellipses.Tests.csproj", "{D5DDF722-4E72-5893-A3C2-189770075D28}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuchAdo.MySql.Tests", "tests\MuchAdo.MySql.Tests\MuchAdo.MySql.Tests.csproj", "{4A6471A5-9682-80D1-F095-24EB607278BC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +69,10 @@ Global
 		{D5DDF722-4E72-5893-A3C2-189770075D28}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5DDF722-4E72-5893-A3C2-189770075D28}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5DDF722-4E72-5893-A3C2-189770075D28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A6471A5-9682-80D1-F095-24EB607278BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A6471A5-9682-80D1-F095-24EB607278BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A6471A5-9682-80D1-F095-24EB607278BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A6471A5-9682-80D1-F095-24EB607278BC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

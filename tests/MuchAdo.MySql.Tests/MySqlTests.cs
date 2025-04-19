@@ -5,7 +5,7 @@ using MuchAdo.SqlFormatting;
 using MySqlConnector;
 using NUnit.Framework;
 
-namespace MuchAdo.Tests;
+namespace MuchAdo.MySql.Tests;
 
 [TestFixture]
 internal sealed class MySqlTests
@@ -79,9 +79,8 @@ internal sealed class MySqlTests
 		connector.Command(Sql.Format($"select Name from {tableName} order by Id;")).Query<string>().Should().Equal("one", "two", "three", "four", "three", "four");
 	}
 
-	private static DbConnector CreateConnector() => new(
-		new MySqlConnection("Server=localhost;User Id=root;Password=test;SSL Mode=none;Database=test;Ignore Prepare=false;AllowPublicKeyRetrieval=true"),
-		new DbConnectorSettings { SqlSyntax = SqlSyntax.MySql });
+	private static MySqlDbConnector CreateConnector() => new(
+		new MySqlConnection("Server=localhost;User Id=root;Password=test;SSL Mode=none;Database=test;Ignore Prepare=false;AllowPublicKeyRetrieval=true"));
 
 #if NET9_0
 	private const string c_suffix = "_net9";

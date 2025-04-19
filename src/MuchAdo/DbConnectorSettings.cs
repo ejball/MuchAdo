@@ -28,4 +28,6 @@ public class DbConnectorSettings
 	/// If true, does not dispose the connection when the connector is disposed.
 	/// </summary>
 	public bool NoDispose { get; init; }
+
+	internal static DbConnectorSettings Default { get; } = new();
 }

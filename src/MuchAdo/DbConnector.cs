@@ -16,10 +16,18 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// Creates a new DbConnector.
 	/// </summary>
 	/// <param name="connection">The database connection.</param>
-	/// <param name="settings">The settings.</param>
-	public DbConnector(IDbConnection connection, DbConnectorSettings? settings = null)
+	public DbConnector(IDbConnection connection)
+		: this(connection, DbConnectorSettings.Default)
 	{
-		settings ??= s_defaultSettings;
+	}
+
+	/// <summary>
+	/// Creates a new DbConnector.
+	/// </summary>
+	/// <param name="connection">The database connection.</param>
+	/// <param name="settings">The settings.</param>
+	public DbConnector(IDbConnection connection, DbConnectorSettings settings)
+	{
 		m_connection = connection ?? throw new ArgumentNullException(nameof(connection));
 		m_isConnectionOpen = m_connection.State == ConnectionState.Open;
 		m_noCloseConnection = m_isConnectionOpen;
@@ -658,7 +666,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// Prepares a command.
 	/// </summary>
-	protected virtual void PrepareCommandCore()
+	protected virtual void PrepareCore()
 	{
 		if (ActiveCommandOrBatch is IDbCommand command)
 		{
@@ -680,17 +688,17 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// Prepares a command asynchronously.
 	/// </summary>
-	protected virtual ValueTask PrepareCommandCoreAsync(CancellationToken cancellationToken)
+	protected virtual ValueTask PrepareCoreAsync(CancellationToken cancellationToken)
 	{
+#if !NETSTANDARD2_0
 		if (ActiveCommandOrBatch is DbCommand command)
 			return new ValueTask(command.PrepareAsync(cancellationToken));
 
-#if !NETSTANDARD2_0
 		if (ActiveCommandOrBatch is DbBatch batch)
 			return new ValueTask(batch.PrepareAsync(cancellationToken));
 #endif
 
-		PrepareCommandCore();
+		PrepareCore();
 		return default;
 	}
 
@@ -721,10 +729,10 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// </summary>
 	protected virtual ValueTask DisposeCommandOrBatchCoreAsync()
 	{
+#if !NETSTANDARD2_0
 		if (ActiveCommandOrBatch is DbCommand command)
 			return command.DisposeAsync();
 
-#if !NETSTANDARD2_0
 		if (ActiveCommandOrBatch is DbBatch batch)
 			return batch.DisposeAsync();
 #endif
@@ -1217,7 +1225,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		OpenConnection();
 		DoCreateCommand(connectorCommandBatch, out var needsPrepare);
 		if (needsPrepare)
-			PrepareCommandCore();
+			PrepareCore();
 		return new DbActiveCommandDisposer(this);
 	}
 
@@ -1226,7 +1234,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
 		DoCreateCommand(connectorCommandBatch, out var needsPrepare);
 		if (needsPrepare)
-			await PrepareCommandCoreAsync(cancellationToken).ConfigureAwait(false);
+			await PrepareCoreAsync(cancellationToken).ConfigureAwait(false);
 		return new DbActiveCommandDisposer(this);
 	}
 
@@ -1437,8 +1445,6 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	private static InvalidOperationException CreateNoRecordsException() => new("No records were found; use 'OrDefault' to permit this.");
 
 	private static InvalidOperationException CreateTooManyRecordsException() => new("Additional records were found; use 'First' to permit this.");
-
-	private static readonly DbConnectorSettings s_defaultSettings = new();
 
 	private readonly bool m_noDisposeConnection;
 	private readonly bool m_noCloseConnection;

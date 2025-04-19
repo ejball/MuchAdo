@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net472;net9.0</TargetFrameworks>
@@ -19,6 +19,8 @@
     <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Microsoft.Data.SQLite" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" />
+    <PackageReference Include="MySqlConnector" />
     <PackageReference Include="Newtonsoft.Json" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="NUnit" />
@@ -28,11 +30,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MuchAdo\MuchAdo.csproj" />
+    <ProjectReference Include="..\..\src\MuchAdo.MySql\MuchAdo.MySql.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" />
     <PackageReference Update="Npgsql" VersionOverride="8.0.7" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
   </ItemGroup>

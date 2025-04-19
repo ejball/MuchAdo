@@ -30,7 +30,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MuchAdo\MuchAdo.csproj" />
     <ProjectReference Include="..\..\src\MuchAdo.Ellipses\MuchAdo.Ellipses.csproj" />
   </ItemGroup>
 

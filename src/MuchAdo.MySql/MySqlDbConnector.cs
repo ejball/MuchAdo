@@ -5,7 +5,12 @@ namespace MuchAdo.MySql;
 
 public class MySqlDbConnector : DbConnector
 {
-	public MySqlDbConnector(MySqlConnection connection, MySqlDbConnectorSettings? settings = null)
+	public MySqlDbConnector(MySqlConnection connection)
+		: this(connection, MySqlDbConnectorSettings.Default)
+	{
+	}
+
+	public MySqlDbConnector(MySqlConnection connection, MySqlDbConnectorSettings settings)
 		: base(connection, settings)
 	{
 	}
@@ -50,9 +55,145 @@ public class MySqlDbConnector : DbConnector
 
 	protected override ValueTask DisposeTransactionCoreAsync() => new(Transaction!.DisposeAsync());
 
-	protected override ValueTask PrepareCommandCoreAsync(CancellationToken cancellationToken) => new(ActiveCommand!.PrepareAsync(cancellationToken));
+	protected override int ExecuteNonQueryCore()
+	{
+		if (ActiveBatch is { } batch)
+			return batch.ExecuteNonQuery();
+		else
+			return base.ExecuteNonQueryCore();
+	}
 
-	protected override ValueTask DisposeCommandOrBatchCoreAsync() => new(ActiveCommand!.DisposeAsync());
+	protected override ValueTask<int> ExecuteNonQueryCoreAsync(CancellationToken cancellationToken)
+	{
+		if (ActiveBatch is { } batch)
+			return new ValueTask<int>(batch.ExecuteNonQueryAsync(cancellationToken));
+		else
+			return base.ExecuteNonQueryCoreAsync(cancellationToken);
+	}
+
+	protected override IDataReader ExecuteReaderCore()
+	{
+		if (ActiveBatch is { } batch)
+			return batch.ExecuteReader();
+		else
+			return base.ExecuteReaderCore();
+	}
+
+	protected override async ValueTask<IDataReader> ExecuteReaderCoreAsync(CancellationToken cancellationToken)
+	{
+		if (ActiveBatch is { } batch)
+			return await batch.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+		else
+			return await base.ExecuteReaderCoreAsync(cancellationToken).ConfigureAwait(false);
+	}
+
+	protected override IDataReader ExecuteReaderCore(CommandBehavior commandBehavior)
+	{
+		if (ActiveBatch is { } batch)
+			return batch.ExecuteReader(commandBehavior);
+		else
+			return base.ExecuteReaderCore(commandBehavior);
+	}
+
+	protected override async ValueTask<IDataReader> ExecuteReaderCoreAsync(CommandBehavior commandBehavior, CancellationToken cancellationToken)
+	{
+		if (ActiveBatch is { } batch)
+			return await batch.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+		else
+			return await base.ExecuteReaderCoreAsync(commandBehavior, cancellationToken).ConfigureAwait(false);
+	}
+
+	protected override void PrepareCore()
+	{
+		if (ActiveBatch is { } batch)
+			batch.Prepare();
+		else
+			base.PrepareCore();
+	}
+
+	protected override ValueTask PrepareCoreAsync(CancellationToken cancellationToken)
+	{
+		if (ActiveBatch is { } batch)
+			return new ValueTask(batch.PrepareAsync(cancellationToken));
+		else
+			return base.PrepareCoreAsync(cancellationToken);
+	}
+
+	protected override void DisposeCommandOrBatchCore()
+	{
+		if (ActiveBatch is { } batch)
+			batch.Dispose();
+		else
+			base.DisposeCommandOrBatchCore();
+	}
+
+	protected override ValueTask DisposeCommandOrBatchCoreAsync()
+	{
+		if (ActiveCommand is { } command)
+			return new ValueTask(command.DisposeAsync());
+		else
+			return base.DisposeCommandOrBatchCoreAsync();
+	}
+
+	protected override object CreateBatchCore() => Connection.CreateBatch();
+
+	protected override void AddBatchCommandCore(object batch, CommandType commandType, string commandText)
+	{
+		if (batch is MySqlBatch dbBatch)
+		{
+			var command = new MySqlBatchCommand();
+
+			if (commandType != CommandType.Text)
+				command.CommandType = commandType;
+
+			command.CommandText = commandText;
+
+			dbBatch.BatchCommands.Add(command);
+
+			return;
+		}
+
+		base.AddBatchCommandCore(batch, commandType, commandText);
+	}
+
+	protected override void SetTimeoutCore(int timeout)
+	{
+		if (ActiveCommandOrBatch is MySqlBatch dbBatch)
+		{
+			dbBatch.Timeout = timeout;
+			return;
+		}
+
+		base.SetTimeoutCore(timeout);
+	}
+
+	protected override void SetTransactionCore(IDbTransaction? transaction)
+	{
+		if (ActiveCommandOrBatch is MySqlBatch dbBatch && transaction is MySqlTransaction dbTransaction)
+		{
+			dbBatch.Transaction = dbTransaction;
+			return;
+		}
+
+		base.SetTransactionCore(transaction);
+	}
+
+	protected override IDataParameterCollection GetParameterCollectionCore(int commandIndex)
+	{
+		if (ActiveCommandOrBatch is MySqlBatch dbBatch)
+			return dbBatch.BatchCommands[commandIndex].Parameters;
+
+		return base.GetParameterCollectionCore(commandIndex);
+	}
+
+	protected override IDataParameter CreateParameterCore<T>(string name, T value)
+	{
+		var parameter = new MySqlParameter();
+		if (name.Length != 0)
+			parameter.ParameterName = name;
+		parameter.Value = value is null ? DBNull.Value : value;
+		return parameter;
+	}
 
 	protected override ValueTask DisposeReaderCoreAsync() => new(ActiveReader!.DisposeAsync());
 #endif

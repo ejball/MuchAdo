@@ -8,4 +8,6 @@ public class MySqlDbConnectorSettings : DbConnectorSettings
 	{
 		SqlSyntax = SqlSyntax.MySql;
 	}
+
+	internal static MySqlDbConnectorSettings Default { get; } = new();
 }
