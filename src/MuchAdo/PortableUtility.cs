@@ -29,6 +29,15 @@ internal static class PortableUtility
 #endif
 	}
 
+	public static int GetHashCodeOrdinal(this string str)
+	{
+#if !NETSTANDARD2_0
+		return str.GetHashCode(StringComparison.Ordinal);
+#else
+		return str.GetHashCode();
+#endif
+	}
+
 	public static int CombineHashCodes(int value1, int value2)
 	{
 #if !NETSTANDARD2_0
