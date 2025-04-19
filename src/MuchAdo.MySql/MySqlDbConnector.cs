@@ -137,9 +137,9 @@ public class MySqlDbConnector : DbConnector
 
 	protected override object CreateBatchCore() => Connection.CreateBatch();
 
-	protected override void AddBatchCommandCore(object batch, CommandType commandType, string commandText)
+	protected override void AddBatchCommandCore(CommandType commandType, string commandText)
 	{
-		if (batch is MySqlBatch dbBatch)
+		if (ActiveBatch is { } batch)
 		{
 			var command = new MySqlBatchCommand();
 
@@ -148,12 +148,12 @@ public class MySqlDbConnector : DbConnector
 
 			command.CommandText = commandText;
 
-			dbBatch.BatchCommands.Add(command);
+			batch.BatchCommands.Add(command);
 
 			return;
 		}
 
-		base.AddBatchCommandCore(batch, commandType, commandText);
+		base.AddBatchCommandCore(commandType, commandText);
 	}
 
 	protected override void SetTimeoutCore(int timeout)

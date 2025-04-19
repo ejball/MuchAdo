@@ -818,10 +818,10 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		throw new NotSupportedException();
 	}
 
-	protected virtual void AddBatchCommandCore(object batch, CommandType commandType, string commandText)
+	protected virtual void AddBatchCommandCore(CommandType commandType, string commandText)
 	{
 #if !NETSTANDARD2_0
-		if (batch is DbBatch dbBatch)
+		if (ActiveCommandOrBatch is DbBatch dbBatch)
 		{
 			var command = dbBatch.CreateBatchCommand();
 
@@ -1249,26 +1249,26 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 	private void DoCreateCommand(DbConnectorCommandBatch commandBatch, out bool needsPrepare)
 	{
+		m_activeCommandOrBatch = null;
+		m_activeCommandOrBatchIsCached = false;
+
 		var commandCount = commandBatch.CommandCount;
 		var transaction = Transaction;
 		var timeout = commandBatch.Timeout;
-
-		IDbCommand? command = null;
-		object? batch = null;
 
 		var wasCached = false;
 		var cache = commandBatch.IsCached ? CommandCache : null;
 		if (commandCount == 1)
 		{
 			var currentCommand = commandBatch.CurrentCommand;
-			if (cache is not null && (command = cache.GetCommandOrDefault(currentCommand.Text) as IDbCommand) is not null)
+			if (cache is not null && (m_activeCommandOrBatch = cache.GetCommandOrDefault(currentCommand.Text) as IDbCommand) is not null)
 			{
 				wasCached = true;
 			}
 			else
 			{
-				command = CreateCommandCore(currentCommand.Type, currentCommand.Text);
-				cache?.AddCommand(currentCommand.Text, command);
+				m_activeCommandOrBatch = CreateCommandCore(currentCommand.Type, currentCommand.Text);
+				cache?.AddCommand(currentCommand.Text, m_activeCommandOrBatch);
 			}
 		}
 		else
@@ -1277,20 +1277,19 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
 				commandTexts[commandIndex] = commandBatch.GetCommand(commandIndex).Text;
 
-			if (cache is not null && (batch = cache.GetCommandOrDefault(commandTexts)) is not null)
+			if (cache is not null && (m_activeCommandOrBatch = cache.GetCommandOrDefault(commandTexts)) is not null)
 			{
 				wasCached = true;
 			}
 			else
 			{
-				batch = CreateBatchCore();
+				m_activeCommandOrBatch = CreateBatchCore();
 				for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
-					AddBatchCommandCore(batch, commandBatch.GetCommand(commandIndex).Type, commandTexts[commandIndex]);
-				cache?.AddCommand(commandTexts, batch);
+					AddBatchCommandCore(commandBatch.GetCommand(commandIndex).Type, commandTexts[commandIndex]);
+				cache?.AddCommand(commandTexts, m_activeCommandOrBatch);
 			}
 		}
 
-		m_activeCommandOrBatch = command ?? batch!;
 		m_activeCommandOrBatchIsCached = cache is not null;
 
 		// TODO: set to default timeout if necessary when cached
