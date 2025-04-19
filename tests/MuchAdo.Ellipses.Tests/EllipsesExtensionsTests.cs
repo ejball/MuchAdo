@@ -45,7 +45,7 @@ internal sealed class EllipsesExtensionsTests
 	private static DbConnector CreateConnector()
 	{
 		var connector = new DbConnector(new SqliteConnection("Data Source=:memory:"));
-		connector.CommandExecuting += (_, e) => e.ConnectorCommandBatch.ExpandEllipses();
+		connector.Executing += (_, e) => e.CommandBatch.ExpandEllipses();
 		return connector;
 	}
 }

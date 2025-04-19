@@ -71,7 +71,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// </summary>
 	public SqlSyntax SqlSyntax { get; }
 
-	public event EventHandler<CommandExecutingEventArgs>? CommandExecuting;
+	public event EventHandler<DbConnectorExecutingEventArgs>? Executing;
 
 	/// <summary>
 	/// Returns the database connection, opened if necessary.
@@ -927,7 +927,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	protected virtual void OnCommandExecuting(DbConnectorCommandBatch connectorCommandBatch) =>
-		CommandExecuting?.Invoke(this, new CommandExecutingEventArgs(connectorCommandBatch));
+		Executing?.Invoke(this, new DbConnectorExecutingEventArgs(connectorCommandBatch));
 
 	internal DbDataMapper DataMapper { get; }
 

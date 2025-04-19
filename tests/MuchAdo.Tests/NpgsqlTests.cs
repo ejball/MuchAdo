@@ -36,7 +36,7 @@ internal sealed class NpgsqlTests
 		using var connector = CreateConnector();
 
 		var lastCommandText = "";
-		connector.CommandExecuting += (s, e) => lastCommandText = e.ConnectorCommandBatch.CurrentCommand.Text;
+		connector.Executing += (s, e) => lastCommandText = e.CommandBatch.CurrentCommand.Text;
 
 		connector.Command(Sql.Format($"drop table if exists {tableName};")).Execute();
 		connector.Command(Sql.Format($"create table {tableName} (ItemId serial primary key, Name varchar not null);")).Execute();
