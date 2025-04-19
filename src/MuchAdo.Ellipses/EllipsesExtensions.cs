@@ -67,6 +67,6 @@ public static class EllipsesExtensions
 			}
 		}
 
-		return connectorCommandBatch.SetCurrentCommand(new(currentQuery.Type, commandText, parameters));
+		return connectorCommandBatch.SetCommand(connectorCommandBatch.CommandCount - 1, new(currentQuery.Type, commandText, parameters));
 	}
 }

@@ -2,7 +2,7 @@ namespace MuchAdo;
 
 internal readonly struct DbActiveCommandDisposer(DbConnector? connector) : IDisposable, IAsyncDisposable
 {
-	public void Dispose() => connector?.DisposeActiveCommand();
+	public void Dispose() => connector?.DisposeActiveCommandOrBatch();
 
-	public ValueTask DisposeAsync() => connector?.DisposeActiveCommandAsync() ?? default;
+	public ValueTask DisposeAsync() => connector?.DisposeActiveCommandOrBatchAsync() ?? default;
 }

@@ -63,9 +63,13 @@ internal sealed class MySqlTests
 		var lastCommandText = "";
 		connector.CommandExecuting += (s, e) => lastCommandText = e.ConnectorCommandBatch.CurrentCommand.Text;
 
-		connector.Command(Sql.Format($"drop table if exists {tableName};")).Execute();
-		connector.Command(Sql.Format($"create table {tableName} (Id int not null auto_increment primary key, Name varchar(100) not null);")).Execute();
-		connector.Command(Sql.Format($"insert into {tableName} (Name) values (?), (?);")).WithParameter("", "one").WithParameter("", "two").Execute();
+		connector
+			.CommandFormat($"drop table if exists {tableName};")
+			.CommandFormat($"create table {tableName} (Id int not null auto_increment primary key, Name varchar(100) not null);")
+			.CommandFormat($"insert into {tableName} (Name) values (?), (?);")
+			.WithParameter("", "one")
+			.WithParameter("", "two")
+			.Execute();
 
 		var three = Sql.Param("three");
 		var four = "four";

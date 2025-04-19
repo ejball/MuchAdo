@@ -14,9 +14,15 @@ public class MySqlDbConnector : DbConnector
 
 	public new MySqlTransaction? Transaction => (MySqlTransaction?) base.Transaction;
 
-	internal new MySqlCommand? ActiveCommand => (MySqlCommand?) base.ActiveCommand;
+	public new MySqlCommand? ActiveCommand => (MySqlCommand?) base.ActiveCommand;
 
-	internal new MySqlDataReader? ActiveReader => (MySqlDataReader?) base.ActiveReader;
+#if NETSTANDARD2_0
+	public MySqlBatch? ActiveBatch => ActiveCommandOrBatch as MySqlBatch;
+#else
+	public new MySqlBatch? ActiveBatch => ActiveCommandOrBatch as MySqlBatch;
+#endif
+
+	public new MySqlDataReader? ActiveReader => (MySqlDataReader?) base.ActiveReader;
 
 	public new MySqlConnection GetOpenConnection() => (MySqlConnection) base.GetOpenConnection();
 
@@ -46,7 +52,7 @@ public class MySqlDbConnector : DbConnector
 
 	protected override ValueTask PrepareCommandCoreAsync(CancellationToken cancellationToken) => new(ActiveCommand!.PrepareAsync(cancellationToken));
 
-	protected override ValueTask DisposeCommandCoreAsync() => new(ActiveCommand!.DisposeAsync());
+	protected override ValueTask DisposeCommandOrBatchCoreAsync() => new(ActiveCommand!.DisposeAsync());
 
 	protected override ValueTask DisposeReaderCoreAsync() => new(ActiveReader!.DisposeAsync());
 #endif

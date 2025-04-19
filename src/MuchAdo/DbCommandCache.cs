@@ -1,15 +1,12 @@
-using System.Data;
-using System.Diagnostics.CodeAnalysis;
-
 namespace MuchAdo;
 
 internal sealed class DbCommandCache
 {
-	public bool TryGetCommand(string text, [MaybeNullWhen(false)] out IDbCommand command) => m_dictionary.TryGetValue(text, out command);
+	public object? GetValueOrDefault(object key) => m_dictionary.TryGetValue(key, out var value) ? value : null;
 
-	public void AddCommand(string text, IDbCommand command) => m_dictionary.Add(text, command);
+	public void AddValue(object key, object value) => m_dictionary.Add(key, value);
 
-	public IReadOnlyCollection<IDbCommand> GetCommands() => m_dictionary.Values;
+	public IReadOnlyCollection<object> GetValues() => m_dictionary.Values;
 
-	private readonly Dictionary<string, IDbCommand> m_dictionary = new();
+	private readonly Dictionary<object, object> m_dictionary = new();
 }

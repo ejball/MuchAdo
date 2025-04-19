@@ -44,7 +44,14 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// The active command, if any.
 	/// </summary>
-	public IDbCommand? ActiveCommand => m_activeCommand;
+	public IDbCommand? ActiveCommand => m_activeCommandOrBatch as IDbCommand;
+
+#if !NETSTANDARD2_0
+	/// <summary>
+	/// The active command, if any.
+	/// </summary>
+	public DbBatch? ActiveBatch => m_activeCommandOrBatch as DbBatch;
+#endif
 
 	/// <summary>
 	/// The active reader, if any.
@@ -535,96 +542,194 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// Executes a non-query command.
 	/// </summary>
-	protected virtual int ExecuteNonQueryCore() => ActiveCommand!.ExecuteNonQuery();
+	protected virtual int ExecuteNonQueryCore()
+	{
+		if (ActiveCommandOrBatch is IDbCommand command)
+			return command.ExecuteNonQuery();
+
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch batch)
+			return batch.ExecuteNonQuery();
+#endif
+
+		throw new NotSupportedException();
+	}
 
 	/// <summary>
 	/// Executes a non-query command asynchronously.
 	/// </summary>
 	protected virtual ValueTask<int> ExecuteNonQueryCoreAsync(CancellationToken cancellationToken)
 	{
-		if (ActiveCommand! is DbCommand dbCommand)
-			return new ValueTask<int>(dbCommand.ExecuteNonQueryAsync(cancellationToken));
+		if (ActiveCommandOrBatch is DbCommand command)
+			return new ValueTask<int>(command.ExecuteNonQueryAsync(cancellationToken));
 
-		return new ValueTask<int>(ActiveCommand!.ExecuteNonQuery());
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch batch)
+			return new ValueTask<int>(batch.ExecuteNonQueryAsync(cancellationToken));
+#endif
+
+		return new ValueTask<int>(ExecuteNonQueryCore());
 	}
 
 	/// <summary>
 	/// Executes a command query.
 	/// </summary>
-	protected virtual IDataReader ExecuteReaderCore() => ActiveCommand!.ExecuteReader();
+	protected virtual IDataReader ExecuteReaderCore()
+	{
+		if (ActiveCommandOrBatch is IDbCommand command)
+			return command.ExecuteReader();
+
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch batch)
+			return batch.ExecuteReader();
+#endif
+
+		throw new NotSupportedException();
+	}
 
 	/// <summary>
 	/// Executes a command query asynchronously.
 	/// </summary>
 	protected virtual ValueTask<IDataReader> ExecuteReaderCoreAsync(CancellationToken cancellationToken)
 	{
-		if (ActiveCommand! is DbCommand dbCommand)
+		if (ActiveCommandOrBatch is DbCommand command)
 		{
 			static async ValueTask<IDataReader> DoAsync(DbCommand c, CancellationToken ct) =>
 				await c.ExecuteReaderAsync(ct).ConfigureAwait(false);
 
-			return DoAsync(dbCommand, cancellationToken);
+			return DoAsync(command, cancellationToken);
 		}
 
-		return new ValueTask<IDataReader>(ActiveCommand!.ExecuteReader());
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch batch)
+		{
+			static async ValueTask<IDataReader> DoAsync(DbBatch b, CancellationToken ct) =>
+				await b.ExecuteReaderAsync(ct).ConfigureAwait(false);
+
+			return DoAsync(batch, cancellationToken);
+		}
+#endif
+
+		return new ValueTask<IDataReader>(ExecuteReaderCore());
 	}
 
 	/// <summary>
 	/// Executes a command query.
 	/// </summary>
-	protected virtual IDataReader ExecuteReaderCore(CommandBehavior commandBehavior) => ActiveCommand!.ExecuteReader(commandBehavior);
+	protected virtual IDataReader ExecuteReaderCore(CommandBehavior commandBehavior)
+	{
+		if (ActiveCommandOrBatch is IDbCommand command)
+			return command.ExecuteReader(commandBehavior);
+
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch batch)
+			return batch.ExecuteReader(commandBehavior);
+#endif
+
+		throw new NotSupportedException();
+	}
 
 	/// <summary>
 	/// Executes a command query asynchronously.
 	/// </summary>
 	protected virtual ValueTask<IDataReader> ExecuteReaderCoreAsync(CommandBehavior commandBehavior, CancellationToken cancellationToken)
 	{
-		if (ActiveCommand! is DbCommand dbCommand)
+		if (ActiveCommandOrBatch is DbCommand command)
 		{
 			static async ValueTask<IDataReader> DoAsync(DbCommand c, CommandBehavior cb, CancellationToken ct) =>
 				await c.ExecuteReaderAsync(cb, ct).ConfigureAwait(false);
 
-			return DoAsync(dbCommand, commandBehavior, cancellationToken);
+			return DoAsync(command, commandBehavior, cancellationToken);
 		}
 
-		return new ValueTask<IDataReader>(ActiveCommand!.ExecuteReader(commandBehavior));
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch batch)
+		{
+			static async ValueTask<IDataReader> DoAsync(DbBatch b, CommandBehavior cb, CancellationToken ct) =>
+				await b.ExecuteReaderAsync(cb, ct).ConfigureAwait(false);
+
+			return DoAsync(batch, commandBehavior, cancellationToken);
+		}
+#endif
+
+		return new ValueTask<IDataReader>(ExecuteReaderCore(commandBehavior));
 	}
 
 	/// <summary>
 	/// Prepares a command.
 	/// </summary>
-	protected virtual void PrepareCommandCore() => ActiveCommand!.Prepare();
+	protected virtual void PrepareCommandCore()
+	{
+		if (ActiveCommandOrBatch is IDbCommand command)
+		{
+			command.Prepare();
+			return;
+		}
+
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch batch)
+		{
+			batch.Prepare();
+			return;
+		}
+#endif
+
+		throw new NotSupportedException();
+	}
 
 	/// <summary>
 	/// Prepares a command asynchronously.
 	/// </summary>
 	protected virtual ValueTask PrepareCommandCoreAsync(CancellationToken cancellationToken)
 	{
+		if (ActiveCommandOrBatch is DbCommand command)
+			return new ValueTask(command.PrepareAsync(cancellationToken));
+
 #if !NETSTANDARD2_0
-		if (ActiveCommand! is DbCommand dbCommand)
-			return new ValueTask(dbCommand.PrepareAsync(cancellationToken));
+		if (ActiveCommandOrBatch is DbBatch batch)
+			return new ValueTask(batch.PrepareAsync(cancellationToken));
 #endif
 
-		ActiveCommand!.Prepare();
+		PrepareCommandCore();
 		return default;
 	}
 
 	/// <summary>
 	/// Disposes a command.
 	/// </summary>
-	protected virtual void DisposeCommandCore() => ActiveCommand!.Dispose();
+	protected virtual void DisposeCommandOrBatchCore()
+	{
+		if (ActiveCommandOrBatch is IDbCommand command)
+		{
+			command.Dispose();
+			return;
+		}
+
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch batch)
+		{
+			batch.Dispose();
+			return;
+		}
+#endif
+
+		throw new NotSupportedException();
+	}
 
 	/// <summary>
 	/// Disposes a command asynchronously.
 	/// </summary>
-	protected virtual ValueTask DisposeCommandCoreAsync()
+	protected virtual ValueTask DisposeCommandOrBatchCoreAsync()
 	{
+		if (ActiveCommandOrBatch is DbCommand command)
+			return command.DisposeAsync();
+
 #if !NETSTANDARD2_0
-		if (ActiveCommand! is DbCommand dbCommand)
-			return dbCommand.DisposeAsync();
+		if (ActiveCommandOrBatch is DbBatch batch)
+			return batch.DisposeAsync();
 #endif
 
-		ActiveCommand!.Dispose();
+		DisposeCommandOrBatchCore();
 		return default;
 	}
 
@@ -679,14 +784,121 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		return default;
 	}
 
-	protected virtual IDbCommand CreateCommandCore() => Connection.CreateCommand();
+	/// <summary>
+	/// The active command or batch, if any.
+	/// </summary>
+	protected object? ActiveCommandOrBatch => m_activeCommandOrBatch;
+
+	protected virtual IDbCommand CreateCommandCore(CommandType commandType, string commandText)
+	{
+		var command = Connection.CreateCommand();
+
+		if (commandType != CommandType.Text)
+			command.CommandType = commandType;
+
+		command.CommandText = commandText;
+
+		return command;
+	}
+
+	protected virtual object CreateBatchCore()
+	{
+#if !NETSTANDARD2_0
+		if (Connection is DbConnection dbConnection)
+			return dbConnection.CreateBatch();
+#endif
+
+		throw new NotSupportedException();
+	}
+
+	protected virtual void AddBatchCommandCore(object batch, CommandType commandType, string commandText)
+	{
+#if !NETSTANDARD2_0
+		if (batch is DbBatch dbBatch)
+		{
+			var command = dbBatch.CreateBatchCommand();
+
+			if (commandType != CommandType.Text)
+				command.CommandType = commandType;
+
+			command.CommandText = commandText;
+
+			dbBatch.BatchCommands.Add(command);
+
+			return;
+		}
+#endif
+
+		throw new NotSupportedException();
+	}
+
+	protected virtual void SetTimeoutCore(int timeout)
+	{
+		if (ActiveCommandOrBatch is IDbCommand command)
+		{
+			command.CommandTimeout = timeout;
+			return;
+		}
+
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch dbBatch)
+		{
+			dbBatch.Timeout = timeout;
+			return;
+		}
+#endif
+
+		throw new NotSupportedException();
+	}
+
+	protected virtual void SetTransactionCore(IDbTransaction? transaction)
+	{
+		if (ActiveCommandOrBatch is IDbCommand command)
+		{
+			command.Transaction = transaction;
+			return;
+		}
+
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch dbBatch && transaction is DbTransaction dbTransaction)
+		{
+			dbBatch.Transaction = dbTransaction;
+			return;
+		}
+#endif
+
+		throw new NotSupportedException();
+	}
+
+	protected virtual IDataParameterCollection GetParameterCollectionCore(int commandIndex)
+	{
+		if (ActiveCommandOrBatch is IDbCommand command && commandIndex == 0)
+			return command.Parameters;
+
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch dbBatch)
+			return dbBatch.BatchCommands[commandIndex].Parameters;
+#endif
+
+		throw new NotSupportedException();
+	}
 
 	/// <summary>
 	/// Creates a parameter with the specified name and value.
 	/// </summary>
 	protected virtual IDataParameter CreateParameterCore<T>(string name, T value)
 	{
-		var parameter = ActiveCommand!.CreateParameter();
+		IDataParameter parameter;
+
+		if (ActiveCommandOrBatch is IDbCommand command)
+			parameter = command.CreateParameter();
+#if !NETSTANDARD2_0
+		else if (ActiveCommandOrBatch is DbBatch dbBatch)
+			parameter = dbBatch.BatchCommands[0].CreateParameter();
+#endif
+		else
+			throw new NotSupportedException();
+
 		if (name.Length != 0)
 			parameter.ParameterName = name;
 		parameter.Value = value is null ? DBNull.Value : value;
@@ -946,35 +1158,35 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		}
 	}
 
-	internal void SetActiveCommand(IDbCommand command, bool isCached)
+	internal void SetActiveCommandOrBatch(object commandOrBatch, bool isCached)
 	{
-		m_activeCommand = command;
-		m_activeCommandIsCached = isCached;
+		m_activeCommandOrBatch = commandOrBatch;
+		m_activeCommandOrBatchIsCached = isCached;
 	}
 
 	internal void SetActiveReader(IDataReader reader) => m_activeReader = reader;
 
-	internal void DisposeActiveCommand()
+	internal void DisposeActiveCommandOrBatch()
 	{
 		VerifyNotDisposed();
 
-		if (m_activeCommand is not null)
+		if (m_activeCommandOrBatch is not null)
 		{
-			if (!m_activeCommandIsCached)
-				DisposeCommandCore();
-			m_activeCommand = null;
+			if (!m_activeCommandOrBatchIsCached)
+				DisposeCommandOrBatchCore();
+			m_activeCommandOrBatch = null;
 		}
 	}
 
-	internal async ValueTask DisposeActiveCommandAsync()
+	internal async ValueTask DisposeActiveCommandOrBatchAsync()
 	{
 		VerifyNotDisposed();
 
-		if (m_activeCommand is not null)
+		if (m_activeCommandOrBatch is not null)
 		{
-			if (!m_activeCommandIsCached)
-				await DisposeCommandCoreAsync().ConfigureAwait(false);
-			m_activeCommand = null;
+			if (!m_activeCommandOrBatchIsCached)
+				await DisposeCommandOrBatchCoreAsync().ConfigureAwait(false);
+			m_activeCommandOrBatch = null;
 		}
 	}
 
@@ -1020,73 +1232,71 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 	private void DoCreateCommand(DbConnectorCommandBatch connectorCommandBatch, out bool needsPrepare)
 	{
-		if (connectorCommandBatch.QueryCount != 1)
-			throw new InvalidOperationException("Only one query is supported.");
-
-		var commandQuery = connectorCommandBatch.GetCommand(0);
-		var commandType = commandQuery.Type;
-		var commandText = commandQuery.Text;
-		var parameters = commandQuery.Parameters;
+		var commandCount = connectorCommandBatch.CommandCount;
+		var transaction = Transaction;
 		var timeout = connectorCommandBatch.Timeout;
 
-		IDbCommand? command;
-		var transaction = Transaction;
+		IDbCommand? command = null;
+		object? batch = null;
 
 		var wasCached = false;
-		var isCached = false;
 		var cache = connectorCommandBatch.IsCached ? CommandCache : null;
-		if (cache is not null)
+		if (commandCount == 1)
 		{
-			if (cache.TryGetCommand(commandText, out command))
+			var currentCommand = connectorCommandBatch.CurrentCommand;
+			if (cache is not null && (command = cache.GetValueOrDefault(currentCommand.Text) as IDbCommand) is not null)
 			{
 				wasCached = true;
 			}
 			else
 			{
-				command = CreateNewCommand();
-				cache.AddCommand(commandText, command);
+				command = CreateCommandCore(currentCommand.Type, currentCommand.Text);
+				cache?.AddValue(currentCommand.Text, command);
 			}
-			isCached = true;
 		}
 		else
 		{
-			command = CreateNewCommand();
+			var commandTexts = new string[commandCount];
+			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
+				commandTexts[commandIndex] = connectorCommandBatch.GetCommand(commandIndex).Text;
+
+			if (cache is not null && (batch = cache.GetValueOrDefault(commandTexts)) is not null)
+			{
+				wasCached = true;
+			}
+			else
+			{
+				batch = CreateBatchCore();
+				for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
+					AddBatchCommandCore(batch, connectorCommandBatch.GetCommand(commandIndex).Type, commandTexts[commandIndex]);
+				cache?.AddValue(commandTexts, batch);
+			}
 		}
 
-		SetActiveCommand(command, isCached);
+		SetActiveCommandOrBatch(command ?? batch!, isCached: cache is not null);
+
+		// TODO: set to default timeout if necessary when cached
+		if (timeout is not null)
+			SetTimeoutCore(timeout == Timeout.InfiniteTimeSpan ? 0 : (int) Math.Ceiling(timeout.Value.TotalSeconds));
+
+		if (transaction is not null || wasCached)
+			SetTransactionCore(transaction);
 
 		if (wasCached)
 		{
-			command.Transaction = transaction;
-			parameters.SubmitParameters(new ReapplyParameterTarget(this));
+			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
+				connectorCommandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(new ReapplyParameterTarget(this, GetParameterCollectionCore(commandIndex)));
 			needsPrepare = false;
 		}
 		else
 		{
-			parameters.SubmitParameters(new ApplyParameterTarget(this));
+			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
+				connectorCommandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(new ApplyParameterTarget(this, GetParameterCollectionCore(commandIndex)));
 			needsPrepare = connectorCommandBatch.IsPrepared;
-		}
-
-		IDbCommand CreateNewCommand()
-		{
-			var newCommand = CreateCommandCore();
-
-			newCommand.CommandText = commandText;
-
-			if (commandType != CommandType.Text)
-				newCommand.CommandType = commandType;
-
-			if (timeout is not null)
-				newCommand.CommandTimeout = timeout == Timeout.InfiniteTimeSpan ? 0 : (int) Math.Ceiling(timeout.Value.TotalSeconds);
-
-			if (transaction is not null)
-				newCommand.Transaction = transaction;
-
-			return newCommand;
 		}
 	}
 
-	private sealed class ApplyParameterTarget(DbConnector connector) : IDbParameterTarget
+	private sealed class ApplyParameterTarget(DbConnector connector, IDataParameterCollection parameters) : IDbParameterTarget
 	{
 		public void AcceptParameter<T>(string name, T value)
 		{
@@ -1100,21 +1310,20 @@ public class DbConnector : IDisposable, IAsyncDisposable
 				dbParameter = connector.CreateParameter(name, value);
 			}
 
-			connector.ActiveCommand!.Parameters.Add(dbParameter);
+			parameters.Add(dbParameter);
 		}
 	}
 
-	private sealed class ReapplyParameterTarget(DbConnector connector) : IDbParameterTarget
+	private sealed class ReapplyParameterTarget(DbConnector connector, IDataParameterCollection parameters) : IDbParameterTarget
 	{
 		public void AcceptParameter<T>(string name, T value)
 		{
-			var command = connector.ActiveCommand!;
-			var dbParameter = command.Parameters[m_index] as IDataParameter;
+			var dbParameter = parameters[m_index] as IDataParameter;
 			if (dbParameter is null || (dbParameter.ParameterName ?? "") != name)
 			{
 				try
 				{
-					dbParameter = command.Parameters[name] as IDataParameter;
+					dbParameter = parameters[name] as IDataParameter;
 				}
 				catch (Exception exception)
 				{
@@ -1139,13 +1348,13 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		if (m_commandCache is null)
 			return;
 
-		var commands = m_commandCache.GetCommands();
+		var commands = m_commandCache.GetValues();
 		foreach (var command in commands)
 		{
-			m_activeCommand = command;
-			DisposeCommandCore();
+			m_activeCommandOrBatch = command;
+			DisposeCommandOrBatchCore();
 		}
-		m_activeCommand = null;
+		m_activeCommandOrBatch = null;
 	}
 
 	private ValueTask DisposeCachedCommandsAsync()
@@ -1153,17 +1362,17 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		if (m_commandCache is null)
 			return default;
 
-		var commands = m_commandCache.GetCommands();
+		var commands = m_commandCache.GetValues();
 		return commands.Count != 0 ? DoAsync() : default;
 
 		async ValueTask DoAsync()
 		{
 			foreach (var command in commands)
 			{
-				m_activeCommand = command;
-				await DisposeCommandCoreAsync().ConfigureAwait(false);
+				m_activeCommandOrBatch = command;
+				await DisposeCommandOrBatchCoreAsync().ConfigureAwait(false);
 			}
-			m_activeCommand = null;
+			m_activeCommandOrBatch = null;
 		}
 	}
 
@@ -1236,13 +1445,13 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	private readonly IsolationLevel? m_defaultIsolationLevel;
 	private readonly IDbConnection m_connection;
 	private IDbTransaction? m_transaction;
-	private IDbCommand? m_activeCommand;
+	private object? m_activeCommandOrBatch;
 	private IDataReader? m_activeReader;
 	private DbCommandCache? m_commandCache;
 	private List<object?>? m_disposables;
 	private bool m_isConnectionOpen;
 	private bool m_isDisposed;
 	private bool m_noDisposeTransaction;
-	private bool m_activeCommandIsCached;
+	private bool m_activeCommandOrBatchIsCached;
 	private bool m_hasReadFirstResultSet;
 }

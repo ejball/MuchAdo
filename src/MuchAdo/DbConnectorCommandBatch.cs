@@ -32,7 +32,7 @@ public sealed class DbConnectorCommandBatch
 	/// <summary>
 	/// The number of queries in the command batch.
 	/// </summary>
-	public int QueryCount => 1 + (m_batchedQueries?.Count ?? 0);
+	public int CommandCount => 1 + (m_batchedCommands?.Count ?? 0);
 
 	/// <summary>
 	/// Executes the command, returning the number of rows affected.
@@ -360,33 +360,44 @@ public sealed class DbConnectorCommandBatch
 	public DbConnectorCommandBatch StoredProcedure(string name) => StartNextCommand(CommandType.StoredProcedure, name);
 
 	/// <summary>
-	/// Gets the command at the specified index.
-	/// </summary>
-	public DbConnectorCommand GetCommand(int index)
-	{
-		if (index == (m_batchedQueries?.Count ?? 0))
-			return CurrentCommand;
-
-		if (m_batchedQueries is null)
-			throw new ArgumentOutOfRangeException(nameof(index));
-
-		return m_batchedQueries[index];
-	}
-
-	/// <summary>
 	/// Gets the current command.
 	/// </summary>
 	public DbConnectorCommand CurrentCommand => new(m_commandType, m_text, m_parameterSource ?? m_parameterSources ?? DbParameterSource.Empty);
 
 	/// <summary>
-	/// Replaces the current command.
+	/// Gets the command at the specified index.
 	/// </summary>
-	public DbConnectorCommandBatch SetCurrentCommand(DbConnectorCommand command)
+	public DbConnectorCommand GetCommand(int index)
 	{
-		m_commandType = command.Type;
-		m_text = command.Text;
-		m_parameterSource = command.Parameters;
-		m_parameterSources = null;
+		if (index == (m_batchedCommands?.Count ?? 0))
+			return CurrentCommand;
+
+		if (m_batchedCommands is null)
+			throw new ArgumentOutOfRangeException(nameof(index));
+
+		return m_batchedCommands[index];
+	}
+
+	/// <summary>
+	/// Replaces the command at the specified index.
+	/// </summary>
+	public DbConnectorCommandBatch SetCommand(int index, DbConnectorCommand command)
+	{
+		if (index == (m_batchedCommands?.Count ?? 0))
+		{
+			m_commandType = command.Type;
+			m_text = command.Text;
+			m_parameterSource = command.Parameters;
+			m_parameterSources = null;
+		}
+		else
+		{
+			if (m_batchedCommands is null)
+				throw new ArgumentOutOfRangeException(nameof(index));
+
+			m_batchedCommands[index] = command;
+		}
+
 		return this;
 	}
 
@@ -414,8 +425,8 @@ public sealed class DbConnectorCommandBatch
 
 	private DbConnectorCommandBatch StartNextCommand(CommandType commandType, string commandText, IDbParameterSource? parameterSource = null)
 	{
-		m_batchedQueries ??= [];
-		m_batchedQueries.Add(CurrentCommand);
+		m_batchedCommands ??= [];
+		m_batchedCommands.Add(CurrentCommand);
 
 		m_commandType = commandType;
 		m_text = commandText;
@@ -429,5 +440,5 @@ public sealed class DbConnectorCommandBatch
 	private string m_text;
 	private IDbParameterSource? m_parameterSource;
 	private DbParameterSources? m_parameterSources;
-	private List<DbConnectorCommand>? m_batchedQueries;
+	private List<DbConnectorCommand>? m_batchedCommands;
 }
