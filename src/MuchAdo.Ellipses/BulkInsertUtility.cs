@@ -12,8 +12,12 @@ public static class BulkInsertUtility
 	/// </summary>
 	public static int BulkInsert(this DbConnectorCommandBatch commandBatch, IEnumerable<IDbParameterSource> rows, BulkInsertSettings? settings = null)
 	{
+		if (commandBatch.CommandCount != 1)
+			throw new ArgumentException("Command batch must contain exactly one command.", nameof(commandBatch));
+		var command = commandBatch.CurrentCommand;
+
 		var rowCount = 0;
-		foreach (var (sql, parameters) in GetBulkInsertCommands(commandBatch.CurrentCommand.Text, commandBatch.CurrentCommand.Parameters, rows, settings))
+		foreach (var (sql, parameters) in GetBulkInsertCommands(command.Text, command.Parameters, rows, settings))
 			rowCount += CreateBatchCommand(commandBatch, sql, parameters).Execute();
 		return rowCount;
 	}
@@ -29,8 +33,12 @@ public static class BulkInsertUtility
 	/// </summary>
 	public static async Task<int> BulkInsertAsync(this DbConnectorCommandBatch commandBatch, IEnumerable<IDbParameterSource> rows, BulkInsertSettings? settings = null, CancellationToken cancellationToken = default)
 	{
+		if (commandBatch.CommandCount != 1)
+			throw new ArgumentException("Command batch must contain exactly one command.", nameof(commandBatch));
+		var command = commandBatch.CurrentCommand;
+
 		var rowCount = 0;
-		foreach (var (sql, parameters) in GetBulkInsertCommands(commandBatch.CurrentCommand.Text, commandBatch.CurrentCommand.Parameters, rows, settings))
+		foreach (var (sql, parameters) in GetBulkInsertCommands(command.Text, command.Parameters, rows, settings))
 			rowCount += await CreateBatchCommand(commandBatch, sql, parameters).ExecuteAsync(cancellationToken).ConfigureAwait(false);
 		return rowCount;
 	}
