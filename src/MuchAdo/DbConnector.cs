@@ -1211,38 +1211,38 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		}
 	}
 
-	private DbActiveCommandDisposer CreateCommand(DbConnectorCommandBatch connectorCommandBatch)
+	private DbActiveCommandDisposer CreateCommand(DbConnectorCommandBatch commandBatch)
 	{
 		OpenConnection();
-		DoCreateCommand(connectorCommandBatch, out var needsPrepare);
+		DoCreateCommand(commandBatch, out var needsPrepare);
 		if (needsPrepare)
 			PrepareCore();
 		return new DbActiveCommandDisposer(this);
 	}
 
-	private async ValueTask<DbActiveCommandDisposer> CreateCommandAsync(DbConnectorCommandBatch connectorCommandBatch, CancellationToken cancellationToken = default)
+	private async ValueTask<DbActiveCommandDisposer> CreateCommandAsync(DbConnectorCommandBatch commandBatch, CancellationToken cancellationToken = default)
 	{
 		await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
-		DoCreateCommand(connectorCommandBatch, out var needsPrepare);
+		DoCreateCommand(commandBatch, out var needsPrepare);
 		if (needsPrepare)
 			await PrepareCoreAsync(cancellationToken).ConfigureAwait(false);
 		return new DbActiveCommandDisposer(this);
 	}
 
-	private void DoCreateCommand(DbConnectorCommandBatch connectorCommandBatch, out bool needsPrepare)
+	private void DoCreateCommand(DbConnectorCommandBatch commandBatch, out bool needsPrepare)
 	{
-		var commandCount = connectorCommandBatch.CommandCount;
+		var commandCount = commandBatch.CommandCount;
 		var transaction = Transaction;
-		var timeout = connectorCommandBatch.Timeout;
+		var timeout = commandBatch.Timeout;
 
 		IDbCommand? command = null;
 		object? batch = null;
 
 		var wasCached = false;
-		var cache = connectorCommandBatch.IsCached ? CommandCache : null;
+		var cache = commandBatch.IsCached ? CommandCache : null;
 		if (commandCount == 1)
 		{
-			var currentCommand = connectorCommandBatch.CurrentCommand;
+			var currentCommand = commandBatch.CurrentCommand;
 			if (cache is not null && (command = cache.GetCommandOrDefault(currentCommand.Text) as IDbCommand) is not null)
 			{
 				wasCached = true;
@@ -1257,7 +1257,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		{
 			var commandTexts = new string[commandCount];
 			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
-				commandTexts[commandIndex] = connectorCommandBatch.GetCommand(commandIndex).Text;
+				commandTexts[commandIndex] = commandBatch.GetCommand(commandIndex).Text;
 
 			if (cache is not null && (batch = cache.GetCommandOrDefault(commandTexts)) is not null)
 			{
@@ -1267,7 +1267,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			{
 				batch = CreateBatchCore();
 				for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
-					AddBatchCommandCore(batch, connectorCommandBatch.GetCommand(commandIndex).Type, commandTexts[commandIndex]);
+					AddBatchCommandCore(batch, commandBatch.GetCommand(commandIndex).Type, commandTexts[commandIndex]);
 				cache?.AddCommand(commandTexts, batch);
 			}
 		}
@@ -1285,14 +1285,14 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		if (wasCached)
 		{
 			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
-				connectorCommandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(new ReapplyParameterTarget(this, GetParameterCollectionCore(commandIndex)));
+				commandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(new ReapplyParameterTarget(this, GetParameterCollectionCore(commandIndex)));
 			needsPrepare = false;
 		}
 		else
 		{
 			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
-				connectorCommandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(new ApplyParameterTarget(this, GetParameterCollectionCore(commandIndex)));
-			needsPrepare = connectorCommandBatch.IsPrepared;
+				commandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(new ApplyParameterTarget(this, GetParameterCollectionCore(commandIndex)));
+			needsPrepare = commandBatch.IsPrepared;
 		}
 	}
 
