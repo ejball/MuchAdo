@@ -1239,8 +1239,8 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		try
 		{
-			DoCreateCommand(commandBatch, out var needsPrepare);
-			if (needsPrepare)
+			DoCreateCommand(commandBatch);
+			if (commandBatch.IsPrepared)
 				PrepareCore();
 			return new DbActiveCommandDisposer(this);
 		}
@@ -1257,8 +1257,8 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		try
 		{
-			DoCreateCommand(commandBatch, out var needsPrepare);
-			if (needsPrepare)
+			DoCreateCommand(commandBatch);
+			if (commandBatch.IsPrepared)
 				await PrepareCoreAsync(cancellationToken).ConfigureAwait(false);
 			return new DbActiveCommandDisposer(this);
 		}
@@ -1269,7 +1269,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		}
 	}
 
-	private void DoCreateCommand(DbConnectorCommandBatch commandBatch, out bool needsPrepare)
+	private void DoCreateCommand(DbConnectorCommandBatch commandBatch)
 	{
 		m_activeCommandOrBatch = null;
 		m_activeCommandOrBatchIsCached = false;
@@ -1325,13 +1325,11 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		{
 			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
 				commandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(new ReapplyParameterTarget(this, GetParameterCollectionCore(commandIndex)));
-			needsPrepare = false;
 		}
 		else
 		{
 			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
 				commandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(new ApplyParameterTarget(this, GetParameterCollectionCore(commandIndex)));
-			needsPrepare = commandBatch.IsPrepared;
 		}
 	}
 
