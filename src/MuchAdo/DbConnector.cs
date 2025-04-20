@@ -1330,6 +1330,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			m_parameterTarget.Parameters = GetParameterCollectionCore(commandIndex);
 			commandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(m_parameterTarget);
 		}
+		m_parameterTarget.Finish();
 	}
 
 	private void DisposeCachedCommands()
@@ -1433,6 +1434,12 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		public IDataParameterCollection Parameters { get; set; } = null!;
 
+		public void Finish()
+		{
+			if (m_cachedIndex != -1 && m_cachedIndex < Parameters.Count)
+				throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters (expected {Parameters.Count}, actual {m_cachedIndex}).");
+		}
+
 		public void AcceptParameter<T>(string name, T value, IDbParameterType? type)
 		{
 			if (m_cachedIndex == -1)
@@ -1453,23 +1460,11 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			}
 			else
 			{
+				if (m_cachedIndex >= Parameters.Count)
+					throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters (missing '{name}').");
 				var dbParameter = Parameters[m_cachedIndex] as IDataParameter;
 				if (dbParameter is null || (dbParameter.ParameterName ?? "") != name)
-				{
-					try
-					{
-						dbParameter = Parameters[name] as IDataParameter;
-					}
-					catch (Exception exception)
-					{
-						throw new InvalidOperationException(GetExceptionMessage(), exception);
-					}
-					if (dbParameter is null)
-						throw new InvalidOperationException(GetExceptionMessage());
-
-					string GetExceptionMessage() =>
-						$"Cached commands must always be executed with the same parameters (missing '{name}').";
-				}
+					throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters in the same order (found '{dbParameter?.ParameterName}', expected '{name}').");
 
 				connector.SetParameterValueCore(dbParameter, value);
 

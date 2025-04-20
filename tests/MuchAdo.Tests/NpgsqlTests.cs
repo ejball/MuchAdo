@@ -3,6 +3,7 @@ using FluentAssertions;
 using MuchAdo.SqlFormatting;
 using Npgsql;
 using NUnit.Framework;
+using static FluentAssertions.FluentActions;
 
 namespace MuchAdo.Tests;
 
@@ -21,11 +22,12 @@ internal sealed class NpgsqlTests
 		var insertSql = Sql.Format($"insert into {tableName} (Name) values (@itemA); insert into {tableName} (Name) values (@itemB);");
 		connector.Command(insertSql).WithParameters(("itemA", "one"), ("itemB", "two")).Prepare().Cache().Execute().Should().Be(2);
 		connector.Command(insertSql).WithParameters(("itemA", "three"), ("itemB", "four")).Prepare().Cache().Execute().Should().Be(2);
-		connector.Command(insertSql).WithParameters(("itemB", "six"), ("itemA", "five")).Prepare().Cache().Execute().Should().Be(2);
 
-		// fails if parameters aren't reused properly
-		connector.Command(Sql.Format($"select Name from {tableName} order by ItemId;"))
-			.Query<string>().Should().Equal("one", "two", "three", "four", "five", "six");
+		Invoking(() => connector.Command(insertSql).WithParameters(("itemA", "five"), ("itemB", "six"), ("itemC", "seven")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql).WithParameters(("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql).WithParameters(("itemB", "six"), ("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+
+		connector.Command(Sql.Format($"select Name from {tableName} order by ItemId;")).Query<string>().Should().Equal("one", "two", "three", "four");
 	}
 
 	[Test]
