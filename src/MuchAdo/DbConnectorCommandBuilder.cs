@@ -1,16 +1,17 @@
 using System.Data;
 using System.Text;
 using MuchAdo.Parameters;
+using MuchAdo.SqlFormatting;
 using static System.FormattableString;
 
-namespace MuchAdo.SqlFormatting;
+namespace MuchAdo;
 
 internal sealed class DbConnectorCommandBuilder
 {
 	public DbConnectorCommandBuilder(SqlSyntax syntax)
 	{
 		Syntax = syntax;
-		m_textBuilder = new StringBuilder();
+		m_textBuilder = new StringBuilder(capacity: 128);
 		m_parameterSources = new DbParameterSources();
 	}
 
@@ -36,6 +37,8 @@ internal sealed class DbConnectorCommandBuilder
 		ApplyPrefixes();
 		m_textBuilder.Append(ch);
 	}
+
+	public void AddParameters(IDbParameterSource parameters) => m_parameterSources.Add(parameters);
 
 	public void AppendParameterValue<T>(object? key, T value, IDbParameterType? type)
 	{
@@ -106,8 +109,6 @@ internal sealed class DbConnectorCommandBuilder
 			}
 		}
 	}
-
-	public void AddParameters(IDbParameterSource parameters) => m_parameterSources.Add(parameters);
 
 	public DbConnectorBracketScope Prefix(string prefix) => Bracket(prefix, "");
 

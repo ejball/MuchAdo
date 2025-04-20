@@ -1,5 +1,3 @@
-using MuchAdo.SqlFormatting;
-
 namespace MuchAdo;
 
 internal readonly struct DbConnectorBracketScope(DbConnectorCommandBuilder commandBuilder) : IDisposable

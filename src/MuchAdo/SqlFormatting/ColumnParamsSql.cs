@@ -1,3 +1,5 @@
+using MuchAdo;
+
 namespace MuchAdo.SqlFormatting;
 
 public sealed class ColumnParamsSql<T> : Sql
