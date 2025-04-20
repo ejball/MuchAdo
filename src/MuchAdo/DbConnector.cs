@@ -1323,68 +1323,13 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		if (transaction is not null || wasCached)
 			SetTransactionCore(transaction);
 
-		if (wasCached)
+		m_parameterTarget ??= new ParameterTarget(this);
+		m_parameterTarget.Reset(wasCached);
+		for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
 		{
-			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
-				commandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(new ReapplyParameterTarget(this, GetParameterCollectionCore(commandIndex)));
+			m_parameterTarget.Parameters = GetParameterCollectionCore(commandIndex);
+			commandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(m_parameterTarget);
 		}
-		else
-		{
-			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
-				commandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(new ApplyParameterTarget(this, GetParameterCollectionCore(commandIndex)));
-		}
-	}
-
-	private sealed class ApplyParameterTarget(DbConnector connector, IDataParameterCollection parameters) : IDbParameterTarget
-	{
-		public void AcceptParameter<T>(string name, T value, IDbParameterType? type)
-		{
-			if (value is IDataParameter dbParameter)
-			{
-				if (name.Length != 0)
-					dbParameter.ParameterName = name;
-			}
-			else
-			{
-				dbParameter = connector.CreateParameterCore(name, value);
-			}
-
-			type?.ApplyToParameter(dbParameter);
-
-			parameters.Add(dbParameter);
-		}
-	}
-
-	private sealed class ReapplyParameterTarget(DbConnector connector, IDataParameterCollection parameters) : IDbParameterTarget
-	{
-		public void AcceptParameter<T>(string name, T value, IDbParameterType? type)
-		{
-			var dbParameter = parameters[m_index] as IDataParameter;
-			if (dbParameter is null || (dbParameter.ParameterName ?? "") != name)
-			{
-				try
-				{
-					dbParameter = parameters[name] as IDataParameter;
-				}
-				catch (Exception exception)
-				{
-					throw new InvalidOperationException(GetExceptionMessage(), exception);
-				}
-				if (dbParameter is null)
-					throw new InvalidOperationException(GetExceptionMessage());
-
-				string GetExceptionMessage() =>
-					$"Cached commands must always be executed with the same parameters (missing '{name}').";
-			}
-
-			connector.SetParameterValueCore(dbParameter, value);
-
-			type?.ApplyToParameter(dbParameter);
-
-			m_index++;
-		}
-
-		private int m_index;
 	}
 
 	private void DisposeCachedCommands()
@@ -1482,6 +1427,61 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 	private static InvalidOperationException CreateTooManyRecordsException() => new("Additional records were found; use 'First' to permit this.");
 
+	private sealed class ParameterTarget(DbConnector connector) : IDbParameterTarget
+	{
+		public void Reset(bool wasCached) => m_cachedIndex = wasCached ? 0 : -1;
+
+		public IDataParameterCollection Parameters { get; set; } = null!;
+
+		public void AcceptParameter<T>(string name, T value, IDbParameterType? type)
+		{
+			if (m_cachedIndex == -1)
+			{
+				if (value is IDataParameter dbParameter)
+				{
+					if (name.Length != 0)
+						dbParameter.ParameterName = name;
+				}
+				else
+				{
+					dbParameter = connector.CreateParameterCore(name, value);
+				}
+
+				type?.ApplyToParameter(dbParameter);
+
+				Parameters.Add(dbParameter);
+			}
+			else
+			{
+				var dbParameter = Parameters[m_cachedIndex] as IDataParameter;
+				if (dbParameter is null || (dbParameter.ParameterName ?? "") != name)
+				{
+					try
+					{
+						dbParameter = Parameters[name] as IDataParameter;
+					}
+					catch (Exception exception)
+					{
+						throw new InvalidOperationException(GetExceptionMessage(), exception);
+					}
+					if (dbParameter is null)
+						throw new InvalidOperationException(GetExceptionMessage());
+
+					string GetExceptionMessage() =>
+						$"Cached commands must always be executed with the same parameters (missing '{name}').";
+				}
+
+				connector.SetParameterValueCore(dbParameter, value);
+
+				type?.ApplyToParameter(dbParameter);
+
+				m_cachedIndex++;
+			}
+		}
+
+		private int m_cachedIndex;
+	}
+
 	private readonly bool m_noDisposeConnection;
 	private readonly bool m_noCloseConnection;
 	private readonly IsolationLevel? m_defaultIsolationLevel;
@@ -1492,6 +1492,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	private IDataReader? m_activeReader;
 	private DbCommandCache? m_commandCache;
 	private List<object?>? m_disposables;
+	private ParameterTarget? m_parameterTarget;
 	private bool m_isConnectionOpen;
 	private bool m_isDisposed;
 	private bool m_noDisposeTransaction;
