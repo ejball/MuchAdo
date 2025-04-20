@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using MuchAdo.SqlFormatting;
 using NUnit.Framework;
+using static FluentAssertions.FluentActions;
 
 namespace MuchAdo.Tests;
 
@@ -21,12 +22,12 @@ internal sealed class SqliteTests
 		connector.Command(insertSql).WithParameter("itemA", "one").WithParameter("itemB", "two").Prepare().Cache().Execute().Should().Be(2);
 		connector.Command(insertSql).WithParameter("itemA", "three").WithParameter("itemB", "four").Prepare().Cache().Execute().Should().Be(2);
 
-		// allow named parameters in different order
-		connector.Command(insertSql).WithParameter("itemB", "six").WithParameter("itemA", "five").Prepare().Cache().Execute().Should().Be(2);
+		Invoking(() => connector.Command(insertSql).WithParameters(("itemA", "five"), ("itemB", "six"), ("itemC", "seven")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql).WithParameters(("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql).WithParameters(("itemB", "six"), ("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
 
-		// fails if parameters aren't reused properly
 		connector.Command(Sql.Format($"select Name from {tableName} order by ItemId;"))
-			.Query<string>().Should().Equal("one", "two", "three", "four", "five", "six");
+			.Query<string>().Should().Equal("one", "two", "three", "four");
 	}
 
 	[Test]

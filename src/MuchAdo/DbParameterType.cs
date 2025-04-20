@@ -4,26 +4,12 @@ namespace MuchAdo;
 
 public static class DbParameterType
 {
-	public static IDbParameterType Default { get; } = new DefaultDbParameterType();
+	public static IDbParameterType Create<T>(Action<T> action)
+		where T : IDataParameter => new ActionDbParameterType<T>(action);
 
-	public static IDbParameterType FromAction(Action<IDataParameter> action) => new ActionDbParameterType(action);
-
-	public static IDbParameterType FromDbType(DbType dbType) => new DbTypeDbParameterType(dbType);
-
-	private sealed class DefaultDbParameterType : IDbParameterType
+	private sealed class ActionDbParameterType<T>(Action<T> action) : IDbParameterType
+		where T : IDataParameter
 	{
-		public void ApplyToParameter(IDataParameter parameter)
-		{
-		}
-	}
-
-	private sealed class ActionDbParameterType(Action<IDataParameter> action) : IDbParameterType
-	{
-		public void ApplyToParameter(IDataParameter parameter) => action(parameter);
-	}
-
-	private sealed class DbTypeDbParameterType(DbType dbType) : IDbParameterType
-	{
-		public void ApplyToParameter(IDataParameter parameter) => parameter.DbType = dbType;
+		public void ApplyToParameter(IDataParameter parameter) => action((T) parameter);
 	}
 }
