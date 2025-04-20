@@ -1189,9 +1189,13 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		if (m_activeCommandOrBatch is not null)
 		{
-			if (!m_activeCommandOrBatchIsCached)
+			if (m_activeCommandOrBatchCacheKey is not null)
+				CommandCache.AddCommand(m_activeCommandOrBatchCacheKey, m_activeCommandOrBatch);
+			else
 				DisposeCommandOrBatchCore();
+
 			m_activeCommandOrBatch = null;
+			m_activeCommandOrBatchCacheKey = null;
 		}
 	}
 
@@ -1201,9 +1205,13 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		if (m_activeCommandOrBatch is not null)
 		{
-			if (!m_activeCommandOrBatchIsCached)
+			if (m_activeCommandOrBatchCacheKey is not null)
+				CommandCache.AddCommand(m_activeCommandOrBatchCacheKey, m_activeCommandOrBatch);
+			else
 				await DisposeCommandOrBatchCoreAsync().ConfigureAwait(false);
+
 			m_activeCommandOrBatch = null;
+			m_activeCommandOrBatchCacheKey = null;
 		}
 	}
 
@@ -1272,34 +1280,31 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	private void DoCreateCommand(DbConnectorCommandBatch commandBatch)
 	{
 		m_activeCommandOrBatch = null;
-		m_activeCommandOrBatchIsCached = false;
+		m_activeCommandOrBatchCacheKey = null;
 
 		var commandCount = commandBatch.CommandCount;
 		var transaction = Transaction;
 		var timeout = commandBatch.Timeout;
 
 		var wasCached = false;
-		var cache = commandBatch.IsCached ? CommandCache : null;
 		if (commandCount == 1)
 		{
 			var currentCommand = commandBatch.CurrentCommand;
-			if (cache is not null && (m_activeCommandOrBatch = cache.GetCommandOrDefault(currentCommand.Text) as IDbCommand) is not null)
-			{
+			m_activeCommandOrBatchCacheKey = commandBatch.IsCached ? currentCommand.Text : null;
+
+			if (m_activeCommandOrBatchCacheKey is not null && (m_activeCommandOrBatch = CommandCache.TryRemoveCommand(currentCommand.Text) as IDbCommand) is not null)
 				wasCached = true;
-			}
 			else
-			{
 				m_activeCommandOrBatch = CreateCommandCore(currentCommand.Type, currentCommand.Text);
-				cache?.AddCommand(currentCommand.Text, m_activeCommandOrBatch);
-			}
 		}
 		else
 		{
 			var commandTexts = new string[commandCount];
 			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
 				commandTexts[commandIndex] = commandBatch.GetCommand(commandIndex).Text;
+			m_activeCommandOrBatchCacheKey = commandBatch.IsCached ? commandTexts : null;
 
-			if (cache is not null && (m_activeCommandOrBatch = cache.GetCommandOrDefault(commandTexts)) is not null)
+			if (m_activeCommandOrBatchCacheKey is not null && (m_activeCommandOrBatch = CommandCache.TryRemoveCommand(commandTexts)) is not null)
 			{
 				wasCached = true;
 			}
@@ -1308,11 +1313,8 @@ public class DbConnector : IDisposable, IAsyncDisposable
 				m_activeCommandOrBatch = CreateBatchCore();
 				for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
 					AddBatchCommandCore(commandBatch.GetCommand(commandIndex).Type, commandTexts[commandIndex]);
-				cache?.AddCommand(commandTexts, m_activeCommandOrBatch);
 			}
 		}
-
-		m_activeCommandOrBatchIsCached = cache is not null;
 
 		// TODO: set to default timeout if necessary when cached
 		if (timeout is not null)
@@ -1486,12 +1488,12 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	private readonly IDbConnection m_connection;
 	private IDbTransaction? m_transaction;
 	private object? m_activeCommandOrBatch;
+	private object? m_activeCommandOrBatchCacheKey;
 	private IDataReader? m_activeReader;
 	private DbCommandCache? m_commandCache;
 	private List<object?>? m_disposables;
 	private bool m_isConnectionOpen;
 	private bool m_isDisposed;
 	private bool m_noDisposeTransaction;
-	private bool m_activeCommandOrBatchIsCached;
 	private bool m_hasReadFirstResultSet;
 }
