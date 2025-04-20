@@ -29,9 +29,12 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	public DbConnector(IDbConnection connection, DbConnectorSettings settings)
 	{
 		m_connection = connection ?? throw new ArgumentNullException(nameof(connection));
+		if (settings is null)
+			throw new ArgumentNullException(nameof(settings));
+
 		m_isConnectionOpen = m_connection.State == ConnectionState.Open;
 		m_noCloseConnection = m_isConnectionOpen;
-		m_noDisposeConnection = settings.NoDispose;
+		m_noDisposeConnection = settings.NoDisposeConnection;
 		m_defaultIsolationLevel = settings.DefaultIsolationLevel;
 		SqlSyntax = settings.SqlSyntax ?? SqlSyntax.Default;
 		DataMapper = settings.DataMapper ?? DbDataMapper.Default;
@@ -40,8 +43,6 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// The database connection.
 	/// </summary>
-	/// <remarks>Use <see cref="GetOpenConnectionAsync" /> or <see cref="GetOpenConnection" />
-	/// to automatically open the connection.</remarks>
 	public IDbConnection Connection => m_connection;
 
 	/// <summary>
@@ -56,7 +57,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 #if !NETSTANDARD2_0
 	/// <summary>
-	/// The active command, if any.
+	/// The active batch, if any.
 	/// </summary>
 	public DbBatch? ActiveBatch => m_activeCommandOrBatch as DbBatch;
 #endif
@@ -71,83 +72,41 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// </summary>
 	public SqlSyntax SqlSyntax { get; }
 
+	/// <summary>
+	/// Raised immediately before a command batch is executed.
+	/// </summary>
 	public event EventHandler<DbConnectorExecutingEventArgs>? Executing;
 
 	/// <summary>
-	/// Returns the database connection, opened if necessary.
+	/// Creates a new command.
 	/// </summary>
-	/// <returns>The opened database connection.</returns>
-	/// <seealso cref="Connection" />
-	/// <seealso cref="GetOpenConnectionAsync" />
-	public IDbConnection GetOpenConnection()
-	{
-		VerifyNotDisposed();
-		if (m_isConnectionOpen)
-			return m_connection;
+	/// <param name="text">The text of the command.</param>
+	public DbConnectorCommandBatch Command(string text) => new(this, CommandType.Text, text ?? throw new ArgumentNullException(nameof(text)));
 
-		OpenConnectionCore();
-		m_isConnectionOpen = true;
-		return m_connection;
+	/// <summary>
+	/// Creates a new command from parameterized SQL.
+	/// </summary>
+	/// <param name="sql">The parameterized SQL.</param>
+	public DbConnectorCommandBatch Command(Sql sql)
+	{
+		var builder = new DbConnectorCommandBuilder(SqlSyntax);
+		(sql ?? throw new ArgumentNullException(nameof(sql))).Render(builder);
+		var command = builder.Build(CommandType.Text);
+		return new DbConnectorCommandBatch(this, command.Type, command.Text, command.Parameters);
 	}
 
 	/// <summary>
-	/// Returns the database connection, opened if necessary.
+	/// Creates a new command from a formatted SQL string.
 	/// </summary>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <returns>The opened database connection.</returns>
-	/// <seealso cref="Connection" />
-	/// <seealso cref="GetOpenConnection" />
-	public ValueTask<IDbConnection> GetOpenConnectionAsync(CancellationToken cancellationToken = default)
-	{
-		VerifyNotDisposed();
-		return m_isConnectionOpen ? new ValueTask<IDbConnection>(m_connection) : DoAsync();
-
-		async ValueTask<IDbConnection> DoAsync()
-		{
-			await OpenConnectionCoreAsync(cancellationToken).ConfigureAwait(false);
-			m_isConnectionOpen = true;
-			return m_connection;
-		}
-	}
+	/// <param name="sql">The formatted SQL string.</param>
+	/// <remarks>Shorthand for <c>Command(Sql.Format(...))</c>.</remarks>
+	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql) => Command(Sql.Format(sql));
 
 	/// <summary>
-	/// Opens the connection.
+	/// Creates a new command to access a stored procedure.
 	/// </summary>
-	/// <returns>An <see cref="IDisposable" /> that should be disposed when the connection should be closed.
-	/// If the connection was already open, disposing the return value does nothing.</returns>
-	/// <remarks>This method is not typically needed, since all operations automatically open
-	/// the connection as needed.</remarks>
-	/// <seealso cref="OpenConnectionAsync" />
-	public DbConnectionCloser OpenConnection()
-	{
-		VerifyNotDisposed();
-		if (m_isConnectionOpen)
-			return default;
-
-		OpenConnectionCore();
-		m_isConnectionOpen = true;
-		return new DbConnectionCloser(this);
-	}
-
-	/// <summary>
-	/// Opens the connection.
-	/// </summary>
-	/// <param name="cancellationToken">The cancellation token.</param>
-	/// <returns>An <see cref="IDisposable" /> that should be disposed when the connection should be closed.
-	/// If the connection was already open, disposing the return value does nothing.</returns>
-	/// <seealso cref="OpenConnection" />
-	public ValueTask<DbConnectionCloser> OpenConnectionAsync(CancellationToken cancellationToken = default)
-	{
-		VerifyNotDisposed();
-		return m_isConnectionOpen ? default : DoAsync();
-
-		async ValueTask<DbConnectionCloser> DoAsync()
-		{
-			await OpenConnectionCoreAsync(cancellationToken).ConfigureAwait(false);
-			m_isConnectionOpen = true;
-			return new DbConnectionCloser(this);
-		}
-	}
+	/// <param name="name">The name of the stored procedure.</param>
+	public DbConnectorCommandBatch StoredProcedure(string name) => new(this, CommandType.StoredProcedure, name ?? throw new ArgumentNullException(nameof(name)));
 
 	/// <summary>
 	/// Begins a transaction.
@@ -210,13 +169,16 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// Attaches a transaction.
 	/// </summary>
+	/// <param name="transaction">The transaction to attach.</param>
+	/// <param name="noDispose">If true, the transaction is not disposed by the connector.</param>
 	/// <returns>An <see cref="IDisposable" /> that should be disposed when the transaction has been committed or should be rolled back.</returns>
 	public DbTransactionDisposer AttachTransaction(IDbTransaction transaction, bool noDispose = false)
 	{
 		if (!m_isConnectionOpen)
-			throw new InvalidOperationException("The connection must be open to attach a transaction.");
+			throw new InvalidOperationException("The connection must be open to attach a transaction; first call OpenTransaction or OpenTransactionAsync.");
+
 		VerifyCanBeginTransaction();
-		m_transaction = transaction;
+		m_transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
 		m_noDisposeTransaction = noDispose;
 		return new DbTransactionDisposer(this);
 	}
@@ -268,35 +230,84 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Creates a new command.
+	/// Returns the database connection, opened if necessary.
 	/// </summary>
-	/// <param name="text">The text of the command.</param>
-	public DbConnectorCommandBatch Command(string text) => new(this, CommandType.Text, text);
-
-	/// <summary>
-	/// Creates a new command from parameterized SQL.
-	/// </summary>
-	/// <param name="sql">The parameterized SQL.</param>
-	public DbConnectorCommandBatch Command(Sql sql)
+	/// <returns>The opened database connection.</returns>
+	/// <remarks>This method is not typically needed, since the connection is opened automatically
+	/// immediately before a command is executed and remains open until the connector is disposed.</remarks>
+	/// <seealso cref="Connection" />
+	/// <seealso cref="GetOpenConnectionAsync" />
+	public IDbConnection GetOpenConnection()
 	{
-		var builder = new DbConnectorCommandBuilder(SqlSyntax);
-		sql.Render(builder);
-		var query = builder.Build(CommandType.Text);
-		return new DbConnectorCommandBatch(this, query.Type, query.Text, query.Parameters);
+		VerifyNotDisposed();
+		if (m_isConnectionOpen)
+			return m_connection;
+
+		OpenConnectionCore();
+		m_isConnectionOpen = true;
+		return m_connection;
 	}
 
 	/// <summary>
-	/// Creates a new command from a formatted SQL string.
+	/// Returns the database connection, opened if necessary.
 	/// </summary>
-	/// <param name="sql">The formatted SQL string.</param>
-	/// <remarks>Shorthand for <c>Command(Sql.Format($"..."))</c>.</remarks>
-	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql) => Command(Sql.Format(sql));
+	/// <param name="cancellationToken">The cancellation token.</param>
+	/// <returns>The opened database connection.</returns>
+	/// <remarks>This method is not typically needed, since the connection is opened automatically
+	/// immediately before a command is executed and remains open until the connector is disposed.</remarks>
+	/// <seealso cref="Connection" />
+	/// <seealso cref="GetOpenConnection" />
+	public ValueTask<IDbConnection> GetOpenConnectionAsync(CancellationToken cancellationToken = default)
+	{
+		VerifyNotDisposed();
+		return m_isConnectionOpen ? new ValueTask<IDbConnection>(m_connection) : DoAsync();
+
+		async ValueTask<IDbConnection> DoAsync()
+		{
+			await OpenConnectionCoreAsync(cancellationToken).ConfigureAwait(false);
+			m_isConnectionOpen = true;
+			return m_connection;
+		}
+	}
 
 	/// <summary>
-	/// Creates a new command to access a stored procedure.
+	/// Opens the connection.
 	/// </summary>
-	/// <param name="name">The name of the stored procedure.</param>
-	public DbConnectorCommandBatch StoredProcedure(string name) => new(this, CommandType.StoredProcedure, name);
+	/// <returns>An <see cref="IDisposable" /> that should be disposed when the connection should be closed.
+	/// If the connection was already open, disposing the return value does nothing.</returns>
+	/// <remarks>This method is not typically needed, since the connection is opened automatically
+	/// immediately before a command is executed and remains open until the connector is disposed.</remarks>
+	/// <seealso cref="OpenConnectionAsync" />
+	public DbConnectionCloser OpenConnection()
+	{
+		VerifyNotDisposed();
+		if (m_isConnectionOpen)
+			return default;
+
+		OpenConnectionCore();
+		m_isConnectionOpen = true;
+		return new DbConnectionCloser(this);
+	}
+
+	/// <summary>
+	/// Opens the connection.
+	/// </summary>
+	/// <param name="cancellationToken">The cancellation token.</param>
+	/// <remarks>This method is not typically needed, since the connection is opened automatically
+	/// immediately before a command is executed and remains open until the connector is disposed.</remarks>
+	/// <seealso cref="OpenConnection" />
+	public ValueTask<DbConnectionCloser> OpenConnectionAsync(CancellationToken cancellationToken = default)
+	{
+		VerifyNotDisposed();
+		return m_isConnectionOpen ? default : DoAsync();
+
+		async ValueTask<DbConnectionCloser> DoAsync()
+		{
+			await OpenConnectionCoreAsync(cancellationToken).ConfigureAwait(false);
+			m_isConnectionOpen = true;
+			return new DbConnectionCloser(this);
+		}
+	}
 
 	/// <summary>
 	/// Closes the connection.
@@ -406,12 +417,12 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Closes a connection.
+	/// Closes the connection.
 	/// </summary>
 	protected virtual void CloseConnectionCore() => Connection.Close();
 
 	/// <summary>
-	/// Closes a connection asynchronously.
+	/// Closes the connection asynchronously.
 	/// </summary>
 	protected virtual ValueTask CloseConnectionCoreAsync()
 	{
@@ -425,12 +436,12 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Disposes a connection.
+	/// Disposes the connection.
 	/// </summary>
 	protected virtual void DisposeConnectionCore() => Connection.Dispose();
 
 	/// <summary>
-	/// Disposes a connection asynchronously.
+	/// Disposes the connection asynchronously.
 	/// </summary>
 	protected virtual ValueTask DisposeConnectionCoreAsync()
 	{
@@ -439,7 +450,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			return dbConnection.DisposeAsync();
 #endif
 
-		Connection.Dispose();
+		DisposeConnectionCore();
 		return default;
 	}
 
@@ -463,7 +474,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		}
 #endif
 
-		return new ValueTask<IDbTransaction>(Connection.BeginTransaction());
+		return new ValueTask<IDbTransaction>(BeginTransactionCore());
 	}
 
 	/// <summary>
@@ -486,16 +497,16 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		}
 #endif
 
-		return new ValueTask<IDbTransaction>(Connection.BeginTransaction(isolationLevel));
+		return new ValueTask<IDbTransaction>(BeginTransactionCore(isolationLevel));
 	}
 
 	/// <summary>
-	/// Commits a transaction.
+	/// Commits the current transaction.
 	/// </summary>
 	protected virtual void CommitTransactionCore() => Transaction!.Commit();
 
 	/// <summary>
-	/// Commits a transaction asynchronously.
+	/// Commits the current transaction asynchronously.
 	/// </summary>
 	protected virtual ValueTask CommitTransactionCoreAsync(CancellationToken cancellationToken)
 	{
@@ -504,17 +515,17 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			return new ValueTask(dbTransaction.CommitAsync(cancellationToken));
 #endif
 
-		Transaction!.Commit();
+		CommitTransactionCore();
 		return default;
 	}
 
 	/// <summary>
-	/// Rolls back a transaction.
+	/// Rolls back the current transaction.
 	/// </summary>
 	protected virtual void RollbackTransactionCore() => Transaction!.Rollback();
 
 	/// <summary>
-	/// Rolls back a transaction asynchronously.
+	/// Rolls back a current transaction asynchronously.
 	/// </summary>
 	protected virtual ValueTask RollbackTransactionCoreAsync(CancellationToken cancellationToken)
 	{
@@ -523,17 +534,17 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			return new ValueTask(dbTransaction.RollbackAsync(cancellationToken));
 #endif
 
-		Transaction!.Rollback();
+		RollbackTransactionCore();
 		return default;
 	}
 
 	/// <summary>
-	/// Disposes a transaction.
+	/// Disposes the current transaction.
 	/// </summary>
 	protected virtual void DisposeTransactionCore() => Transaction!.Dispose();
 
 	/// <summary>
-	/// Disposes a transaction asynchronously.
+	/// Disposes the current transaction asynchronously.
 	/// </summary>
 	protected virtual ValueTask DisposeTransactionCoreAsync()
 	{
@@ -542,12 +553,17 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			return dbTransaction.DisposeAsync();
 #endif
 
-		Transaction!.Dispose();
+		DisposeTransactionCore();
 		return default;
 	}
 
 	/// <summary>
-	/// Executes a non-query command.
+	/// The active command or batch, if any, i.e. an <c>IDbCommand</c> or a <c>DbBatch</c>.
+	/// </summary>
+	protected object? ActiveCommandOrBatch => m_activeCommandOrBatch;
+
+	/// <summary>
+	/// Executes the active command or batch.
 	/// </summary>
 	protected virtual int ExecuteNonQueryCore()
 	{
@@ -563,7 +579,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Executes a non-query command asynchronously.
+	/// Executes the active command or batch asynchronously.
 	/// </summary>
 	protected virtual ValueTask<int> ExecuteNonQueryCoreAsync(CancellationToken cancellationToken)
 	{
@@ -579,7 +595,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Executes a command query.
+	/// Opens a reader for the active command or batch.
 	/// </summary>
 	protected virtual IDataReader ExecuteReaderCore()
 	{
@@ -595,7 +611,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Executes a command query asynchronously.
+	/// Opens a reader for the active command or batch asynchronously.
 	/// </summary>
 	protected virtual ValueTask<IDataReader> ExecuteReaderCoreAsync(CancellationToken cancellationToken)
 	{
@@ -621,7 +637,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Executes a command query.
+	/// Opens a reader for the active command or batch.
 	/// </summary>
 	protected virtual IDataReader ExecuteReaderCore(CommandBehavior commandBehavior)
 	{
@@ -637,7 +653,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Executes a command query asynchronously.
+	/// Opens a reader for the active command or batch asynchronously.
 	/// </summary>
 	protected virtual ValueTask<IDataReader> ExecuteReaderCoreAsync(CommandBehavior commandBehavior, CancellationToken cancellationToken)
 	{
@@ -663,7 +679,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Prepares a command.
+	/// Prepares the active command or batch.
 	/// </summary>
 	protected virtual void PrepareCore()
 	{
@@ -685,7 +701,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Prepares a command asynchronously.
+	/// Prepares the active command or batch asynchronously.
 	/// </summary>
 	protected virtual ValueTask PrepareCoreAsync(CancellationToken cancellationToken)
 	{
@@ -702,7 +718,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Disposes a command.
+	/// Disposes the active command or batch.
 	/// </summary>
 	protected virtual void DisposeCommandOrBatchCore()
 	{
@@ -724,7 +740,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Disposes a command asynchronously.
+	/// Disposes the active command or batch asynchronously.
 	/// </summary>
 	protected virtual ValueTask DisposeCommandOrBatchCoreAsync()
 	{
@@ -741,49 +757,49 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Reads the next record.
+	/// Reads the next record from the active reader.
 	/// </summary>
 	protected virtual bool ReadReaderCore() => ActiveReader!.Read();
 
 	/// <summary>
-	/// Reads the next record asynchronously.
+	/// Reads the next record from the active reader asynchronously.
 	/// </summary>
 	protected virtual ValueTask<bool> ReadReaderCoreAsync(CancellationToken cancellationToken)
 	{
-		if (ActiveReader! is DbDataReader dbReader)
+		if (ActiveReader is DbDataReader dbReader)
 			return new ValueTask<bool>(dbReader.ReadAsync(cancellationToken));
 
 		return new ValueTask<bool>(ReadReaderCore());
 	}
 
 	/// <summary>
-	/// Reads the next result.
+	/// Reads the next result from the active reader.
 	/// </summary>
 	protected virtual bool NextReaderResultCore() => ActiveReader!.NextResult();
 
 	/// <summary>
-	/// Reads the next result asynchronously.
+	/// Reads the next result from the active reader asynchronously.
 	/// </summary>
 	protected virtual ValueTask<bool> NextReaderResultCoreAsync(CancellationToken cancellationToken)
 	{
-		if (ActiveReader! is DbDataReader dbReader)
+		if (ActiveReader is DbDataReader dbReader)
 			return new ValueTask<bool>(dbReader.NextResultAsync(cancellationToken));
 
 		return new ValueTask<bool>(NextReaderResultCore());
 	}
 
 	/// <summary>
-	/// Disposes a reader.
+	/// Disposes the active reader.
 	/// </summary>
 	protected virtual void DisposeReaderCore() => ActiveReader!.Dispose();
 
 	/// <summary>
-	/// Disposes a reader asynchronously.
+	/// Disposes the active reader asynchronously.
 	/// </summary>
 	protected virtual ValueTask DisposeReaderCoreAsync()
 	{
 #if !NETSTANDARD2_0
-		if (ActiveReader! is DbDataReader dbReader)
+		if (ActiveReader is DbDataReader dbReader)
 			return dbReader.DisposeAsync();
 #endif
 
@@ -792,22 +808,20 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// The active command or batch, if any.
+	/// Creates a command.
 	/// </summary>
-	protected object? ActiveCommandOrBatch => m_activeCommandOrBatch;
-
 	protected virtual IDbCommand CreateCommandCore(CommandType commandType, string commandText)
 	{
 		var command = Connection.CreateCommand();
-
 		if (commandType != CommandType.Text)
 			command.CommandType = commandType;
-
 		command.CommandText = commandText;
-
 		return command;
 	}
 
+	/// <summary>
+	/// Creates a batch.
+	/// </summary>
 	protected virtual object CreateBatchCore()
 	{
 #if !NETSTANDARD2_0
@@ -818,20 +832,19 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		throw new NotSupportedException();
 	}
 
+	/// <summary>
+	/// Adds a command to the active batch.
+	/// </summary>
 	protected virtual void AddBatchCommandCore(CommandType commandType, string commandText)
 	{
 #if !NETSTANDARD2_0
 		if (ActiveCommandOrBatch is DbBatch dbBatch)
 		{
 			var command = dbBatch.CreateBatchCommand();
-
 			if (commandType != CommandType.Text)
 				command.CommandType = commandType;
-
 			command.CommandText = commandText;
-
 			dbBatch.BatchCommands.Add(command);
-
 			return;
 		}
 #endif
@@ -839,6 +852,9 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		throw new NotSupportedException();
 	}
 
+	/// <summary>
+	/// Sets the timeout of the active command or batch.
+	/// </summary>
 	protected virtual void SetTimeoutCore(int timeout)
 	{
 		if (ActiveCommandOrBatch is IDbCommand command)
@@ -858,6 +874,9 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		throw new NotSupportedException();
 	}
 
+	/// <summary>
+	/// Sets the transaction of the active command or batch.
+	/// </summary>
 	protected virtual void SetTransactionCore(IDbTransaction? transaction)
 	{
 		if (ActiveCommandOrBatch is IDbCommand command)
@@ -877,6 +896,9 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		throw new NotSupportedException();
 	}
 
+	/// <summary>
+	/// Gets the parameter collection of the specified command.
+	/// </summary>
 	protected virtual IDataParameterCollection GetParameterCollectionCore(int commandIndex)
 	{
 		if (ActiveCommandOrBatch is IDbCommand command && commandIndex == 0)
@@ -915,6 +937,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// Updates the parameter value of a parameter.
 	/// </summary>
+	/// <remarks>If the value is a parameter, use its value.</remarks>
 	protected virtual void SetParameterValueCore<T>(IDataParameter parameter, T value)
 	{
 		parameter.Value = value switch
@@ -925,18 +948,15 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		};
 	}
 
+	/// <summary>
+	/// Raises the <see cref="Executing" /> event.
+	/// </summary>
 	protected virtual void OnExecuting(DbConnectorCommandBatch commandBatch) =>
 		Executing?.Invoke(this, new DbConnectorExecutingEventArgs(commandBatch));
 
 	internal DbDataMapper DataMapper { get; }
 
-	internal DbCommandCache CommandCache => m_commandCache ??= new();
-
 	internal DbConnectorPool? ConnectorPool { get; set; }
-
-	internal IDataParameter CreateParameter<T>(string name, T value) => CreateParameterCore(name, value);
-
-	internal void SetParameterValue<T>(IDataParameter parameter, T value) => SetParameterValueCore(parameter, value);
 
 	internal int ExecuteCommand(DbConnectorCommandBatch commandBatch)
 	{
@@ -1139,8 +1159,6 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			yield return map is not null ? map(record) : record.Get<T>();
 	}
 
-	private static InvalidOperationException CreateNoMoreResultsException() => new("No more results.");
-
 	internal void DisposeTransaction()
 	{
 		VerifyNotDisposed();
@@ -1210,6 +1228,10 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			m_activeReader = null;
 		}
 	}
+
+	private DbCommandCache CommandCache => m_commandCache ??= new();
+
+	private static InvalidOperationException CreateNoMoreResultsException() => new("No more results.");
 
 	private DbActiveCommandDisposer CreateCommand(DbConnectorCommandBatch commandBatch)
 	{
@@ -1324,7 +1346,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			}
 			else
 			{
-				dbParameter = connector.CreateParameter(name, value);
+				dbParameter = connector.CreateParameterCore(name, value);
 			}
 
 			type?.ApplyToParameter(dbParameter);
@@ -1355,7 +1377,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 					$"Cached commands must always be executed with the same parameters (missing '{name}').";
 			}
 
-			connector.SetParameterValue(dbParameter, value);
+			connector.SetParameterValueCore(dbParameter, value);
 
 			type?.ApplyToParameter(dbParameter);
 

@@ -14,9 +14,12 @@ namespace MuchAdo.Tests;
 internal sealed class DbConnectorTests
 {
 	[Test]
-	public void NullConnection()
+	public void ArgumentNullException()
 	{
 		Invoking(() => new DbConnector(null!)).Should().Throw<ArgumentNullException>();
+
+		using var connection = new SqliteConnection("Data Source=:memory:");
+		Invoking(() => new DbConnector(connection, null!)).Should().Throw<ArgumentNullException>();
 	}
 
 	[Test]
@@ -45,6 +48,68 @@ internal sealed class DbConnectorTests
 			connector.Connection.State.Should().Be(ConnectionState.Open);
 		}
 		connector.Connection.State.Should().Be(ConnectionState.Closed);
+	}
+
+	[Test]
+	public void GetOpenConnection()
+	{
+		using var connector = new DbConnector(new SqliteConnection("Data Source=:memory:"));
+		connector.Connection.State.Should().Be(ConnectionState.Closed);
+		var connection = connector.GetOpenConnection();
+		connection.State.Should().Be(ConnectionState.Open);
+		connection.Should().BeSameAs(connector.Connection);
+		connector.CloseConnection();
+		connection.State.Should().Be(ConnectionState.Closed);
+		connector.CloseConnection();
+	}
+
+	[Test]
+	public async Task GetOpenConnectionAsync()
+	{
+		await using var connector = new DbConnector(new SqliteConnection("Data Source=:memory:"));
+		connector.Connection.State.Should().Be(ConnectionState.Closed);
+		var connection = await connector.GetOpenConnectionAsync();
+		connection.State.Should().Be(ConnectionState.Open);
+		connection.Should().BeSameAs(connector.Connection);
+		await connector.CloseConnectionAsync();
+		connection.State.Should().Be(ConnectionState.Closed);
+		await connector.CloseConnectionAsync();
+	}
+
+	[Test]
+	public void AttachDisposable()
+	{
+		var ints = new List<int>();
+		var disposable1 = new DisposableAction(() => ints.Add(1));
+		var disposable2 = new AsyncDisposableAction(async () => ints.Add(2));
+
+		var connector = new DbConnector(new SqliteConnection("Data Source=:memory:"));
+		connector.AttachDisposable(disposable1);
+		connector.AttachDisposable(disposable2);
+
+		connector.Dispose();
+		ints.Should().Equal(2, 1);
+
+		connector.Dispose();
+		ints.Should().Equal(2, 1);
+	}
+
+	[Test]
+	public async Task AttachDisposableAsync()
+	{
+		var ints = new List<int>();
+		var disposable1 = new DisposableAction(() => ints.Add(1));
+		var disposable2 = new AsyncDisposableAction(async () => ints.Add(2));
+
+		var connector = new DbConnector(new SqliteConnection("Data Source=:memory:"));
+		connector.AttachDisposable(disposable1);
+		connector.AttachDisposable(disposable2);
+
+		await connector.DisposeAsync();
+		ints.Should().Equal(2, 1);
+
+		await connector.DisposeAsync();
+		ints.Should().Equal(2, 1);
 	}
 
 	[Test]
@@ -279,8 +344,8 @@ internal sealed class DbConnectorTests
 		var connectionString = new SqliteConnectionStringBuilder { DataSource = nameof(DeferredTransaction), Mode = SqliteOpenMode.Memory, Cache = SqliteCacheMode.Shared }.ConnectionString;
 		using var connector1 = new DbConnector(new SqliteConnection(connectionString));
 		using var connector2 = new DbConnector(new SqliteConnection(connectionString));
-		((SqliteConnection) connector1.GetOpenConnection()).DefaultTimeout = 5;
-		((SqliteConnection) connector2.GetOpenConnection()).DefaultTimeout = 5;
+		((SqliteConnection) connector1.Connection).DefaultTimeout = 5;
+		((SqliteConnection) connector2.Connection).DefaultTimeout = 5;
 		connector1.Command("create table Items (ItemId integer primary key, Name text not null);").Execute();
 		connector1.Command("insert into Items (Name) values ('xyzzy');").Execute();
 		using var transaction1 = connector1.AttachTransaction(((SqliteConnection) connector1.GetOpenConnection()).BeginTransaction(deferred: true));
@@ -525,6 +590,16 @@ internal sealed class DbConnectorTests
 		await foreach (var item in items)
 			return item;
 		throw new InvalidOperationException();
+	}
+
+	private sealed class DisposableAction(Action action) : IDisposable
+	{
+		public void Dispose() => action();
+	}
+
+	private sealed class AsyncDisposableAction(Func<ValueTask> asyncAction) : IAsyncDisposable
+	{
+		public ValueTask DisposeAsync() => asyncAction();
 	}
 
 	private static DbConnector CreateConnector(DefaultDbTypeMapperSettings? defaultTypeMapperSettings = null) =>
