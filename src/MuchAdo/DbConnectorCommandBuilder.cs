@@ -92,48 +92,45 @@ internal sealed class DbConnectorCommandBuilder
 
 	private void ApplyPrefixes()
 	{
-		if (m_prefixes is { Count: not 0 })
+		if (m_brackets is { Count: not 0 })
 		{
-			for (var index = 0; index < m_prefixes.Count; index++)
+			for (var index = 0; index < m_brackets.Count; index++)
 			{
-				var prefix = m_prefixes[index];
+				var (prefix, suffix) = m_brackets[index];
 				if (prefix is not null)
 				{
 					m_textBuilder?.Append(prefix);
 					m_textLength += prefix.Length;
-					m_prefixes[index] = null;
+					m_brackets[index] = (null, suffix);
 				}
 			}
 		}
 	}
 
-	public DbConnectorBracketScope Prefix(string prefix) => Bracket(prefix, "");
+	public DbConnectorBracketScope Prefix(string prefix) => Bracket(prefix, null);
 
-	public DbConnectorBracketScope Bracket(string prefix, string suffix)
+	public DbConnectorBracketScope Bracket(string prefix, string? suffix)
 	{
-		(m_prefixes ??= new()).Add(prefix);
-		(m_suffixes ??= new()).Add(suffix);
+		(m_brackets ??= new()).Add((prefix, suffix));
 		return new(this);
 	}
 
 	internal void EndBracket()
 	{
-		var index = m_prefixes!.Count - 1;
-		if (m_prefixes![index] is null)
+		var index = m_brackets!.Count - 1;
+		var (prefix, suffix) = m_brackets[index];
+		if (prefix is null && suffix is not null)
 		{
-			var suffix = m_suffixes![index]!;
 			m_textBuilder?.Append(suffix);
 			m_textLength += suffix.Length;
 		}
-		m_prefixes!.RemoveAt(index);
-		m_suffixes!.RemoveAt(index);
+		m_brackets!.RemoveAt(index);
 	}
 
 	private readonly StringBuilder? m_textBuilder;
 	private readonly IDbParameterTarget? m_parameterTarget;
 	private int m_textLength;
 	private int m_parameterCount;
-	private List<string?>? m_prefixes;
-	private List<string?>? m_suffixes;
+	private List<(string? Prefix, string? Suffix)>? m_brackets;
 	private Dictionary<object, (string ParameterName, string SqlPlaceholder)>? m_parameterNames;
 }
