@@ -1,0 +1,15 @@
+using System.Data;
+using System.Data.Common;
+
+namespace MuchAdo.Mappers;
+
+internal sealed class TextReaderMapper : ReferenceValueMapper<TextReader>
+{
+	public override TextReader MapNotNullField(IDataRecord record, int index)
+	{
+		if (record is DbDataReader dbReader)
+			return dbReader.GetTextReader(index);
+
+		return new StringReader(record.GetString(index));
+	}
+}

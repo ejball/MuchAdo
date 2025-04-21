@@ -12,41 +12,50 @@ public sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
 
 	public override DbTypeMapper<T>? TryCreateTypeMapper<T>(DbDataMapper dataMapper)
 	{
-		if (typeof(T) == typeof(string))
-			return (DbTypeMapper<T>) (object) new StringMapper();
-
 		if (typeof(T) == typeof(bool))
 			return (DbTypeMapper<T>) (object) new BooleanMapper();
-
 		if (typeof(T) == typeof(byte))
 			return (DbTypeMapper<T>) (object) new ByteMapper();
-
 		if (typeof(T) == typeof(char))
 			return (DbTypeMapper<T>) (object) new CharMapper();
-
 		if (typeof(T) == typeof(Guid))
 			return (DbTypeMapper<T>) (object) new GuidMapper();
-
 		if (typeof(T) == typeof(short))
 			return (DbTypeMapper<T>) (object) new Int16Mapper();
-
 		if (typeof(T) == typeof(int))
 			return (DbTypeMapper<T>) (object) new Int32Mapper();
-
 		if (typeof(T) == typeof(long))
 			return (DbTypeMapper<T>) (object) new Int64Mapper();
-
 		if (typeof(T) == typeof(float))
 			return (DbTypeMapper<T>) (object) new FloatMapper();
-
 		if (typeof(T) == typeof(double))
 			return (DbTypeMapper<T>) (object) new DoubleMapper();
-
+		if (typeof(T) == typeof(string))
+			return (DbTypeMapper<T>) (object) new StringMapper();
 		if (typeof(T) == typeof(decimal))
 			return (DbTypeMapper<T>) (object) new DecimalMapper();
-
 		if (typeof(T) == typeof(DateTime))
 			return (DbTypeMapper<T>) (object) new DateTimeMapper();
+
+		if (typeof(T) == typeof(DateTimeOffset))
+			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<DateTimeOffset>();
+		if (typeof(T) == typeof(sbyte))
+			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<sbyte>();
+		if (typeof(T) == typeof(ushort))
+			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<ushort>();
+		if (typeof(T) == typeof(uint))
+			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<uint>();
+		if (typeof(T) == typeof(ulong))
+			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<ulong>();
+		if (typeof(T) == typeof(TimeSpan))
+			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<TimeSpan>();
+
+#if !NETSTANDARD2_0
+		if (typeof(T) == typeof(DateOnly))
+			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<DateOnly>();
+		if (typeof(T) == typeof(TimeOnly))
+			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<TimeOnly>();
+#endif
 
 		if (typeof(T) == typeof(byte[]))
 			return (DbTypeMapper<T>) (object) new ByteArrayMapper();
@@ -74,6 +83,8 @@ public sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
 
 		if (typeof(T) == typeof(Stream))
 			return (DbTypeMapper<T>) (object) new StreamMapper();
+		if (typeof(T) == typeof(TextReader))
+			return (DbTypeMapper<T>) (object) new TextReaderMapper();
 
 		if (Nullable.GetUnderlyingType(typeof(T)) is { } nonNullType)
 			return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(NullableValueMapper<>).MakeGenericType(nonNullType), dataMapper.GetTypeMapper(nonNullType))!);
