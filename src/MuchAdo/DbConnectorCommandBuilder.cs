@@ -1,6 +1,4 @@
-#if NET9_0_OR_GREATER
-using System.Runtime.InteropServices;
-#endif
+using System.Text;
 using MuchAdo.SqlFormatting;
 using static System.FormattableString;
 
@@ -11,23 +9,13 @@ internal sealed class DbConnectorCommandBuilder
 	public DbConnectorCommandBuilder(SqlSyntax syntax, bool buildText, IDbParameterTarget? parameterTarget)
 	{
 		Syntax = syntax;
-		m_strings = buildText ? new List<string?>() : null;
+		m_textBuilder = buildText ? new StringBuilder(capacity: 128) : null;
 		m_parameterTarget = parameterTarget;
 	}
 
 	public SqlSyntax Syntax { get; }
 
-	public string GetText()
-	{
-		if (m_strings is null)
-			return "";
-
-#if NET9_0_OR_GREATER
-		return string.Concat(CollectionsMarshal.AsSpan(m_strings));
-#else
-		return string.Concat([.. m_strings]);
-#endif
-	}
+	public string GetText() => m_textBuilder?.ToString() ?? "";
 
 	public int TextLength => m_textLength;
 
@@ -36,7 +24,7 @@ internal sealed class DbConnectorCommandBuilder
 		if (text.Length != 0)
 		{
 			ApplyPrefixes();
-			m_strings?.Add(text);
+			m_textBuilder?.Append(text);
 			m_textLength += text.Length;
 		}
 	}
@@ -98,7 +86,7 @@ internal sealed class DbConnectorCommandBuilder
 			needsParameterNamed = null;
 		}
 
-		m_strings?.Add(tuple.SqlPlaceholder);
+		m_textBuilder?.Append(tuple.SqlPlaceholder);
 		m_textLength += tuple.SqlPlaceholder.Length;
 	}
 
@@ -111,7 +99,7 @@ internal sealed class DbConnectorCommandBuilder
 				var (prefix, suffix) = m_brackets[index];
 				if (prefix is not null)
 				{
-					m_strings?.Add(prefix);
+					m_textBuilder?.Append(prefix);
 					m_textLength += prefix.Length;
 					m_brackets[index] = (null, suffix);
 				}
@@ -133,13 +121,13 @@ internal sealed class DbConnectorCommandBuilder
 		var (prefix, suffix) = m_brackets[index];
 		if (prefix is null && suffix is not null)
 		{
-			m_strings?.Add(suffix);
+			m_textBuilder?.Append(suffix);
 			m_textLength += suffix.Length;
 		}
 		m_brackets!.RemoveAt(index);
 	}
 
-	private readonly List<string?>? m_strings;
+	private readonly StringBuilder? m_textBuilder;
 	private readonly IDbParameterTarget? m_parameterTarget;
 	private int m_textLength;
 	private int m_parameterCount;
