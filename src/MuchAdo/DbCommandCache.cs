@@ -1,5 +1,3 @@
-using MuchAdo.SqlFormatting;
-
 namespace MuchAdo;
 
 internal sealed class DbCommandCache
@@ -25,9 +23,6 @@ internal sealed class DbCommandCache
 
 		bool IEqualityComparer<object>.Equals(object? x, object? y)
 		{
-			if (x is Sql xSql && y is Sql ySql)
-				return string.Equals(xSql.ToString(), ySql.ToString(), StringComparison.Ordinal);
-
 			if (x is IEnumerable<object> xs && y is IEnumerable<object> ys)
 				return xs.SequenceEqual(ys, Instance);
 
@@ -36,9 +31,6 @@ internal sealed class DbCommandCache
 
 		int IEqualityComparer<object>.GetHashCode(object obj)
 		{
-			if (obj is Sql sql)
-				return sql.ToString().GetHashCodeOrdinal();
-
 			if (obj is IEnumerable<object> items)
 			{
 				var hash = 0;
@@ -47,7 +39,7 @@ internal sealed class DbCommandCache
 				return hash;
 			}
 
-			return EqualityComparer<object>.Default.GetHashCode(obj);
+			return obj.GetHashCode();
 		}
 	}
 }

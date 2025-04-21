@@ -139,23 +139,18 @@ public class MySqlDbConnector : DbConnector
 
 	protected override object CreateBatchCore() => Connection.CreateBatch();
 
-	protected override void AddBatchCommandCore(CommandType commandType, string commandText)
+	protected override void AddBatchCommandCore(CommandType commandType)
 	{
 		if (ActiveBatch is { } batch)
 		{
 			var command = new MySqlBatchCommand();
-
 			if (commandType != CommandType.Text)
 				command.CommandType = commandType;
-
-			command.CommandText = commandText;
-
 			batch.BatchCommands.Add(command);
-
 			return;
 		}
 
-		base.AddBatchCommandCore(commandType, commandText);
+		base.AddBatchCommandCore(commandType);
 	}
 
 	protected override void SetTimeoutCore(int timeout)
@@ -172,6 +167,14 @@ public class MySqlDbConnector : DbConnector
 			dbBatch.Transaction = dbTransaction;
 		else
 			base.SetTransactionCore(transaction);
+	}
+
+	protected override void SetCommandTextCore(int commandIndex, string commandText)
+	{
+		if (ActiveCommandOrBatch is MySqlBatch dbBatch)
+			dbBatch.BatchCommands[commandIndex].CommandText = commandText;
+		else
+			base.SetCommandTextCore(commandIndex, commandText);
 	}
 
 	protected override IDataParameterCollection GetParameterCollectionCore(int commandIndex)
