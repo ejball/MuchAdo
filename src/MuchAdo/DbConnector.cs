@@ -36,6 +36,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		m_noCloseConnection = m_isConnectionOpen;
 		m_noDisposeConnection = settings.NoDisposeConnection;
 		m_defaultIsolationLevel = settings.DefaultIsolationLevel;
+		m_cancelUnfinishedCommands = settings.CancelUnfinishedCommands;
 		SqlSyntax = settings.SqlSyntax ?? SqlSyntax.Default;
 		DataMapper = settings.DataMapper ?? DbDataMapper.Default;
 	}
@@ -816,6 +817,25 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
+	/// Closes the active reader.
+	/// </summary>
+	protected virtual void CloseReaderCore() => ActiveReader!.Close();
+
+	/// <summary>
+	/// Closes the active reader asynchronously.
+	/// </summary>
+	protected virtual ValueTask CloseReaderCoreAsync()
+	{
+#if !NETSTANDARD2_0
+		if (ActiveReader is DbDataReader dbReader)
+			return new ValueTask(dbReader.CloseAsync());
+#endif
+
+		CloseReaderCore();
+		return default;
+	}
+
+	/// <summary>
 	/// Disposes the active reader.
 	/// </summary>
 	protected virtual void DisposeReaderCore() => ActiveReader!.Dispose();
@@ -1054,6 +1074,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		}
 		while (NextReaderResultCore());
 
+		CloseReaderCore();
 		return list;
 	}
 
@@ -1074,6 +1095,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		}
 		while (await NextReaderResultCoreAsync(cancellationToken).ConfigureAwait(false));
 
+		await CloseReaderCoreAsync().ConfigureAwait(false);
 		return list;
 	}
 
@@ -1099,6 +1121,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		if (single && NextReaderResultCore())
 			throw CreateTooManyRecordsException();
 
+		CloseReaderCore();
 		return value;
 	}
 
@@ -1124,6 +1147,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		if (single && await NextReaderResultCoreAsync(cancellationToken).ConfigureAwait(false))
 			throw CreateTooManyRecordsException();
 
+		await CloseReaderCoreAsync().ConfigureAwait(false);
 		return value;
 	}
 
@@ -1140,6 +1164,8 @@ public class DbConnector : IDisposable, IAsyncDisposable
 				yield return map is not null ? map(record) : record.Get<T>();
 		}
 		while (NextReaderResultCore());
+
+		CloseReaderCore();
 	}
 
 	internal async IAsyncEnumerable<T> EnumerateAsync<T>(DbConnectorCommandBatch commandBatch, Func<DbConnectorRecord, T>? map, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -1156,6 +1182,8 @@ public class DbConnector : IDisposable, IAsyncDisposable
 				yield return map is not null ? map(record) : record.Get<T>();
 		}
 		while (await NextReaderResultCoreAsync(cancellationToken).ConfigureAwait(false));
+
+		await CloseReaderCoreAsync().ConfigureAwait(false);
 	}
 
 	internal List<T> ReadResultSet<T>(Func<DbConnectorRecord, T>? map)
@@ -1268,6 +1296,9 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		if (m_activeReader is not null)
 		{
+			if (m_cancelUnfinishedCommands && !m_activeReader.IsClosed)
+				CancelNoThrow();
+
 			DisposeReaderCore();
 			m_activeReader = null;
 		}
@@ -1279,8 +1310,22 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		if (m_activeReader is not null)
 		{
+			if (m_cancelUnfinishedCommands && !m_activeReader.IsClosed)
+				CancelNoThrow();
+
 			await DisposeReaderCoreAsync().ConfigureAwait(false);
 			m_activeReader = null;
+		}
+	}
+
+	private void CancelNoThrow()
+	{
+		try
+		{
+			CancelCore();
+		}
+		catch
+		{
 		}
 	}
 
@@ -1573,8 +1618,6 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		private int m_cachedIndex;
 	}
 
-	private readonly bool m_noDisposeConnection;
-	private readonly bool m_noCloseConnection;
 	private readonly IsolationLevel? m_defaultIsolationLevel;
 	private readonly IDbConnection m_connection;
 	private IDbTransaction? m_transaction;
@@ -1584,6 +1627,9 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	private DbCommandCache? m_commandCache;
 	private List<object?>? m_disposables;
 	private ParameterTarget? m_parameterTarget;
+	private readonly bool m_noDisposeConnection;
+	private readonly bool m_noCloseConnection;
+	private readonly bool m_cancelUnfinishedCommands;
 	private bool m_isConnectionOpen;
 	private bool m_isDisposed;
 	private bool m_noDisposeTransaction;

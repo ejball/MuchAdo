@@ -37,8 +37,8 @@ internal sealed class NpgsqlTests
 
 		using var connector = CreateConnector();
 
-		////var lastCommandText = "";
-		////connector.Executing += (s, e) => lastCommandText = e.CommandBatch.CurrentCommand.Text;
+		var lastCommandText = "";
+		connector.Executing += (_, e) => lastCommandText = e.CommandBatch.CurrentCommand.BuildText(connector.SqlSyntax);
 
 		connector.Command(Sql.Format($"drop table if exists {tableName};")).Execute();
 		connector.Command(Sql.Format($"create table {tableName} (ItemId serial primary key, Name varchar not null);")).Execute();
@@ -47,7 +47,7 @@ internal sealed class NpgsqlTests
 		var three = Sql.Param("three");
 		var four = "four";
 		connector.CommandFormat($"insert into {tableName} (Name) values ({three}), ({four}), ({three}), ({four});").Execute();
-		////lastCommandText.Should().Contain("(Name) values ($1), ($2), ($1), ($3);");
+		lastCommandText.Should().Contain("(Name) values ($1), ($2), ($1), ($3);");
 
 		connector.Command(Sql.Format($"select Name from {tableName} order by ItemId;")).Query<string>().Should().Equal("one", "two", "three", "four", "three", "four");
 	}
