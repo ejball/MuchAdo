@@ -121,6 +121,14 @@ public class MySqlDbConnector : DbConnector
 		return base.PrepareCoreAsync(cancellationToken);
 	}
 
+	protected override void CancelCore()
+	{
+		if (ActiveBatch is { } batch)
+			batch.Cancel();
+		else
+			base.CancelCore();
+	}
+
 	protected override void DisposeCommandOrBatchCore()
 	{
 		if (ActiveBatch is { } batch)

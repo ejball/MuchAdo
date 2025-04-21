@@ -339,6 +339,17 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
+	/// Cancels the active command or batch.
+	/// </summary>
+	public void Cancel()
+	{
+		if (ActiveCommandOrBatch is null)
+			throw new InvalidOperationException("No command or batch is currently active.");
+
+		CancelCore();
+	}
+
+	/// <summary>
 	/// Attaches a disposable to the connector, which is disposed when the connector is disposed.
 	/// </summary>
 	public void AttachDisposable(object disposable) => (m_disposables ??= []).Add(disposable);
@@ -709,6 +720,28 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		PrepareCore();
 		return default;
+	}
+
+	/// <summary>
+	/// Cancels the active command or batch.
+	/// </summary>
+	protected virtual void CancelCore()
+	{
+		if (ActiveCommandOrBatch is IDbCommand command)
+		{
+			command.Cancel();
+			return;
+		}
+
+#if !NETSTANDARD2_0
+		if (ActiveCommandOrBatch is DbBatch batch)
+		{
+			batch.Cancel();
+			return;
+		}
+#endif
+
+		throw new NotSupportedException();
 	}
 
 	/// <summary>
