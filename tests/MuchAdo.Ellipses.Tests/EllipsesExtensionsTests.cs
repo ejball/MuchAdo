@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
+using MuchAdo.SqlFormatting;
 using NUnit.Framework;
 using static FluentAssertions.FluentActions;
 
@@ -14,12 +15,13 @@ internal sealed class EllipsesExtensionsTests
 	public void ParameterCollectionTests()
 	{
 		using var connector = CreateConnector();
-		connector.Command("create table Items (ItemId integer primary key, Name text not null);").Execute().Should().Be(0);
-		connector.Command("insert into Items (Name) values ('one'), ('two'), ('three');").Execute().Should().Be(3);
+		var tableName = Sql.Raw(nameof(ParameterCollectionTests));
+		connector.CommandFormat($"create table {tableName} (ItemId integer primary key, Name text not null);").Execute().Should().Be(0);
+		connector.CommandFormat($"insert into {tableName} (Name) values ('one'), ('two'), ('three');").Execute().Should().Be(3);
 		var resultSets = connector
-			.Command("""
-				select Name from Items where Name in (@names...);
-				select Name from Items where Name not in (@names...);
+			.CommandFormat($"""
+				select Name from {tableName} where Name in (@names...);
+				select Name from {tableName} where Name not in (@names...);
 				select @before + @after;
 				""")
 			.WithParameter("before", 1)

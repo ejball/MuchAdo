@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
+using MuchAdo.SqlFormatting;
 using NUnit.Framework;
 using static FluentAssertions.FluentActions;
 
@@ -12,20 +13,22 @@ internal sealed class BulkInsertUtilityTests
 	public void BulkInsertTests()
 	{
 		using var connector = CreateConnector();
-		connector.Command("create table Items (ItemId integer primary key, Name text not null);").Execute();
-		connector.Command("insert into Items (Name) values (@name)...;")
+		var tableName = Sql.Raw(nameof(BulkInsertTests));
+		connector.CommandFormat($"create table {tableName} (ItemId integer primary key, Name text not null);").Execute();
+		connector.CommandFormat($"insert into {tableName} (Name) values (@name)...;")
 			.BulkInsert(Enumerable.Range(1, 100).Select(x => DbParameterSource.Create("name", $"item{x}")));
-		connector.Command("select count(*) from Items;").QuerySingle<long>().Should().Be(100);
+		connector.CommandFormat($"select count(*) from {tableName};").QuerySingle<long>().Should().Be(100);
 	}
 
 	[Test]
 	public async Task BulkInsertAsyncTests()
 	{
 		await using var connector = CreateConnector();
-		await connector.Command("create table Items (ItemId integer primary key, Name text not null);").ExecuteAsync();
-		await connector.Command("insert into Items (Name) values (@name)...;")
+		var tableName = Sql.Raw(nameof(BulkInsertAsyncTests));
+		await connector.CommandFormat($"create table {tableName} (ItemId integer primary key, Name text not null);").ExecuteAsync();
+		await connector.CommandFormat($"insert into {tableName} (Name) values (@name)...;")
 			.BulkInsertAsync(Enumerable.Range(1, 100).Select(x => DbParameterSource.Create("name", $"item{x}")));
-		(await connector.Command("select count(*) from Items;").QuerySingleAsync<long>()).Should().Be(100);
+		(await connector.CommandFormat($"select count(*) from {tableName};").QuerySingleAsync<long>()).Should().Be(100);
 	}
 
 	[Test]

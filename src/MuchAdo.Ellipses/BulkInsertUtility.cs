@@ -14,10 +14,12 @@ public static class BulkInsertUtility
 	{
 		if (commandBatch.CommandCount != 1)
 			throw new ArgumentException("Command batch must contain exactly one command.", nameof(commandBatch));
+
 		var command = commandBatch.CurrentCommand;
+		var commandText = command.Text ?? command.Sql!.ToString(commandBatch.Connector.SqlSyntax);
 
 		var rowCount = 0;
-		foreach (var (sql, parameters) in GetBulkInsertCommands(command.Text!, command.Parameters, rows, settings))
+		foreach (var (sql, parameters) in GetBulkInsertCommands(commandText, command.Parameters, rows, settings))
 			rowCount += CreateBatchCommand(commandBatch, sql, parameters).Execute();
 		return rowCount;
 	}
@@ -35,10 +37,12 @@ public static class BulkInsertUtility
 	{
 		if (commandBatch.CommandCount != 1)
 			throw new ArgumentException("Command batch must contain exactly one command.", nameof(commandBatch));
+
 		var command = commandBatch.CurrentCommand;
+		var commandText = command.Text ?? command.Sql!.ToString(commandBatch.Connector.SqlSyntax);
 
 		var rowCount = 0;
-		foreach (var (sql, parameters) in GetBulkInsertCommands(command.Text!, command.Parameters, rows, settings))
+		foreach (var (sql, parameters) in GetBulkInsertCommands(commandText, command.Parameters, rows, settings))
 			rowCount += await CreateBatchCommand(commandBatch, sql, parameters).ExecuteAsync(cancellationToken).ConfigureAwait(false);
 		return rowCount;
 	}

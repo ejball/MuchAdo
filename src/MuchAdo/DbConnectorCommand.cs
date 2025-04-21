@@ -8,6 +8,16 @@ namespace MuchAdo;
 /// </summary>
 public readonly struct DbConnectorCommand
 {
+	public DbConnectorCommand(CommandType type, string text, IDbParameterSource parameters)
+		: this(type, (object) text, parameters)
+	{
+	}
+
+	public DbConnectorCommand(CommandType type, Sql sql, IDbParameterSource parameters)
+		: this(type, (object) sql, parameters)
+	{
+	}
+
 	/// <summary>
 	/// The command type.
 	/// </summary>
@@ -28,7 +38,12 @@ public readonly struct DbConnectorCommand
 	/// </summary>
 	public IDbParameterSource Parameters { get; }
 
-	public DbConnectorCommand(CommandType type, object textOrSql, IDbParameterSource parameters)
+	/// <summary>
+	/// Gets the text of the command, building it from parameterized SQL as needed.
+	/// </summary>
+	public string BuildText(SqlSyntax sqlSyntax) => Text ?? Sql!.ToString(sqlSyntax);
+
+	internal DbConnectorCommand(CommandType type, object textOrSql, IDbParameterSource parameters)
 	{
 		Type = type;
 		m_textOrSql = textOrSql;

@@ -175,9 +175,11 @@ public abstract class Sql
 	public static Sql operator +(Sql a, Sql b) => new AddSql(a, b);
 
 	/// <inheritdoc />
-	public override string ToString()
+	public override string ToString() => ToString(SqlSyntax.Ansi);
+
+	public string ToString(SqlSyntax syntax)
 	{
-		var commandBuilder = new DbConnectorCommandBuilder(SqlSyntax.Ansi, buildText: true, parameterTarget: null);
+		var commandBuilder = new DbConnectorCommandBuilder(syntax, buildText: true, parameterTarget: null);
 		Render(commandBuilder);
 		return commandBuilder.GetText();
 	}
