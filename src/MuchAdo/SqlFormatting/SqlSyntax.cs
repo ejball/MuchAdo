@@ -74,22 +74,22 @@ public sealed class SqlSyntax
 	public SqlSyntax WithLowercaseKeywords(bool value = true) => new(this) { LowercaseKeywords = value };
 
 	/// <summary>
-	/// The character used to start a named parameter.
+	/// The prefix of a named parameter.
 	/// </summary>
-	public char NamedParameterChar { get; private init; }
+	public string NamedParameterPrefix { get; private init; }
 
 	/// <summary>
-	/// Creates a new syntax with the specified named parameter character.
+	/// Creates a new syntax with the specified named parameter prefix.
 	/// </summary>
-	public SqlSyntax WithNamedParameterChar(char value) => new(this) { NamedParameterChar = value };
+	public SqlSyntax WithNamedParameterChar(string value) => new(this) { NamedParameterPrefix = value };
 
 	/// <summary>
-	/// The prefix for positional parameters.
+	/// The strategy for positional parameters.
 	/// </summary>
 	public SqlPositionalParameterStrategy PositionalParameterStrategy { get; private init; }
 
 	/// <summary>
-	/// Creates a new syntax with the specified prefix for unnamed parameters.
+	/// Creates a new syntax with the specified strategy for unnamed parameters.
 	/// </summary>
 	public SqlSyntax WithPositionalParameterStrategy(SqlPositionalParameterStrategy value) => new(this) { PositionalParameterStrategy = value };
 
@@ -127,7 +127,7 @@ public sealed class SqlSyntax
 		IdentifierQuoting = SqlIdentifierQuoting.Throw;
 		SnakeCaseColumnNames = false;
 		LowercaseKeywords = false;
-		NamedParameterChar = '@';
+		NamedParameterPrefix = "@";
 		PositionalParameterStrategy = SqlPositionalParameterStrategy.Named("ado");
 	}
 
@@ -136,7 +136,7 @@ public sealed class SqlSyntax
 		IdentifierQuoting = source.IdentifierQuoting;
 		SnakeCaseColumnNames = source.SnakeCaseColumnNames;
 		LowercaseKeywords = source.LowercaseKeywords;
-		NamedParameterChar = source.NamedParameterChar;
+		NamedParameterPrefix = source.NamedParameterPrefix;
 		PositionalParameterStrategy = source.PositionalParameterStrategy;
 	}
 

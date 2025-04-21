@@ -48,7 +48,7 @@ public sealed class DtoParamNamesSql<T> : Sql
 		{
 			if (builder.TextLength != oldTextLength)
 				builder.AppendText(", ");
-			builder.AppendText(builder.Syntax.NamedParameterChar);
+			builder.AppendText(builder.Syntax.NamedParameterPrefix);
 			builder.AppendText(GetName(filteredProperty.Name));
 		}
 

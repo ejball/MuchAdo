@@ -177,7 +177,7 @@ public abstract class Sql
 	/// <inheritdoc />
 	public override string ToString()
 	{
-		var commandBuilder = new DbConnectorCommandBuilder(SqlSyntax.Ansi);
+		var commandBuilder = new DbConnectorCommandBuilder(SqlSyntax.Ansi, buildText: true, parameterTarget: null);
 		Render(commandBuilder);
 		return commandBuilder.Text;
 	}
@@ -276,7 +276,7 @@ public abstract class Sql
 	{
 		internal override void Render(DbConnectorCommandBuilder builder)
 		{
-			builder.AppendText(builder.Syntax.NamedParameterChar);
+			builder.AppendText(builder.Syntax.NamedParameterPrefix);
 			builder.AppendText(name);
 			builder.AddParameters(this);
 		}

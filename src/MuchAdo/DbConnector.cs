@@ -1327,7 +1327,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		{
 			m_parameterTarget.Parameters = GetParameterCollectionCore(commandIndex);
 			var command = commandBatch.GetCommand(commandIndex);
-			BuildCommandParameters(command.TextOrSql).SubmitParameters(m_parameterTarget);
+			SubmitCommandParameters(command.TextOrSql, m_parameterTarget);
 			command.Parameters.SubmitParameters(m_parameterTarget);
 		}
 		m_parameterTarget.Finish();
@@ -1340,24 +1340,24 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		if (textOrSql is Sql sql)
 		{
-			var builder = new DbConnectorCommandBuilder(SqlSyntax);
+			var builder = new DbConnectorCommandBuilder(SqlSyntax, buildText: true, parameterTarget: null);
 			sql.Render(builder);
-			return builder.Build(CommandType.Text).Text!;
+			return builder.Text;
 		}
 
 		throw new InvalidOperationException();
 	}
 
-	private IDbParameterSource BuildCommandParameters(object textOrSql)
+	private void SubmitCommandParameters(object textOrSql, IDbParameterTarget target)
 	{
 		if (textOrSql is string)
-			return DbParameterSource.Empty;
+			return;
 
 		if (textOrSql is Sql sql)
 		{
-			var builder = new DbConnectorCommandBuilder(SqlSyntax);
+			var builder = new DbConnectorCommandBuilder(SqlSyntax, buildText: false, parameterTarget: target);
 			sql.Render(builder);
-			return builder.Build(CommandType.Text).Parameters;
+			return;
 		}
 
 		throw new InvalidOperationException();

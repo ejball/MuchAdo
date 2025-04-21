@@ -1,6 +1,4 @@
-using System.Data;
 using System.Text;
-using MuchAdo.Parameters;
 using MuchAdo.SqlFormatting;
 using static System.FormattableString;
 
@@ -8,50 +6,47 @@ namespace MuchAdo;
 
 internal sealed class DbConnectorCommandBuilder
 {
-	public DbConnectorCommandBuilder(SqlSyntax syntax)
+	public DbConnectorCommandBuilder(SqlSyntax syntax, bool buildText, IDbParameterTarget? parameterTarget)
 	{
 		Syntax = syntax;
-		m_textBuilder = new StringBuilder(capacity: 128);
-		m_parameterSources = new DbParameterSources();
+		m_textBuilder = buildText ? new StringBuilder(capacity: 128) : null;
+		m_parameterTarget = parameterTarget;
 	}
 
 	public SqlSyntax Syntax { get; }
 
-	public string Text => m_textBuilder.ToString();
+	public string Text => m_textBuilder?.ToString() ?? "";
 
-	public int TextLength => m_textBuilder.Length;
-
-	public IDbParameterSource Parameters => m_parameterSources;
+	public int TextLength => m_textLength;
 
 	public void AppendText(string text)
 	{
 		if (text.Length != 0)
 		{
 			ApplyPrefixes();
-			m_textBuilder.Append(text);
+			m_textBuilder?.Append(text);
+			m_textLength += text.Length;
 		}
 	}
 
-	public void AppendText(char ch)
+	public void AddParameters(IDbParameterSource parameters)
 	{
-		ApplyPrefixes();
-		m_textBuilder.Append(ch);
+		if (m_parameterTarget is not null)
+			parameters.SubmitParameters(m_parameterTarget);
 	}
-
-	public void AddParameters(IDbParameterSource parameters) => m_parameterSources.Add(parameters);
 
 	public void AppendParameterValue<T>(object? key, T value, IDbParameterType? type)
 	{
 		DoAppendParameter(key, out var needsParameterNamed);
-		if (needsParameterNamed is not null)
-			m_parameterSources.Add(DbParameterSource.Create(needsParameterNamed, value, type));
+		if (m_parameterTarget is not null && needsParameterNamed is not null)
+			m_parameterTarget.AcceptParameter(needsParameterNamed, value, type);
 	}
 
 	public void AppendParameterValue<T>(object? key, T valueSource, DbDtoProperty<T> valueProperty, IDbParameterType? type)
 	{
 		DoAppendParameter(key, out var needsParameterNamed);
-		if (needsParameterNamed is not null)
-			m_parameterSources.Add(new PropertyDbParameter<T>(needsParameterNamed, valueSource, valueProperty, type));
+		if (m_parameterTarget is not null && needsParameterNamed is not null)
+			valueProperty.SubmitParameter(m_parameterTarget, needsParameterNamed, valueSource, type);
 	}
 
 	private void DoAppendParameter(object? key, out string? needsParameterNamed)
@@ -63,7 +58,7 @@ internal sealed class DbConnectorCommandBuilder
 			if (Syntax.PositionalParameterStrategy.NamedParameterNamePrefix is { } namedPrefix)
 			{
 				tuple.ParameterName = Invariant($"{namedPrefix}{++m_parameterCount}");
-				tuple.SqlPlaceholder = Invariant($"{Syntax.NamedParameterChar}{tuple.ParameterName}");
+				tuple.SqlPlaceholder = Invariant($"{Syntax.NamedParameterPrefix}{tuple.ParameterName}");
 				if (key is not null)
 					(m_parameterNames ??= new()).Add(key, tuple);
 			}
@@ -91,7 +86,8 @@ internal sealed class DbConnectorCommandBuilder
 			needsParameterNamed = null;
 		}
 
-		m_textBuilder.Append(tuple.SqlPlaceholder);
+		m_textBuilder?.Append(tuple.SqlPlaceholder);
+		m_textLength += tuple.SqlPlaceholder.Length;
 	}
 
 	private void ApplyPrefixes()
@@ -103,7 +99,8 @@ internal sealed class DbConnectorCommandBuilder
 				var prefix = m_prefixes[index];
 				if (prefix is not null)
 				{
-					m_textBuilder.Append(prefix);
+					m_textBuilder?.Append(prefix);
+					m_textLength += prefix.Length;
 					m_prefixes[index] = null;
 				}
 			}
@@ -123,15 +120,18 @@ internal sealed class DbConnectorCommandBuilder
 	{
 		var index = m_prefixes!.Count - 1;
 		if (m_prefixes![index] is null)
-			m_textBuilder.Append(m_suffixes![index]);
+		{
+			var suffix = m_suffixes![index]!;
+			m_textBuilder?.Append(suffix);
+			m_textLength += suffix.Length;
+		}
 		m_prefixes!.RemoveAt(index);
 		m_suffixes!.RemoveAt(index);
 	}
 
-	public DbConnectorCommand Build(CommandType commandType) => new(commandType, m_textBuilder.ToString(), m_parameterSources);
-
-	private readonly StringBuilder m_textBuilder;
-	private readonly DbParameterSources m_parameterSources;
+	private readonly StringBuilder? m_textBuilder;
+	private readonly IDbParameterTarget? m_parameterTarget;
+	private int m_textLength;
 	private int m_parameterCount;
 	private List<string?>? m_prefixes;
 	private List<string?>? m_suffixes;

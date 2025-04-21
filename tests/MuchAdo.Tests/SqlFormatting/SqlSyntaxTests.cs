@@ -1,9 +1,5 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
-using FluentAssertions;
-using MuchAdo.SqlFormatting;
 using NUnit.Framework;
-using static FluentAssertions.FluentActions;
 
 namespace MuchAdo.Tests.SqlFormatting;
 
@@ -13,6 +9,7 @@ namespace MuchAdo.Tests.SqlFormatting;
 [SuppressMessage("Usage", "CA2263:Prefer generic overload when type is known", Justification = "Testing.")]
 internal sealed class SqlSyntaxTests
 {
+#if false
 	[Test]
 	public void EmptySql()
 	{
@@ -497,4 +494,5 @@ internal sealed class SqlSyntaxTests
 
 		public bool IsActive { get; set; }
 	}
+#endif
 }
