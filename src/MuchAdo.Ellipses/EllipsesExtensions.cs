@@ -13,7 +13,7 @@ public static class EllipsesExtensions
 		for (var commandIndex = 0; commandIndex < commandBatch.CommandCount; commandIndex++)
 		{
 			var command = commandBatch.GetCommand(commandIndex);
-			var commandText = command.Text;
+			var commandText = command.Text!;
 			var parameters = command.Parameters;
 
 			if (commandText.ContainsOrdinal("..."))

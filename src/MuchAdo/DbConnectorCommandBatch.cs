@@ -347,13 +347,7 @@ public sealed class DbConnectorCommandBatch
 	/// Creates the next command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
-	public DbConnectorCommandBatch Command(Sql sql)
-	{
-		var builder = new DbConnectorCommandBuilder(Connector.SqlSyntax);
-		sql.Render(builder);
-		var command = builder.Build(CommandType.Text);
-		return StartNextCommand(command.Type, command.Text, command.Parameters);
-	}
+	public DbConnectorCommandBatch Command(Sql sql) => StartNextCommand(CommandType.Text, sql);
 
 	/// <summary>
 	/// Creates the next command from a formatted SQL string.
@@ -371,7 +365,7 @@ public sealed class DbConnectorCommandBatch
 	/// <summary>
 	/// Gets the current command.
 	/// </summary>
-	public DbConnectorCommand CurrentCommand => new(m_commandType, m_text, m_parameterSource ?? m_parameterSources ?? DbParameterSource.Empty);
+	public DbConnectorCommand CurrentCommand => new(m_commandType, m_textOrSql, m_parameterSource ?? m_parameterSources ?? DbParameterSource.Empty);
 
 	/// <summary>
 	/// Gets the command at the specified index.
@@ -395,7 +389,7 @@ public sealed class DbConnectorCommandBatch
 		if (index == (m_batchedCommands?.Count ?? 0))
 		{
 			m_commandType = command.Type;
-			m_text = command.Text;
+			m_textOrSql = command.TextOrSql;
 			m_parameterSource = command.Parameters;
 			m_parameterSources = null;
 		}
@@ -410,11 +404,11 @@ public sealed class DbConnectorCommandBatch
 		return this;
 	}
 
-	internal DbConnectorCommandBatch(DbConnector connector, CommandType commandType, string commandText, IDbParameterSource? parameterSource = null)
+	internal DbConnectorCommandBatch(DbConnector connector, CommandType commandType, object textOrSql, IDbParameterSource? parameterSource = null)
 	{
 		Connector = connector;
 		m_commandType = commandType;
-		m_text = commandText;
+		m_textOrSql = textOrSql;
 		m_parameterSource = parameterSource;
 	}
 
@@ -432,13 +426,13 @@ public sealed class DbConnectorCommandBatch
 		}
 	}
 
-	private DbConnectorCommandBatch StartNextCommand(CommandType commandType, string commandText, IDbParameterSource? parameterSource = null)
+	private DbConnectorCommandBatch StartNextCommand(CommandType commandType, object textOrSql, IDbParameterSource? parameterSource = null)
 	{
 		m_batchedCommands ??= [];
 		m_batchedCommands.Add(CurrentCommand);
 
 		m_commandType = commandType;
-		m_text = commandText;
+		m_textOrSql = textOrSql;
 		m_parameterSource = parameterSource;
 		m_parameterSources = null;
 
@@ -446,7 +440,7 @@ public sealed class DbConnectorCommandBatch
 	}
 
 	private CommandType m_commandType;
-	private string m_text;
+	private object m_textOrSql;
 	private IDbParameterSource? m_parameterSource;
 	private DbParameterSources? m_parameterSources;
 	private List<DbConnectorCommand>? m_batchedCommands;

@@ -1,3 +1,5 @@
+using MuchAdo.SqlFormatting;
+
 namespace MuchAdo;
 
 internal sealed class DbCommandCache
@@ -19,23 +21,29 @@ internal sealed class DbCommandCache
 
 	private sealed class KeyComparer : IEqualityComparer<object>
 	{
-		public static readonly KeyComparer Instance = new();
+		public static readonly IEqualityComparer<object> Instance = new KeyComparer();
 
 		bool IEqualityComparer<object>.Equals(object? x, object? y)
 		{
-			if (x is IEnumerable<string> xs && y is IEnumerable<string> ys)
-				return xs.SequenceEqual(ys, StringComparer.Ordinal);
+			if (x is Sql xSql && y is Sql ySql)
+				return string.Equals(xSql.ToString(), ySql.ToString(), StringComparison.Ordinal);
 
-			return EqualityComparer<object>.Default.Equals(x!, y!);
+			if (x is IEnumerable<object> xs && y is IEnumerable<object> ys)
+				return xs.SequenceEqual(ys, Instance);
+
+			return Equals(x, y);
 		}
 
 		int IEqualityComparer<object>.GetHashCode(object obj)
 		{
-			if (obj is IEnumerable<string> texts)
+			if (obj is Sql sql)
+				return sql.ToString().GetHashCodeOrdinal();
+
+			if (obj is IEnumerable<object> items)
 			{
 				var hash = 0;
-				foreach (var text in texts)
-					hash = PortableUtility.CombineHashCodes(hash, text.GetHashCodeOrdinal());
+				foreach (var item in items)
+					hash = PortableUtility.CombineHashCodes(hash, Instance.GetHashCode(item));
 				return hash;
 			}
 

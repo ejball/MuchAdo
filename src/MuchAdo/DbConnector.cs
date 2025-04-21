@@ -87,13 +87,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// Creates a new command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
-	public DbConnectorCommandBatch Command(Sql sql)
-	{
-		var builder = new DbConnectorCommandBuilder(SqlSyntax);
-		(sql ?? throw new ArgumentNullException(nameof(sql))).Render(builder);
-		var command = builder.Build(CommandType.Text);
-		return new DbConnectorCommandBatch(this, command.Type, command.Text, command.Parameters);
-	}
+	public DbConnectorCommandBatch Command(Sql sql) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)));
 
 	/// <summary>
 	/// Creates a new command from a formatted SQL string.
@@ -1290,21 +1284,25 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		if (commandCount == 1)
 		{
 			var currentCommand = commandBatch.CurrentCommand;
-			m_activeCommandOrBatchCacheKey = commandBatch.IsCached ? currentCommand.Text : null;
+			m_activeCommandOrBatchCacheKey = commandBatch.IsCached ? currentCommand.TextOrSql : null;
 
-			if (m_activeCommandOrBatchCacheKey is not null && (m_activeCommandOrBatch = CommandCache.TryRemoveCommand(currentCommand.Text) as IDbCommand) is not null)
+			if (m_activeCommandOrBatchCacheKey is not null && (m_activeCommandOrBatch = CommandCache.TryRemoveCommand(currentCommand.TextOrSql) as IDbCommand) is not null)
+			{
 				wasCached = true;
+			}
 			else
-				m_activeCommandOrBatch = CreateCommandCore(currentCommand.Type, currentCommand.Text);
+			{
+				m_activeCommandOrBatch = CreateCommandCore(currentCommand.Type, BuildCommandText(currentCommand.TextOrSql));
+			}
 		}
 		else
 		{
-			var commandTexts = new string[commandCount];
+			var commandObjects = new object[commandCount];
 			for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
-				commandTexts[commandIndex] = commandBatch.GetCommand(commandIndex).Text;
-			m_activeCommandOrBatchCacheKey = commandBatch.IsCached ? commandTexts : null;
+				commandObjects[commandIndex] = commandBatch.GetCommand(commandIndex).TextOrSql;
+			m_activeCommandOrBatchCacheKey = commandBatch.IsCached ? commandObjects : null;
 
-			if (m_activeCommandOrBatchCacheKey is not null && (m_activeCommandOrBatch = CommandCache.TryRemoveCommand(commandTexts)) is not null)
+			if (m_activeCommandOrBatchCacheKey is not null && (m_activeCommandOrBatch = CommandCache.TryRemoveCommand(commandObjects)) is not null)
 			{
 				wasCached = true;
 			}
@@ -1312,7 +1310,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			{
 				m_activeCommandOrBatch = CreateBatchCore();
 				for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
-					AddBatchCommandCore(commandBatch.GetCommand(commandIndex).Type, commandTexts[commandIndex]);
+					AddBatchCommandCore(commandBatch.GetCommand(commandIndex).Type, BuildCommandText(commandObjects[commandIndex]));
 			}
 		}
 
@@ -1328,9 +1326,41 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
 		{
 			m_parameterTarget.Parameters = GetParameterCollectionCore(commandIndex);
-			commandBatch.GetCommand(commandIndex).Parameters.SubmitParameters(m_parameterTarget);
+			var command = commandBatch.GetCommand(commandIndex);
+			BuildCommandParameters(command.TextOrSql).SubmitParameters(m_parameterTarget);
+			command.Parameters.SubmitParameters(m_parameterTarget);
 		}
 		m_parameterTarget.Finish();
+	}
+
+	private string BuildCommandText(object textOrSql)
+	{
+		if (textOrSql is string text)
+			return text;
+
+		if (textOrSql is Sql sql)
+		{
+			var builder = new DbConnectorCommandBuilder(SqlSyntax);
+			sql.Render(builder);
+			return builder.Build(CommandType.Text).Text!;
+		}
+
+		throw new InvalidOperationException();
+	}
+
+	private IDbParameterSource BuildCommandParameters(object textOrSql)
+	{
+		if (textOrSql is string)
+			return DbParameterSource.Empty;
+
+		if (textOrSql is Sql sql)
+		{
+			var builder = new DbConnectorCommandBuilder(SqlSyntax);
+			sql.Render(builder);
+			return builder.Build(CommandType.Text).Parameters;
+		}
+
+		throw new InvalidOperationException();
 	}
 
 	private void DisposeCachedCommands()

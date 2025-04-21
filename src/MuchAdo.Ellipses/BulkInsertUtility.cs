@@ -17,7 +17,7 @@ public static class BulkInsertUtility
 		var command = commandBatch.CurrentCommand;
 
 		var rowCount = 0;
-		foreach (var (sql, parameters) in GetBulkInsertCommands(command.Text, command.Parameters, rows, settings))
+		foreach (var (sql, parameters) in GetBulkInsertCommands(command.Text!, command.Parameters, rows, settings))
 			rowCount += CreateBatchCommand(commandBatch, sql, parameters).Execute();
 		return rowCount;
 	}
@@ -38,7 +38,7 @@ public static class BulkInsertUtility
 		var command = commandBatch.CurrentCommand;
 
 		var rowCount = 0;
-		foreach (var (sql, parameters) in GetBulkInsertCommands(command.Text, command.Parameters, rows, settings))
+		foreach (var (sql, parameters) in GetBulkInsertCommands(command.Text!, command.Parameters, rows, settings))
 			rowCount += await CreateBatchCommand(commandBatch, sql, parameters).ExecuteAsync(cancellationToken).ConfigureAwait(false);
 		return rowCount;
 	}
