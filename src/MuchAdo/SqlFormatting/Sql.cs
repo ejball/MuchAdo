@@ -179,7 +179,7 @@ public abstract class Sql
 	{
 		var commandBuilder = new DbConnectorCommandBuilder(SqlSyntax.Ansi, buildText: true, parameterTarget: null);
 		Render(commandBuilder);
-		return commandBuilder.Text;
+		return commandBuilder.GetText();
 	}
 
 	internal abstract void Render(DbConnectorCommandBuilder builder);

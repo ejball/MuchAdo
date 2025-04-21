@@ -1342,7 +1342,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		{
 			var builder = new DbConnectorCommandBuilder(SqlSyntax, buildText: true, parameterTarget: null);
 			sql.Render(builder);
-			return builder.Text;
+			return builder.GetText();
 		}
 
 		throw new InvalidOperationException();
