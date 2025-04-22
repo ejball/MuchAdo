@@ -3,7 +3,7 @@ using System.Data.Common;
 
 namespace MuchAdo.Mappers;
 
-internal sealed class StreamMapper : ReferenceValueMapper<Stream>
+internal sealed class StreamMapper : SingleFieldReferenceMapper<Stream>
 {
 	public override Stream MapNotNullField(IDataRecord record, int index)
 	{

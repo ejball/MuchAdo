@@ -3,7 +3,7 @@ using System.Data.Common;
 
 namespace MuchAdo.Mappers;
 
-internal sealed class FieldValueStructMapper<T> : NonNullableValueMapper<T>
+internal sealed class GetFieldValueMapper<T> : SingleFieldValueMapper<T>
 	where T : struct
 {
 	public override T MapNotNullField(IDataRecord record, int index) =>

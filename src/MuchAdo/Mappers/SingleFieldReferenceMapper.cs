@@ -2,7 +2,7 @@ using System.Data;
 
 namespace MuchAdo.Mappers;
 
-internal abstract class ReferenceValueMapper<T> : SingleFieldMapper<T?>
+public abstract class SingleFieldReferenceMapper<T> : SingleFieldMapper<T?>
 	where T : class
 {
 	protected sealed override T? MapField(IDataRecord record, int index) =>

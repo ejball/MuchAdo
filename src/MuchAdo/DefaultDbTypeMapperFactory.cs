@@ -38,23 +38,23 @@ public sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
 			return (DbTypeMapper<T>) (object) new DateTimeMapper();
 
 		if (typeof(T) == typeof(DateTimeOffset))
-			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<DateTimeOffset>();
+			return (DbTypeMapper<T>) (object) new GetFieldValueMapper<DateTimeOffset>();
 		if (typeof(T) == typeof(sbyte))
-			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<sbyte>();
+			return (DbTypeMapper<T>) (object) new GetFieldValueMapper<sbyte>();
 		if (typeof(T) == typeof(ushort))
-			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<ushort>();
+			return (DbTypeMapper<T>) (object) new GetFieldValueMapper<ushort>();
 		if (typeof(T) == typeof(uint))
-			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<uint>();
+			return (DbTypeMapper<T>) (object) new GetFieldValueMapper<uint>();
 		if (typeof(T) == typeof(ulong))
-			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<ulong>();
+			return (DbTypeMapper<T>) (object) new GetFieldValueMapper<ulong>();
 		if (typeof(T) == typeof(TimeSpan))
-			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<TimeSpan>();
+			return (DbTypeMapper<T>) (object) new GetFieldValueMapper<TimeSpan>();
 
 #if !NETSTANDARD2_0
 		if (typeof(T) == typeof(DateOnly))
-			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<DateOnly>();
+			return (DbTypeMapper<T>) (object) new GetFieldValueMapper<DateOnly>();
 		if (typeof(T) == typeof(TimeOnly))
-			return (DbTypeMapper<T>) (object) new FieldValueStructMapper<TimeOnly>();
+			return (DbTypeMapper<T>) (object) new GetFieldValueMapper<TimeOnly>();
 #endif
 
 		if (typeof(T) == typeof(byte[]))

@@ -2,7 +2,7 @@ using System.Data;
 
 namespace MuchAdo.Mappers;
 
-internal sealed class ByteArrayMapper : ReferenceValueMapper<byte[]>
+internal sealed class ByteArrayMapper : SingleFieldReferenceMapper<byte[]>
 {
 	public override byte[] MapNotNullField(IDataRecord record, int index)
 	{

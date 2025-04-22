@@ -109,6 +109,24 @@ internal sealed class MySqlTests
 		connector.Command(Sql.Format($"select Name from {tableName} order by Id;")).Query<string>().Should().Equal("one", "two", "three", "four", "three", "four");
 	}
 
+	[Test]
+	public void MySqlDecimalTest()
+	{
+		var tableName = Sql.Name($"{nameof(MySqlDecimalTest)}_{c_framework}");
+
+		using var connector = CreateConnector();
+
+		connector
+			.CommandFormat($"drop table if exists {tableName}")
+			.CommandFormat($"create table {tableName} (Id int not null auto_increment primary key, Value decimal(10, 2) not null)")
+			.CommandFormat($"insert into {tableName} (Value) values (?)")
+			.WithParameterValue(6.875m)
+			.Execute();
+
+		connector.Command(Sql.Format($"select Value from {tableName}")).QuerySingle<decimal>().Should().Be(6.88m);
+		connector.Command(Sql.Format($"select Value from {tableName}")).QuerySingle<MySqlDecimal>().Value.Should().Be(6.88m);
+	}
+
 	private static MySqlDbConnector CreateConnector(bool cancelUnfinishedCommands = false) => new(
 		new MySqlConnection("Server=localhost;User Id=root;Password=test;SSL Mode=none;Database=test;Ignore Prepare=false;AllowPublicKeyRetrieval=true"),
 		new MySqlDbConnectorSettings

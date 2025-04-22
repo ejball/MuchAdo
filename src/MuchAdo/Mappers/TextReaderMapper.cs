@@ -3,7 +3,7 @@ using System.Data.Common;
 
 namespace MuchAdo.Mappers;
 
-internal sealed class TextReaderMapper : ReferenceValueMapper<TextReader>
+internal sealed class TextReaderMapper : SingleFieldReferenceMapper<TextReader>
 {
 	public override TextReader MapNotNullField(IDataRecord record, int index)
 	{

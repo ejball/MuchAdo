@@ -2,7 +2,7 @@ using System.Data;
 
 namespace MuchAdo.Mappers;
 
-internal abstract class NonNullableValueMapper<T> : SingleFieldMapper<T>
+public abstract class SingleFieldValueMapper<T> : SingleFieldMapper<T>
 	where T : struct
 {
 	protected sealed override T MapField(IDataRecord record, int index) =>

@@ -2,7 +2,7 @@ using System.Data;
 
 namespace MuchAdo.Mappers;
 
-internal abstract class SingleFieldMapper<T> : DbTypeMapper<T>
+public abstract class SingleFieldMapper<T> : DbTypeMapper<T>
 {
 	public override int? FieldCount => 1;
 
