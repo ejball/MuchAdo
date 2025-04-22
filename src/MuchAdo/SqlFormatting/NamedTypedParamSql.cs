@@ -6,7 +6,7 @@ internal sealed class NamedTypedParamSql<T>(string name, T value, IDbParameterTy
 	{
 		builder.AppendText(builder.Syntax.NamedParameterPrefix);
 		builder.AppendText(name);
-		builder.AddParameters(this);
+		builder.SubmitParameters(this);
 	}
 
 	public void SubmitParameters(IDbParameterTarget target) => target.AcceptParameter(name, value, type);

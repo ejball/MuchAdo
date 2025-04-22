@@ -58,7 +58,7 @@ public static class DbParameterSource
 	/// Creates parameters from a dictionary.
 	/// </summary>
 	public static IDbParameterSource Create<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		new TuplesDbParameterSource<T>(parameters.Select(x => (x.Key, x.Value)).ToList());
+		new DictionaryDbParameterSource<T>(parameters);
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO.

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using MuchAdo.SqlFormatting;
 using static System.FormattableString;
@@ -29,65 +30,81 @@ internal sealed class DbConnectorCommandBuilder
 		}
 	}
 
-	public void AddParameters(IDbParameterSource parameters)
+	public void SubmitParameters(IDbParameterSource parameters)
 	{
 		if (m_parameterTarget is not null)
 			parameters.SubmitParameters(m_parameterTarget);
 	}
 
-	public void AppendParameterValue<T>(object? key, T value, IDbParameterType? type)
+	public void AppendParameterValue<T>(object? identity, T value, IDbParameterType? type = null)
 	{
-		DoAppendParameter(key, out var needsParameterNamed);
+		DoAppendParameter(identity, out var needsParameterNamed);
 		if (m_parameterTarget is not null && needsParameterNamed is not null)
 			m_parameterTarget.AcceptParameter(needsParameterNamed, value, type);
 	}
 
-	public void AppendParameterValue<T>(object? key, T valueSource, DbDtoProperty<T> valueProperty, IDbParameterType? type)
+	public void AppendParameterValue<T>(object? identity, T valueSource, DbDtoProperty<T> valueProperty)
 	{
-		DoAppendParameter(key, out var needsParameterNamed);
+		DoAppendParameter(identity, out var needsParameterNamed);
 		if (m_parameterTarget is not null && needsParameterNamed is not null)
-			valueProperty.SubmitParameter(m_parameterTarget, needsParameterNamed, valueSource, type);
+			valueProperty.SubmitParameter(m_parameterTarget, needsParameterNamed, valueSource, type: null);
 	}
 
-	private void DoAppendParameter(object? key, out string? needsParameterNamed)
+	private void DoAppendParameter(object? identity, out string? needsParameterNamed)
 	{
 		ApplyPrefixes();
 
-		if (key is null || m_parameterNames is null || !m_parameterNames.TryGetValue(key, out var tuple))
+		if (identity is null || m_placeholders is null || !m_placeholders.TryGetValue(identity, out var tuple))
 		{
 			if (Syntax.PositionalParameterStrategy.NamedParameterNamePrefix is { } namedPrefix)
 			{
-				tuple.ParameterName = Invariant($"{namedPrefix}{++m_parameterCount}");
-				tuple.SqlPlaceholder = Invariant($"{Syntax.NamedParameterPrefix}{tuple.ParameterName}");
-				if (key is not null)
-					(m_parameterNames ??= new()).Add(key, tuple);
+				needsParameterNamed = Invariant($"{namedPrefix}{++m_parameterCount}");
+				tuple = (Syntax.NamedParameterPrefix, needsParameterNamed, -1);
+				tuple.Name = needsParameterNamed;
+				if (identity is not null)
+					(m_placeholders ??= new()).Add(identity, tuple);
 			}
 			else if (Syntax.PositionalParameterStrategy.NumberedParameterPlaceholderPrefix is { } numberedPrefix)
 			{
-				tuple.ParameterName = "";
-				tuple.SqlPlaceholder = Invariant($"{numberedPrefix}{++m_parameterCount}");
-				if (key is not null)
-					(m_parameterNames ??= new()).Add(key, tuple);
+				needsParameterNamed = "";
+				tuple = (numberedPrefix, "", ++m_parameterCount);
+				if (identity is not null)
+					(m_placeholders ??= new()).Add(identity, tuple);
 			}
 			else if (Syntax.PositionalParameterStrategy.UnnumberedParameterPlaceholder is { } unnumberedPlaceholder)
 			{
-				tuple.ParameterName = "";
-				tuple.SqlPlaceholder = unnumberedPlaceholder;
+				needsParameterNamed = "";
+				tuple = (unnumberedPlaceholder, "", -1);
 			}
 			else
 			{
 				throw new InvalidOperationException($"Unexpected {nameof(Syntax.PositionalParameterStrategy)}.");
 			}
-
-			needsParameterNamed = tuple.ParameterName;
 		}
 		else
 		{
 			needsParameterNamed = null;
 		}
 
-		m_textBuilder?.Append(tuple.SqlPlaceholder);
-		m_textLength += tuple.SqlPlaceholder.Length;
+		m_textBuilder?.Append(tuple.Prefix);
+		m_textLength += tuple.Prefix.Length;
+
+		m_textBuilder?.Append(tuple.Name);
+		m_textLength += tuple.Name.Length;
+
+		if (tuple.Number >= 0)
+		{
+#if !NETSTANDARD2_0
+			Span<char> numberBuffer = stackalloc char[10];
+			tuple.Number.TryFormat(numberBuffer, out var numberLength, provider: CultureInfo.InvariantCulture);
+			m_textBuilder?.Append(numberBuffer[..numberLength]);
+			m_textLength += numberLength;
+#else
+			var numberString = tuple.Number.ToString(CultureInfo.InvariantCulture);
+			m_textBuilder?.Append(numberString);
+			m_textLength += numberString.Length;
+#endif
+		}
 	}
 
 	private void ApplyPrefixes()
@@ -132,5 +149,5 @@ internal sealed class DbConnectorCommandBuilder
 	private int m_textLength;
 	private int m_parameterCount;
 	private List<(string? Prefix, string? Suffix)>? m_brackets;
-	private Dictionary<object, (string ParameterName, string SqlPlaceholder)>? m_parameterNames;
+	private Dictionary<object, (string Prefix, string Name, int Number)>? m_placeholders;
 }
