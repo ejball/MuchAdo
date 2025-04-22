@@ -1,5 +1,4 @@
 using System.Data;
-using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
@@ -553,7 +552,7 @@ internal sealed class DbConnectorTests
 	{
 		using var connector = CreateConnector();
 		connector.Command("create table Items (ItemId integer primary key, Name text null);").Execute();
-		connector.Command("insert into Items (Name) values (@Name);").WithParameter("Name", "1234567890", DbParameterType.Create((DbParameter x) => x.Size = 5)).Execute();
+		connector.Command("insert into Items (Name) values (@Name);").WithParameter("Name", "1234567890", DbParameterType.Create(x => x.Size = 5)).Execute();
 		connector.Command("select Name from Items order by ItemId limit 1;").QuerySingle<string>().Should().Be("12345");
 	}
 

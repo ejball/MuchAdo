@@ -1,15 +1,14 @@
 using System.Data;
+using System.Data.Common;
 
 namespace MuchAdo;
 
 public static class DbParameterType
 {
-	public static IDbParameterType Create<T>(Action<T> action)
-		where T : IDataParameter => new ActionDbParameterType<T>(action);
+	public static IDbParameterType Create(Action<DbParameter> action) => new ActionDbParameterType(action);
 
-	private sealed class ActionDbParameterType<T>(Action<T> action) : IDbParameterType
-		where T : IDataParameter
+	private sealed class ActionDbParameterType(Action<DbParameter> action) : IDbParameterType
 	{
-		public void ApplyToParameter(IDataParameter parameter) => action((T) parameter);
+		public void ApplyToParameter(IDataParameter parameter) => action((DbParameter) parameter);
 	}
 }

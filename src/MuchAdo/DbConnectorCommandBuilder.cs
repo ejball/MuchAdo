@@ -15,9 +15,9 @@ internal sealed class DbConnectorCommandBuilder
 
 	public SqlSyntax Syntax { get; }
 
-	public string GetText() => m_textBuilder?.ToString() ?? "";
-
 	public int TextLength => m_textLength;
+
+	public string GetText() => m_textBuilder?.ToString() ?? "";
 
 	public void AppendText(string text)
 	{
