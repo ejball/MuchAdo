@@ -19,7 +19,7 @@ internal static class DtoMapper
 
 		public override bool Equals(object? obj) => obj is FieldNameSet other && Equals(other);
 
-		public override int GetHashCode() => Names.Aggregate(0, (hash, name) => PortableUtility.CombineHashCodes(hash, StringComparer.OrdinalIgnoreCase.GetHashCode(name)));
+		public override int GetHashCode() => Names.Aggregate(0, (hash, name) => Utility.CombineHashCodes(hash, StringComparer.OrdinalIgnoreCase.GetHashCode(name)));
 	}
 }
 

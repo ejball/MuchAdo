@@ -35,7 +35,7 @@ internal sealed class DbCommandCache
 			{
 				var hash = 0;
 				foreach (var item in items)
-					hash = PortableUtility.CombineHashCodes(hash, Instance.GetHashCode(item));
+					hash = Utility.CombineHashCodes(hash, Instance.GetHashCode(item));
 				return hash;
 			}
 

@@ -1,0 +1,6 @@
+namespace MuchAdo.SqlFormatting;
+
+internal sealed class NameSql(string identifier) : Sql
+{
+	internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendText(builder.Syntax.QuoteName(identifier));
+}

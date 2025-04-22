@@ -16,7 +16,7 @@ public abstract class Sql
 	/// <summary>
 	/// Joins the specified SQL fragments with the AND operator.
 	/// </summary>
-	public static Sql And(params IEnumerable<Sql> sqls) => new BinaryOperatorSql(" and ", " AND ", AsReadOnlyList(sqls));
+	public static Sql And(params IEnumerable<Sql> sqls) => new BinaryOperatorSql(" and ", " AND ", sqls.AsReadOnlyList());
 
 	/// <summary>
 	/// Joins the specified SQL fragments with newlines.
@@ -42,7 +42,7 @@ public abstract class Sql
 	/// Concatenates SQL fragments.
 	/// </summary>
 	public static Sql Concat(params IEnumerable<Sql> sqls) =>
-		new ConcatSql(AsReadOnlyList(sqls ?? throw new ArgumentNullException(nameof(sqls))));
+		new ConcatSql((sqls ?? throw new ArgumentNullException(nameof(sqls))).AsReadOnlyList());
 
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
@@ -76,7 +76,7 @@ public abstract class Sql
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored.</remarks>
 	public static Sql Join(string separator, params IEnumerable<Sql> sqls) =>
-		new JoinSql(separator ?? throw new ArgumentNullException(nameof(separator)), AsReadOnlyList(sqls ?? throw new ArgumentNullException(nameof(sqls))));
+		new JoinSql(separator ?? throw new ArgumentNullException(nameof(separator)), (sqls ?? throw new ArgumentNullException(nameof(sqls))).AsReadOnlyList());
 
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified fragment of a LIKE pattern followed by a trailing <c>%</c>.
@@ -100,7 +100,7 @@ public abstract class Sql
 	/// <summary>
 	/// Joins the specified SQL fragments with the OR operator.
 	/// </summary>
-	public static Sql Or(params IEnumerable<Sql> sqls) => new BinaryOperatorSql(" or ", " OR ", AsReadOnlyList(sqls));
+	public static Sql Or(params IEnumerable<Sql> sqls) => new BinaryOperatorSql(" or ", " OR ", sqls.AsReadOnlyList());
 
 	/// <summary>
 	/// Creates SQL for an ORDER BY clause. If the SQLs are empty, the ORDER BY clause is omitted.
@@ -187,107 +187,5 @@ public abstract class Sql
 	internal abstract void Render(DbConnectorCommandBuilder builder);
 
 	private static JoinSql JoinOrThrow(string separator, IEnumerable<Sql> sqls, string throwMessageIfEmpty) =>
-		new(separator ?? throw new ArgumentNullException(nameof(separator)), AsReadOnlyList(sqls ?? throw new ArgumentNullException(nameof(sqls))), throwMessageIfEmpty);
-
-	private static IReadOnlyList<T> AsReadOnlyList<T>(IEnumerable<T> items) => (items as IReadOnlyList<T>) ?? [.. items];
-
-	private sealed class AddSql(Sql a, Sql b) : Sql
-	{
-		internal override void Render(DbConnectorCommandBuilder builder)
-		{
-			a.Render(builder);
-			b.Render(builder);
-		}
-	}
-
-	private sealed class BinaryOperatorSql(string lowercase, string uppercase, IReadOnlyList<Sql> sqls) : Sql
-	{
-		internal override void Render(DbConnectorCommandBuilder builder)
-		{
-			if (sqls.Count == 0)
-				return;
-
-			if (sqls.Count == 1)
-			{
-				sqls[0].Render(builder);
-				return;
-			}
-
-			var oldTextLength = builder.TextLength;
-			using var outerScope = builder.Bracket("(", ")");
-
-			foreach (var sql in sqls)
-			{
-				using var innerScope = builder.Prefix(builder.TextLength != oldTextLength ? (builder.Syntax.LowercaseKeywords ? lowercase : uppercase) : "");
-				sql.Render(builder);
-			}
-		}
-	}
-
-	private sealed class ConcatSql(IReadOnlyList<Sql> sqls) : Sql
-	{
-		internal override void Render(DbConnectorCommandBuilder builder)
-		{
-			foreach (var sql in sqls)
-				sql.Render(builder);
-		}
-	}
-
-	private sealed class JoinSql(string separator, IReadOnlyList<Sql> sqls, string? throwMessageIfEmpty = null) : Sql
-	{
-		internal override void Render(DbConnectorCommandBuilder builder)
-		{
-			var oldTextLength = builder.TextLength;
-
-			foreach (var sql in sqls)
-			{
-				using var scope = builder.Prefix(builder.TextLength != oldTextLength ? separator : "");
-				sql.Render(builder);
-			}
-
-			if (throwMessageIfEmpty is not null && builder.TextLength == oldTextLength)
-				throw new InvalidOperationException(throwMessageIfEmpty);
-		}
-	}
-
-	private sealed class LikeParamStartsWithSql(string prefix) : Sql
-	{
-		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, builder.Syntax.EscapeLikeFragment(prefix) + "%", type: null);
-	}
-
-	private sealed class NameSql(string identifier) : Sql
-	{
-		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendText(builder.Syntax.QuoteName(identifier));
-	}
-
-	private sealed class OptionalClauseSql(string lowercase, string uppercase, Sql sql) : Sql
-	{
-		internal override void Render(DbConnectorCommandBuilder builder)
-		{
-			using var scope = builder.Prefix(builder.Syntax.LowercaseKeywords ? lowercase : uppercase);
-			sql.Render(builder);
-		}
-	}
-
-	private sealed class ParamSql<T>(T value, IDbParameterType? type) : Sql
-	{
-		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, value, type);
-	}
-
-	private sealed class NamedParamSql<T>(string name, T value, IDbParameterType? type) : Sql, IDbParameterSource
-	{
-		internal override void Render(DbConnectorCommandBuilder builder)
-		{
-			builder.AppendText(builder.Syntax.NamedParameterPrefix);
-			builder.AppendText(name);
-			builder.AddParameters(this);
-		}
-
-		public void SubmitParameters(IDbParameterTarget target) => target.AcceptParameter(name, value, type);
-	}
-
-	private sealed class RawSql(string text) : Sql
-	{
-		internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendText(text);
-	}
+		new(separator ?? throw new ArgumentNullException(nameof(separator)), (sqls ?? throw new ArgumentNullException(nameof(sqls))).AsReadOnlyList(), throwMessageIfEmpty);
 }

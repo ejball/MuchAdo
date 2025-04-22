@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\MuchAdo\PortableUtility.cs" Link="PortableUtility.cs" />
+    <Compile Include="..\MuchAdo\Utility.cs" Link="Utility.cs" />
   </ItemGroup>
 
   <ItemGroup>
