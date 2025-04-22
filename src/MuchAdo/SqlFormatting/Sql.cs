@@ -110,32 +110,22 @@ public abstract class Sql
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified value.
 	/// </summary>
-	public static Sql Param<T>(T value) => Param(value, null);
+	public static Sql Param<T>(T value) => new ParamSql<T>(value);
 
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified value.
 	/// </summary>
-	public static Sql Param<T>(T value, IDbParameterType? type)
-	{
-		if (value is Sql)
-			throw new ArgumentException("Parameters should not be created from Sql instances.", nameof(value));
-		return new ParamSql<T>(value, type);
-	}
+	public static Sql Param<T>(T value, IDbParameterType? type) => new TypedParamSql<T>(value, type);
 
 	/// <summary>
 	/// Creates SQL for a named parameter with the specified value.
 	/// </summary>
-	public static Sql NamedParam<T>(string name, T value) => NamedParam(name, value, null);
+	public static Sql NamedParam<T>(string name, T value) => new NamedParamSql<T>(name, value);
 
 	/// <summary>
 	/// Creates SQL for a named parameter with the specified value.
 	/// </summary>
-	public static Sql NamedParam<T>(string name, T value, IDbParameterType? type)
-	{
-		if (value is Sql)
-			throw new ArgumentException("Parameters should not be created from Sql instances.", nameof(value));
-		return new NamedParamSql<T>(name, value, type);
-	}
+	public static Sql NamedParam<T>(string name, T value, IDbParameterType? type) => new NamedTypedParamSql<T>(name, value, type);
 
 	/// <summary>
 	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values.
