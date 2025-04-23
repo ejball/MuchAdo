@@ -13,12 +13,12 @@ public static class DbParameterSource
 	/// <summary>
 	/// Creates one parameter.
 	/// </summary>
-	public static SingleDbParameter<T> Create<T>(string name, T value) => new(name, value, null);
+	public static SingleDbParameter<T> Create<T>(string name, T value) => new(name, value);
 
 	/// <summary>
 	/// Creates one parameter.
 	/// </summary>
-	public static SingleDbParameter<T> Create<T>(string name, T value, IDbParameterType? type) => new(name, value, type);
+	public static SingleTypedDbParameter<T> Create<T>(string name, T value, IDbParameterType? type) => new(name, value, type);
 
 	/// <summary>
 	/// Creates parameters from a sequence of parameters.
