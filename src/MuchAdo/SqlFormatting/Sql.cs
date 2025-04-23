@@ -64,12 +64,12 @@ public abstract class Sql
 	/// <summary>
 	/// Creates SQL for a GROUP BY clause. If the SQLs are empty, the GROUP BY clause is omitted.
 	/// </summary>
-	public static Sql GroupBy(params IEnumerable<Sql> sqls) => new OptionalClauseSql("group by ", "GROUP BY ", Join(", ", sqls));
+	public static Sql GroupBy(params IEnumerable<Sql> sqls) => new GroupByClauseSql(Join(", ", sqls));
 
 	/// <summary>
 	/// Creates SQL for a HAVING clause. If the SQL is empty, the HAVING clause is omitted.
 	/// </summary>
-	public static Sql Having(Sql sql) => new OptionalClauseSql("having ", "HAVING ", sql);
+	public static Sql Having(Sql sql) => new HavingClauseSql(sql);
 
 	/// <summary>
 	/// Joins SQL fragments with the specified separator.
@@ -105,7 +105,7 @@ public abstract class Sql
 	/// <summary>
 	/// Creates SQL for an ORDER BY clause. If the SQLs are empty, the ORDER BY clause is omitted.
 	/// </summary>
-	public static Sql OrderBy(params IEnumerable<Sql> sqls) => new OptionalClauseSql("order by ", "ORDER BY ", Join(", ", sqls));
+	public static Sql OrderBy(params IEnumerable<Sql> sqls) => new OrderByClauseSql(Join(", ", sqls));
 
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified value.
@@ -156,13 +156,13 @@ public abstract class Sql
 	/// <summary>
 	/// Creates SQL for a WHERE clause. If the SQL is empty, the WHERE clause is omitted.
 	/// </summary>
-	public static Sql Where(Sql sql) => new OptionalClauseSql("where ", "WHERE ", sql);
+	public static Sql Where(Sql sql) => new WhereClauseSql(sql);
 
 	/// <summary>
 	/// Concatenates two SQL fragments.
 	/// </summary>
 	[SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = "Use Concat.")]
-	public static Sql operator +(Sql a, Sql b) => new AddSql(a, b);
+	public static Sql operator +(Sql a, Sql b) => new AddSql(a ?? throw new ArgumentNullException(nameof(a)), b ?? throw new ArgumentNullException(nameof(b)));
 
 	/// <inheritdoc />
 	public override string ToString() => ToString(SqlSyntax.Ansi);

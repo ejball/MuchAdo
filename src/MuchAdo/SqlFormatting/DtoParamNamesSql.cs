@@ -1,5 +1,3 @@
-using MuchAdo;
-
 namespace MuchAdo.SqlFormatting;
 
 public sealed class DtoParamNamesSql<T> : Sql

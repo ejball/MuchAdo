@@ -1,10 +1,14 @@
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class OptionalClauseSql(string lowercase, string uppercase, Sql sql) : Sql
+internal abstract class OptionalClauseSql(Sql sql) : Sql
 {
+	public abstract string Lowercase { get; }
+
+	public abstract string Uppercase { get; }
+
 	internal override void Render(DbConnectorCommandBuilder builder)
 	{
-		using var scope = builder.Prefix(builder.Syntax.LowercaseKeywords ? lowercase : uppercase);
+		using var scope = builder.Prefix(builder.Syntax.LowercaseKeywords ? Lowercase : Uppercase);
 		sql.Render(builder);
 	}
 }
