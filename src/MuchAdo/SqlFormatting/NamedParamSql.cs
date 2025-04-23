@@ -1,13 +1,23 @@
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class NamedParamSql<T>(string name, T value) : Sql, IDbParameterSource
+public sealed class NamedParamSql<T> : Sql, IDbParameterSource
 {
+	public new string Name { get; set; }
+
+	public T Value { get; set; }
+
+	public void SubmitParameters(IDbParameterTarget target) => target.AcceptParameter(Name, Value, type: null);
+
+	internal NamedParamSql(string name, T value)
+	{
+		Name = name;
+		Value = value;
+	}
+
 	internal override void Render(DbConnectorCommandBuilder builder)
 	{
 		builder.AppendText(builder.Syntax.NamedParameterPrefix);
-		builder.AppendText(name);
+		builder.AppendText(Name);
 		builder.SubmitParameters(this);
 	}
-
-	public void SubmitParameters(IDbParameterTarget target) => target.AcceptParameter(name, value, type: null);
 }

@@ -1,6 +1,13 @@
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class ParamSql<T>(T value) : Sql
+public sealed class ParamSql<T> : Sql
 {
-	internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, value);
+	public T Value { get; set; }
+
+	internal ParamSql(T value)
+	{
+		Value = value;
+	}
+
+	internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, Value);
 }

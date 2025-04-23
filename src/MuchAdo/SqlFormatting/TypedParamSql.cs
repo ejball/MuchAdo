@@ -1,6 +1,16 @@
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class TypedParamSql<T>(T value, IDbParameterType? type) : Sql
+public sealed class TypedParamSql<T> : Sql
 {
-	internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, value, type);
+	public T Value { get; set; }
+
+	public IDbParameterType? Type { get; set; }
+
+	internal TypedParamSql(T value, IDbParameterType? type)
+	{
+		Value = value;
+		Type = type;
+	}
+
+	internal override void Render(DbConnectorCommandBuilder builder) => builder.AppendParameterValue(this, Value, Type);
 }
