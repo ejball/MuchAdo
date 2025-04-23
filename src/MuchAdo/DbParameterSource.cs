@@ -58,7 +58,7 @@ public static class DbParameterSource
 	/// Creates parameters from a dictionary.
 	/// </summary>
 	public static IDbParameterSource Create<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		new DictionaryDbParameterSource<T>(parameters);
+		new DictionaryDbParameterSource<T>(parameters ?? throw new ArgumentNullException(nameof(parameters)));
 
 	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO.

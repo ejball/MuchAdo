@@ -16,7 +16,7 @@ public abstract class Sql
 	/// <summary>
 	/// Joins the specified SQL fragments with the AND operator.
 	/// </summary>
-	public static Sql And(params IEnumerable<Sql> sqls) => new BinaryOperatorSql(" and ", " AND ", sqls.AsReadOnlyList());
+	public static Sql And(params IEnumerable<Sql> sqls) => new AndOperatorSql(sqls.AsReadOnlyList());
 
 	/// <summary>
 	/// Joins the specified SQL fragments with newlines.
@@ -100,7 +100,7 @@ public abstract class Sql
 	/// <summary>
 	/// Joins the specified SQL fragments with the OR operator.
 	/// </summary>
-	public static Sql Or(params IEnumerable<Sql> sqls) => new BinaryOperatorSql(" or ", " OR ", sqls.AsReadOnlyList());
+	public static Sql Or(params IEnumerable<Sql> sqls) => new OrOperatorSql(sqls.AsReadOnlyList());
 
 	/// <summary>
 	/// Creates SQL for an ORDER BY clause. If the SQLs are empty, the ORDER BY clause is omitted.
@@ -110,22 +110,22 @@ public abstract class Sql
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified value.
 	/// </summary>
-	public static Sql Param<T>(T value) => new ParamSql<T>(value);
+	public static Sql Param<T>(T value) => value is not Sql ? new ParamSql<T>(value) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
 
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified value.
 	/// </summary>
-	public static Sql Param<T>(T value, IDbParameterType? type) => new TypedParamSql<T>(value, type);
+	public static Sql Param<T>(T value, IDbParameterType? type) => value is not Sql ? new TypedParamSql<T>(value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
 
 	/// <summary>
 	/// Creates SQL for a named parameter with the specified value.
 	/// </summary>
-	public static Sql NamedParam<T>(string name, T value) => new NamedParamSql<T>(name, value);
+	public static Sql NamedParam<T>(string name, T value) => value is not Sql ? new NamedParamSql<T>(name, value) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
 
 	/// <summary>
 	/// Creates SQL for a named parameter with the specified value.
 	/// </summary>
-	public static Sql NamedParam<T>(string name, T value, IDbParameterType? type) => new NamedTypedParamSql<T>(name, value, type);
+	public static Sql NamedParam<T>(string name, T value, IDbParameterType? type) => value is not Sql ? new NamedTypedParamSql<T>(name, value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
 
 	/// <summary>
 	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values.
@@ -178,4 +178,6 @@ public abstract class Sql
 
 	private static JoinSql JoinOrThrow(string separator, IEnumerable<Sql> sqls, string throwMessageIfEmpty) =>
 		new(separator ?? throw new ArgumentNullException(nameof(separator)), (sqls ?? throw new ArgumentNullException(nameof(sqls))).AsReadOnlyList(), throwMessageIfEmpty);
+
+	private const string c_paramIsSqlMessage = "Parameters may not be created from Sql instances.";
 }

@@ -1,7 +1,11 @@
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class BinaryOperatorSql(string lowercase, string uppercase, IReadOnlyList<Sql> sqls) : Sql
+internal abstract class BinaryOperatorSql(IReadOnlyList<Sql> sqls) : Sql
 {
+	public abstract string Lowercase { get; }
+
+	public abstract string Uppercase { get; }
+
 	internal override void Render(DbConnectorCommandBuilder builder)
 	{
 		if (sqls.Count == 0)
@@ -18,7 +22,7 @@ internal sealed class BinaryOperatorSql(string lowercase, string uppercase, IRea
 
 		foreach (var sql in sqls)
 		{
-			using var innerScope = builder.Prefix(builder.TextLength != oldTextLength ? (builder.Syntax.LowercaseKeywords ? lowercase : uppercase) : "");
+			using var innerScope = builder.Prefix(builder.TextLength != oldTextLength ? (builder.Syntax.LowercaseKeywords ? Lowercase : Uppercase) : "");
 			sql.Render(builder);
 		}
 	}

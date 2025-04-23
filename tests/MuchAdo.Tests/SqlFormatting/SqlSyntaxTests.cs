@@ -1,5 +1,9 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
+using FluentAssertions;
+using MuchAdo.SqlFormatting;
 using NUnit.Framework;
+using static FluentAssertions.FluentActions;
 
 namespace MuchAdo.Tests.SqlFormatting;
 
@@ -9,7 +13,6 @@ namespace MuchAdo.Tests.SqlFormatting;
 [SuppressMessage("Usage", "CA2263:Prefer generic overload when type is known", Justification = "Testing.")]
 internal sealed class SqlSyntaxTests
 {
-#if false
 	[Test]
 	public void EmptySql()
 	{
@@ -203,6 +206,27 @@ internal sealed class SqlSyntaxTests
 			text.Should().Be("select * from widgets where id = @ado1 limit @ado2");
 			parameters.Enumerate().Should().Equal(("ado1", id), ("ado2", limit));
 		}
+	}
+
+	[Test]
+	public void FormatRawString()
+	{
+		var sql = Sql.Format($"select * from widgets where id in ({"42":raw})");
+		var (text, parameters) = Render(sql);
+		text.Should().Be("select * from widgets where id in (42)");
+		parameters.Enumerate().Should().BeEmpty();
+	}
+
+	[Test]
+	public void FormatRawInteger()
+	{
+		Invoking(() => Sql.Format($"select * from widgets where id in ({42:raw})")).Should().Throw<NotSupportedException>();
+	}
+
+	[Test]
+	public void FormatUnknown()
+	{
+		Invoking(() => Sql.Format($"select * from widgets where id in ({"42":xyzzy})")).Should().Throw<NotSupportedException>();
 	}
 
 	[Test]
@@ -480,9 +504,10 @@ internal sealed class SqlSyntaxTests
 
 	private static (string Text, IDbParameterSource Parameters) Render(Sql sql, SqlSyntax? syntax = null)
 	{
-		var commandBuilder = new DbConnectorCommandBuilder(syntax ?? SqlSyntax.Default);
+		var target = new ParameterTarget();
+		var commandBuilder = new DbConnectorCommandBuilder(syntax ?? SqlSyntax.Default, true, target);
 		sql.Render(commandBuilder);
-		return (commandBuilder.Text, commandBuilder.Parameters);
+		return (commandBuilder.GetText(), target.Parameters);
 	}
 
 	private sealed class ItemDto
@@ -494,5 +519,11 @@ internal sealed class SqlSyntaxTests
 
 		public bool IsActive { get; set; }
 	}
-#endif
+
+	private sealed class ParameterTarget : IDbParameterTarget
+	{
+		public DbParameterSources Parameters { get; } = new();
+
+		public void AcceptParameter<T>(string name, T value, IDbParameterType? type) => Parameters.Add(DbParameterSource.Create(name, value, type));
+	}
 }

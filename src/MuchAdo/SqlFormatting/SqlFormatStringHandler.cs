@@ -14,6 +14,14 @@ public readonly ref struct SqlFormatStringHandler
 
 	public void AppendFormatted<T>(T t) => m_parts.Add(t as Sql ?? new FormatParamSql<T>(t));
 
+	public void AppendFormatted<T>(T t, string? format)
+	{
+		if (format == "raw" && t is string { } text)
+			m_parts.Add(text);
+		else
+			throw new NotSupportedException($"Format '{format}' not supported for {typeof(T).FullName}.");
+	}
+
 	internal Sql ToSql() => new FormatSql(m_parts);
 
 	private readonly List<object> m_parts;
