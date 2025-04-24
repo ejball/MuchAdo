@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using MuchAdo.SqlFormatting;
 
 namespace MuchAdo.Ellipses;
 
@@ -110,14 +111,14 @@ public static class BulkInsertUtility
 
 			if (batchSqls.Count == maxRowsPerBatch || batchParameters.Count + tupleParts.Length / 2 > maxParametersPerBatch)
 			{
-				yield return (GetBatchSql(), SqlParamSource.Create(batchParameters));
+				yield return (GetBatchSql(), Sql.NamedParams(batchParameters));
 				batchSqls.Clear();
 				batchParameters = null;
 			}
 		}
 
 		if (batchSqls.Count != 0)
-			yield return (GetBatchSql(), SqlParamSource.Create(batchParameters!));
+			yield return (GetBatchSql(), Sql.NamedParams(batchParameters!));
 	}
 
 	private static DbConnectorCommandBatch CreateBatchCommand(DbConnectorCommandBatch commandBatch, string sql, SqlParamSource parameters)

@@ -33,6 +33,10 @@
     <ProjectReference Include="..\..\src\MuchAdo.Ellipses\MuchAdo.Ellipses.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\MuchAdo.Tests\TestUtility.cs" Link="TestUtility.cs" />
+  </ItemGroup>
+
   <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
     <PackageReference Update="Npgsql" VersionOverride="8.0.7" />
     <Reference Include="System.ComponentModel.DataAnnotations" />

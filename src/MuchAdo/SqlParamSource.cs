@@ -11,12 +11,6 @@ public abstract class SqlParamSource : Sql
 	/// </summary>
 	public new static readonly SqlParamSource Empty = new EmptySqlParamSource();
 
-	/// <summary>
-	/// Creates parameters from a dictionary.
-	/// </summary>
-	public static SqlParamSource Create<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		new DictionarySqlParamSource<T>(parameters ?? throw new ArgumentNullException(nameof(parameters)));
-
 #if false
 	/// <summary>
 	/// Creates one parameter.
