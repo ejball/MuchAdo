@@ -19,7 +19,7 @@ internal sealed class SqlSyntaxTests
 		var sql = Sql.Empty;
 		var (text, parameters) = Render(sql);
 		text.Should().Be("");
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 		sql.ToString().Should().Be("");
 	}
 
@@ -30,7 +30,7 @@ internal sealed class SqlSyntaxTests
 		var sql = Sql.Raw(raw);
 		var (text, parameters) = Render(sql);
 		text.Should().Be(raw);
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 		sql.ToString().Should().Be(raw);
 	}
 
@@ -39,7 +39,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Param("xyzzy"));
 		text.Should().Be("@ado1");
-		parameters.EnumerateTuples().Should().Equal(("ado1", "xyzzy"));
+		parameters.EnumeratePairs().Should().Equal(("ado1", "xyzzy"));
 	}
 
 	[Test]
@@ -47,7 +47,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.NamedParam("abccb", "xyzzy"));
 		text.Should().Be("@abccb");
-		parameters.EnumerateTuples().Should().Equal(("abccb", "xyzzy"));
+		parameters.EnumeratePairs().Should().Equal(("abccb", "xyzzy"));
 	}
 
 	[Test]
@@ -62,7 +62,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.List(Sql.Param("one"), Sql.Param("two"), Sql.Raw("null")));
 		text.Should().Be("@ado1, @ado2, null");
-		parameters.EnumerateTuples().Should().Equal(("ado1", "one"), ("ado2", "two"));
+		parameters.EnumeratePairs().Should().Equal(("ado1", "one"), ("ado2", "two"));
 	}
 
 	[Test]
@@ -77,7 +77,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Tuple(Sql.Param("one"), Sql.Param("two"), Sql.Raw("null")));
 		text.Should().Be("(@ado1, @ado2, null)");
-		parameters.EnumerateTuples().Should().Equal(("ado1", "one"), ("ado2", "two"));
+		parameters.EnumeratePairs().Should().Equal(("ado1", "one"), ("ado2", "two"));
 	}
 
 	[Test]
@@ -92,7 +92,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.ParamList(["one", "two", "three"]));
 		text.Should().Be("@ado1, @ado2, @ado3");
-		parameters.EnumerateTuples().Should().Equal(("ado1", "one"), ("ado2", "two"), ("ado3", "three"));
+		parameters.EnumeratePairs().Should().Equal(("ado1", "one"), ("ado2", "two"), ("ado3", "three"));
 	}
 
 	[Test]
@@ -100,7 +100,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.ParamList([1, 2]));
 		text.Should().Be("@ado1, @ado2");
-		parameters.EnumerateTuples().Should().Equal(("ado1", 1), ("ado2", 2));
+		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("ado2", 2));
 	}
 
 	[Test]
@@ -108,7 +108,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.ParamList<object>([1, 2L]));
 		text.Should().Be("@ado1, @ado2");
-		parameters.EnumerateTuples().Should().Equal(("ado1", 1), ("ado2", 2L));
+		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("ado2", 2L));
 	}
 
 	[Test]
@@ -116,7 +116,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.ParamList<object?>(["one", 2, null]));
 		text.Should().Be("@ado1, @ado2, @ado3");
-		parameters.EnumerateTuples().Should().Equal(("ado1", "one"), ("ado2", 2), ("ado3", null));
+		parameters.EnumeratePairs().Should().Equal(("ado1", "one"), ("ado2", 2), ("ado3", null));
 	}
 
 	[Test]
@@ -130,7 +130,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.ParamTuple(["one", "two", "three"]));
 		text.Should().Be("(@ado1, @ado2, @ado3)");
-		parameters.EnumerateTuples().Should().Equal(("ado1", "one"), ("ado2", "two"), ("ado3", "three"));
+		parameters.EnumeratePairs().Should().Equal(("ado1", "one"), ("ado2", "two"), ("ado3", "three"));
 	}
 
 	[Test]
@@ -138,7 +138,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.ParamTuple([1, 2]));
 		text.Should().Be("(@ado1, @ado2)");
-		parameters.EnumerateTuples().Should().Equal(("ado1", 1), ("ado2", 2));
+		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("ado2", 2));
 	}
 
 	[Test]
@@ -146,7 +146,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.ParamTuple<object>([1, 2L]));
 		text.Should().Be("(@ado1, @ado2)");
-		parameters.EnumerateTuples().Should().Equal(("ado1", 1), ("ado2", 2L));
+		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("ado2", 2L));
 	}
 
 	[Test]
@@ -154,7 +154,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.ParamTuple<object?>(["one", 2, null]));
 		text.Should().Be("(@ado1, @ado2, @ado3)");
-		parameters.EnumerateTuples().Should().Equal(("ado1", "one"), ("ado2", 2), ("ado3", null));
+		parameters.EnumeratePairs().Should().Equal(("ado1", "one"), ("ado2", 2), ("ado3", null));
 	}
 
 	[Test]
@@ -168,7 +168,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Format($""));
 		text.Should().Be("");
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[Test]
@@ -176,7 +176,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Format($"select * from widgets"));
 		text.Should().Be("select * from widgets");
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[Test]
@@ -185,7 +185,7 @@ internal sealed class SqlSyntaxTests
 		var sql = Sql.Format($"select * from widgets where id in ({42}, {-42})");
 		var (text, parameters) = Render(sql);
 		text.Should().Be("select * from widgets where id in (@ado1, @ado2)");
-		parameters.EnumerateTuples().Should().Equal(("ado1", 42), ("ado2", -42));
+		parameters.EnumeratePairs().Should().Equal(("ado1", 42), ("ado2", -42));
 		sql.ToString().Should().Be("select * from widgets where id in (@ado1, @ado2)");
 	}
 
@@ -199,12 +199,12 @@ internal sealed class SqlSyntaxTests
 		if (id is null)
 		{
 			text.Should().Be("select * from widgets  limit @ado1");
-			parameters.EnumerateTuples().Should().Equal(("ado1", limit));
+			parameters.EnumeratePairs().Should().Equal(("ado1", limit));
 		}
 		else
 		{
 			text.Should().Be("select * from widgets where id = @ado1 limit @ado2");
-			parameters.EnumerateTuples().Should().Equal(("ado1", id), ("ado2", limit));
+			parameters.EnumeratePairs().Should().Equal(("ado1", id), ("ado2", limit));
 		}
 	}
 
@@ -214,7 +214,7 @@ internal sealed class SqlSyntaxTests
 		var sql = Sql.Format($"select * from widgets where id in ({"42":raw})");
 		var (text, parameters) = Render(sql);
 		text.Should().Be("select * from widgets where id in (42)");
-		parameters.EnumerateTuples().Should().BeEmpty();
+		parameters.EnumeratePairs().Should().BeEmpty();
 	}
 
 	[Test]
@@ -238,7 +238,7 @@ internal sealed class SqlSyntaxTests
 		var descParam = Sql.Param(desc);
 		var (text, parameters) = Render(Sql.Format($"insert into widgets (Id, Name, Desc) values ({id}, {name}, {descParam}) on duplicate key update Name = {name}, Desc = {descParam}"));
 		text.Should().Be("insert into widgets (Id, Name, Desc) values (@ado1, @ado2, @ado3) on duplicate key update Name = @ado4, Desc = @ado3");
-		parameters.EnumerateTuples().Should().Equal(("ado1", id), ("ado2", name), ("ado3", desc), ("ado4", name));
+		parameters.EnumeratePairs().Should().Equal(("ado1", id), ("ado2", name), ("ado3", desc), ("ado4", name));
 	}
 
 	[Test]
@@ -246,7 +246,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Join(", ", Sql.Param(42), Sql.Param(-42)));
 		text.Should().Be("@ado1, @ado2");
-		parameters.EnumerateTuples().Should().Equal(("ado1", 42), ("ado2", -42));
+		parameters.EnumeratePairs().Should().Equal(("ado1", 42), ("ado2", -42));
 	}
 
 	[Test]
@@ -273,7 +273,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Join("/", Sql.Raw("one"), Sql.Empty, Sql.Raw("two")));
 		text.Should().Be("one/two");
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[Test]
@@ -281,7 +281,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Format($"select {1};") + Sql.Format($"select {2};"));
 		text.Should().Be("select @ado1;select @ado2;");
-		parameters.EnumerateTuples().Should().Equal(("ado1", 1), ("ado2", 2));
+		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("ado2", 2));
 	}
 
 	[Test]
@@ -289,7 +289,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Concat(Sql.Format($"select {1};"), Sql.Format($"select {2};")));
 		text.Should().Be("select @ado1;select @ado2;");
-		parameters.EnumerateTuples().Should().Equal(("ado1", 1), ("ado2", 2));
+		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("ado2", 2));
 	}
 
 	[Test]
@@ -297,7 +297,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Concat(Enumerable.Range(1, 2).Select(x => Sql.Format($"select {x};"))));
 		text.Should().Be("select @ado1;select @ado2;");
-		parameters.EnumerateTuples().Should().Equal(("ado1", 1), ("ado2", 2));
+		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("ado2", 2));
 	}
 
 	[Test]
@@ -305,7 +305,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.LikeParamStartsWith("xy_zy"));
 		text.Should().Be("@ado1");
-		parameters.EnumerateTuples().Should().Equal(("ado1", "xy\\_zy%"));
+		parameters.EnumeratePairs().Should().Equal(("ado1", "xy\\_zy%"));
 	}
 
 	[Test]
@@ -332,7 +332,7 @@ internal sealed class SqlSyntaxTests
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = Render(Sql.Format($"insert into Items ({Sql.ColumnNames<ItemDto>()}) values ({Sql.ColumnParams(item)});"), syntax);
 		text.Should().Be("""insert into Items ("ItemId", "DisplayName", "IsActive") values (@ado1, @ado2, @ado3);""");
-		parameters.EnumerateTuples().Should().Equal(("ado1", item.Id), ("ado2", item.DisplayName), ("ado3", item.IsActive));
+		parameters.EnumeratePairs().Should().Equal(("ado1", item.Id), ("ado2", item.DisplayName), ("ado3", item.IsActive));
 	}
 
 	[Test]
@@ -365,7 +365,7 @@ internal sealed class SqlSyntaxTests
 			insert into Items ("DisplayName")
 			values (@ado1);
 			""");
-		parameters.EnumerateTuples().Should().Equal(("ado1", item.DisplayName));
+		parameters.EnumeratePairs().Should().Equal(("ado1", item.DisplayName));
 	}
 
 	[Test]
@@ -382,7 +382,7 @@ internal sealed class SqlSyntaxTests
 			insert into Items (`DisplayName`)
 			values (@DisplayName);
 			""");
-		parameters.EnumerateTuples().Should().BeEmpty();
+		parameters.EnumeratePairs().Should().BeEmpty();
 	}
 
 	[Test]
@@ -428,7 +428,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.And(values.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[TestCase("", "")]
@@ -440,7 +440,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.Or(values.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[Test]
@@ -448,7 +448,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.And(Sql.Raw("one"), Sql.Or(Sql.Raw("two"), Sql.And(Sql.Raw("three")))));
 		text.Should().Be("(one AND (two OR three))");
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[TestCase("", "")]
@@ -459,7 +459,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.Where(Sql.Raw(condition)), syntax);
 		text.Should().Be(sql);
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[TestCase("", "")]
@@ -470,7 +470,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.OrderBy(columns.Split([';'], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[TestCase("", "")]
@@ -481,7 +481,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.GroupBy(columns.Split([';'], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[TestCase("", "")]
@@ -492,7 +492,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.Having(Sql.Raw(condition)), syntax);
 		text.Should().Be(sql);
-		parameters.EnumerateTuples().Should().Equal();
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[Test]

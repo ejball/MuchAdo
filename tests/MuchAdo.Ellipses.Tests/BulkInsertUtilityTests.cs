@@ -90,7 +90,7 @@ internal sealed class BulkInsertUtilityTests
 			SqlParamSource.Empty, [Sql.NamedParamsFromDto(new { foo = 1 })]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("INSERT INTO t (foo)VALUES(@foo_0);");
-		commands[0].Parameters.EnumerateTuples().Should().Equal((Name: "foo_0", Value: 1));
+		commands[0].Parameters.EnumeratePairs().Should().Equal((Name: "foo_0", Value: 1));
 	}
 
 	[Test]
@@ -100,7 +100,7 @@ internal sealed class BulkInsertUtilityTests
 			SqlParamSource.Empty, [Sql.NamedParamsFromDto(new { foo = 1 })]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("VALUES (@foo_0)");
-		commands[0].Parameters.EnumerateTuples().Should().Equal((Name: "foo_0", Value: 1));
+		commands[0].Parameters.EnumeratePairs().Should().Equal((Name: "foo_0", Value: 1));
 	}
 
 	[Test]
@@ -110,7 +110,7 @@ internal sealed class BulkInsertUtilityTests
 			SqlParamSource.Empty, [Sql.NamedParamsFromDto(new { t = 1, u = 2, v = 3 })]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("INSERT INTO t VALUES (@t); INSERT INTO u VALUES (@u_0); INSERT INTO v VALUES (@v);");
-		commands[0].Parameters.EnumerateTuples().Should().Equal((Name: "u_0", Value: 2));
+		commands[0].Parameters.EnumeratePairs().Should().Equal((Name: "u_0", Value: 2));
 	}
 
 	[Test]
@@ -120,7 +120,7 @@ internal sealed class BulkInsertUtilityTests
 			Sql.NamedParamsFromDto(new { a = 1, b = 2 }), [Sql.NamedParamsFromDto(new { c = 3, d = 4 }), Sql.NamedParamsFromDto(new { c = 5, d = 6 })]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("VALUES (@a, @b, @c_0, @d_0), (@a, @b, @c_1, @d_1)");
-		commands[0].Parameters.EnumerateTuples().Should().Equal(
+		commands[0].Parameters.EnumeratePairs().Should().Equal(
 			(Name: "a", Value: 1),
 			(Name: "b", Value: 2),
 			(Name: "c_0", Value: 3),
@@ -144,11 +144,11 @@ internal sealed class BulkInsertUtilityTests
 			SqlParamSource.Empty, Enumerable.Range(0, 8).Select(x => Sql.NamedParamsFromDto(new { foo = x, bar = x * 2 })), settings).ToList();
 		commands.Count.Should().Be(3);
 		commands[0].Sql.Should().Be("VALUES(@foo_0,@bar_0), (@foo_1,@bar_1), (@foo_2,@bar_2)");
-		commands[0].Parameters.EnumerateTuples().Should().Equal((Name: "foo_0", Value: 0), (Name: "bar_0", Value: 0), (Name: "foo_1", Value: 1), (Name: "bar_1", Value: 2), (Name: "foo_2", Value: 2), (Name: "bar_2", Value: 4));
+		commands[0].Parameters.EnumeratePairs().Should().Equal((Name: "foo_0", Value: 0), (Name: "bar_0", Value: 0), (Name: "foo_1", Value: 1), (Name: "bar_1", Value: 2), (Name: "foo_2", Value: 2), (Name: "bar_2", Value: 4));
 		commands[1].Sql.Should().Be("VALUES(@foo_0,@bar_0), (@foo_1,@bar_1), (@foo_2,@bar_2)");
-		commands[1].Parameters.EnumerateTuples().Should().Equal((Name: "foo_0", Value: 3), (Name: "bar_0", Value: 6), (Name: "foo_1", Value: 4), (Name: "bar_1", Value: 8), (Name: "foo_2", Value: 5), (Name: "bar_2", Value: 10));
+		commands[1].Parameters.EnumeratePairs().Should().Equal((Name: "foo_0", Value: 3), (Name: "bar_0", Value: 6), (Name: "foo_1", Value: 4), (Name: "bar_1", Value: 8), (Name: "foo_2", Value: 5), (Name: "bar_2", Value: 10));
 		commands[2].Sql.Should().Be("VALUES(@foo_0,@bar_0), (@foo_1,@bar_1)");
-		commands[2].Parameters.EnumerateTuples().Should().Equal((Name: "foo_0", Value: 6), (Name: "bar_0", Value: 12), (Name: "foo_1", Value: 7), (Name: "bar_1", Value: 14));
+		commands[2].Parameters.EnumeratePairs().Should().Equal((Name: "foo_0", Value: 6), (Name: "bar_0", Value: 12), (Name: "foo_1", Value: 7), (Name: "bar_1", Value: 14));
 	}
 
 	[Test]
@@ -158,7 +158,7 @@ internal sealed class BulkInsertUtilityTests
 			SqlParamSource.Empty, [Sql.NamedParamsFromDto(new { foo = 1 })]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("VaLueS(@foo_0)");
-		commands[0].Parameters.EnumerateTuples().Should().Equal((Name: "foo_0", Value: 1));
+		commands[0].Parameters.EnumeratePairs().Should().Equal((Name: "foo_0", Value: 1));
 	}
 
 	[Test]
@@ -168,7 +168,7 @@ internal sealed class BulkInsertUtilityTests
 			SqlParamSource.Empty, [Sql.NamedParamsFromDto(new { Foo = 1, BAR = 2, baz = 3 })]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("values (@foo_0, @Bar_0, @BAZ_0, @bam)");
-		commands[0].Parameters.EnumerateTuples().Should().Equal((Name: "Foo_0", Value: 1), (Name: "BAR_0", Value: 2), (Name: "baz_0", Value: 3));
+		commands[0].Parameters.EnumeratePairs().Should().Equal((Name: "Foo_0", Value: 1), (Name: "BAR_0", Value: 2), (Name: "baz_0", Value: 3));
 	}
 
 	[Test]
@@ -178,7 +178,7 @@ internal sealed class BulkInsertUtilityTests
 			SqlParamSource.Empty, [new SqlParamSources(Sql.NamedParam("@foo", 1), Sql.NamedParam("@Bar", 2))]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("values (@foo_0, @bar_0)");
-		commands[0].Parameters.EnumerateTuples().Should().Equal((Name: "@foo_0", Value: 1), (Name: "@Bar_0", Value: 2));
+		commands[0].Parameters.EnumeratePairs().Should().Equal((Name: "@foo_0", Value: 1), (Name: "@Bar_0", Value: 2));
 	}
 
 	[Test]
@@ -188,7 +188,7 @@ internal sealed class BulkInsertUtilityTests
 			Sql.NamedParamsFromDto(new { a = 1, aaa = 3 }), [Sql.NamedParamsFromDto(new { aa = 2, aaaa = 4 })]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("values (@a, @aa_0, @aaa, @aaaa_0)");
-		commands[0].Parameters.EnumerateTuples().Should().Equal((Name: "a", Value: 1), (Name: "aaa", Value: 3), (Name: "aa_0", Value: 2), (Name: "aaaa_0", Value: 4));
+		commands[0].Parameters.EnumeratePairs().Should().Equal((Name: "a", Value: 1), (Name: "aaa", Value: 3), (Name: "aa_0", Value: 2), (Name: "aaaa_0", Value: 4));
 	}
 
 	[Test]
@@ -198,7 +198,7 @@ internal sealed class BulkInsertUtilityTests
 			SqlParamSource.Empty, [Sql.NamedParamsFromDto(new { foo = 1 })]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("\r\n\t VALUES\n\t \r(\t \r\n@foo_0 \r\n\t)\t\r\n");
-		commands[0].Parameters.EnumerateTuples().Should().Equal((Name: "foo_0", Value: 1));
+		commands[0].Parameters.EnumeratePairs().Should().Equal((Name: "foo_0", Value: 1));
 	}
 
 	[Test]
@@ -215,7 +215,7 @@ internal sealed class BulkInsertUtilityTests
 			Sql.NamedParamsFromDto(new { e = 1, f = 2 }), [Sql.NamedParamsFromDto(new { g = 3, h = 4 }), Sql.NamedParamsFromDto(new { g = 5, h = 6 })]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("VALUES (@a, @b, @c, @d), (@a, @b, @c, @d)");
-		commands[0].Parameters.EnumerateTuples().Should().Equal(
+		commands[0].Parameters.EnumeratePairs().Should().Equal(
 			(Name: "e", Value: 1),
 			(Name: "f", Value: 2));
 	}
@@ -227,7 +227,7 @@ internal sealed class BulkInsertUtilityTests
 			Sql.NamedParamsFromDto(new { a = 1, b = 2 }), [Sql.NamedParamsFromDto(new { c = 3, d = 4 }), Sql.NamedParamsFromDto(new { c = 5, d = 6 })]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("VALUES (@a + (@d_0 * @c_0) -\r\n\t@d_0), (@a + (@d_1 * @c_1) -\r\n\t@d_1)");
-		commands[0].Parameters.EnumerateTuples().Should().Equal(
+		commands[0].Parameters.EnumeratePairs().Should().Equal(
 			(Name: "a", Value: 1),
 			(Name: "b", Value: 2),
 			(Name: "c_0", Value: 3),
@@ -244,7 +244,7 @@ internal sealed class BulkInsertUtilityTests
 			[Sql.NamedParamsFromDto(new { b = 4 }), SqlParamSource.Empty, Sql.NamedParamsFromDto(new { a = 3 })]).ToList();
 		commands.Count.Should().Be(1);
 		commands[0].Sql.Should().Be("VALUES (@a, @b_0), (@a, @b), (@a_2, @b)");
-		commands[0].Parameters.EnumerateTuples().Should().Equal(
+		commands[0].Parameters.EnumeratePairs().Should().Equal(
 			(Name: "a", Value: 1),
 			(Name: "b", Value: 2),
 			(Name: "b_0", Value: 4),
