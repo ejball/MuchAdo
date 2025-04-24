@@ -1381,6 +1381,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		}
 		catch
 		{
+			// ignored
 		}
 	}
 
@@ -1498,7 +1499,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		if (transaction is not null || wasCached)
 			SetTransactionCore(transaction);
 
-		m_parameterTarget ??= new ParameterTarget(this);
+		m_parameterTarget ??= new ParamTarget(this);
 		m_parameterTarget.Reset(wasCached);
 		for (var commandIndex = 0; commandIndex < commandCount; commandIndex++)
 		{
@@ -1514,14 +1515,14 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		m_parameterTarget.Finish();
 	}
 
-	private string BuildCommand(object textOrSql, bool buildText, ISqlParamTarget? parameterTarget = null)
+	private string BuildCommand(object textOrSql, bool buildText, ISqlParamTarget? paramTarget = null)
 	{
 		if (textOrSql is string text)
 			return text;
 
 		if (textOrSql is SqlSource sql)
 		{
-			var builder = new DbConnectorCommandBuilder(SqlSyntax, buildText, parameterTarget);
+			var builder = new DbConnectorCommandBuilder(SqlSyntax, buildText, paramTarget);
 			sql.Render(builder);
 			return builder.GetText();
 		}
@@ -1624,7 +1625,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 	private static InvalidOperationException CreateTooManyRecordsException() => new("Additional records were found; use 'First' to permit this.");
 
-	private sealed class ParameterTarget(DbConnector connector) : ISqlParamTarget
+	private sealed class ParamTarget(DbConnector connector) : ISqlParamTarget
 	{
 		public void Reset(bool wasCached) => m_cachedIndex = wasCached ? 0 : -1;
 
@@ -1659,7 +1660,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 				if (m_cachedIndex >= Parameters.Count)
 					throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters (missing '{name}').");
 				var dbParameter = Parameters[m_cachedIndex] as IDataParameter;
-				if (dbParameter is null || (dbParameter.ParameterName ?? "") != name)
+				if (dbParameter is null || dbParameter.ParameterName != name)
 					throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters in the same order (found '{dbParameter?.ParameterName}', expected '{name}').");
 
 				connector.SetParameterValueCore(dbParameter, value);
@@ -1681,7 +1682,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	private IDataReader? m_activeReader;
 	private DbCommandCache? m_commandCache;
 	private List<object?>? m_disposables;
-	private ParameterTarget? m_parameterTarget;
+	private ParamTarget? m_parameterTarget;
 	private readonly bool m_noDisposeConnection;
 	private readonly bool m_noCloseConnection;
 	private readonly bool m_cancelUnfinishedCommands;

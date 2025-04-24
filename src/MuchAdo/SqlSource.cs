@@ -19,7 +19,7 @@ public abstract class SqlSource
 
 	public string ToString(SqlSyntax syntax)
 	{
-		var commandBuilder = new DbConnectorCommandBuilder(syntax, buildText: true, parameterTarget: null);
+		var commandBuilder = new DbConnectorCommandBuilder(syntax, buildText: true, paramTarget: null);
 		Render(commandBuilder);
 		return commandBuilder.GetText();
 	}

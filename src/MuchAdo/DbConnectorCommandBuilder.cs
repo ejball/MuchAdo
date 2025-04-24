@@ -6,11 +6,11 @@ namespace MuchAdo;
 
 internal sealed class DbConnectorCommandBuilder
 {
-	public DbConnectorCommandBuilder(SqlSyntax syntax, bool buildText, ISqlParamTarget? parameterTarget)
+	public DbConnectorCommandBuilder(SqlSyntax syntax, bool buildText, ISqlParamTarget? paramTarget)
 	{
 		Syntax = syntax;
 		m_textBuilder = buildText ? new StringBuilder(capacity: 128) : null;
-		m_parameterTarget = parameterTarget;
+		m_paramTarget = paramTarget;
 	}
 
 	public SqlSyntax Syntax { get; }
@@ -31,22 +31,22 @@ internal sealed class DbConnectorCommandBuilder
 
 	public void SubmitParameters(SqlParamSource parameters)
 	{
-		if (m_parameterTarget is not null)
-			parameters.SubmitParameters(m_parameterTarget);
+		if (m_paramTarget is not null)
+			parameters.SubmitParameters(m_paramTarget);
 	}
 
 	public void AppendParameterValue<T>(object? identity, T value, SqlParamType? type = null)
 	{
 		DoAppendParameter(identity, out var needsParameterNamed);
-		if (m_parameterTarget is not null && needsParameterNamed is not null)
-			m_parameterTarget.AcceptParameter(needsParameterNamed, value, type);
+		if (m_paramTarget is not null && needsParameterNamed is not null)
+			m_paramTarget.AcceptParameter(needsParameterNamed, value, type);
 	}
 
 	public void AppendParameterValue<T>(object? identity, T valueSource, DbDtoProperty<T> valueProperty)
 	{
 		DoAppendParameter(identity, out var needsParameterNamed);
-		if (m_parameterTarget is not null && needsParameterNamed is not null)
-			valueProperty.SubmitParameter(m_parameterTarget, needsParameterNamed, valueSource, type: null);
+		if (m_paramTarget is not null && needsParameterNamed is not null)
+			valueProperty.SubmitParameter(m_paramTarget, needsParameterNamed, valueSource, type: null);
 	}
 
 	private void DoAppendParameter(object? identity, out string? needsParameterNamed)
@@ -144,7 +144,7 @@ internal sealed class DbConnectorCommandBuilder
 	}
 
 	private readonly StringBuilder? m_textBuilder;
-	private readonly ISqlParamTarget? m_parameterTarget;
+	private readonly ISqlParamTarget? m_paramTarget;
 	private int m_textLength;
 	private int m_parameterCount;
 	private List<(string? Prefix, string? Suffix)>? m_brackets;

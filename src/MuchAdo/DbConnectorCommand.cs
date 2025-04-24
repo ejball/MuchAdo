@@ -25,12 +25,12 @@ public readonly struct DbConnectorCommand
 	/// <summary>
 	/// Gets the text of the command.
 	/// </summary>
-	public string? Text => m_textOrSql as string;
+	public string? Text => TextOrSql as string;
 
 	/// <summary>
 	/// Gets the parameterized SQL for the command.
 	/// </summary>
-	public SqlSource? Sql => m_textOrSql as SqlSource;
+	public SqlSource? Sql => TextOrSql as SqlSource;
 
 	/// <summary>
 	/// Gets the parameters.
@@ -45,11 +45,9 @@ public readonly struct DbConnectorCommand
 	internal DbConnectorCommand(CommandType type, object textOrSql, SqlParamSource parameters)
 	{
 		Type = type;
-		m_textOrSql = textOrSql;
+		TextOrSql = textOrSql;
 		Parameters = parameters;
 	}
 
-	internal object TextOrSql => m_textOrSql;
-
-	private readonly object m_textOrSql;
+	internal object TextOrSql { get; }
 }

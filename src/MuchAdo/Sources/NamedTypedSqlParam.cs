@@ -1,4 +1,4 @@
-namespace MuchAdo;
+namespace MuchAdo.Sources;
 
 internal sealed class NamedTypedSqlParam<T>(string name, T value, SqlParamType? type) : SqlParam<T>(value)
 {
