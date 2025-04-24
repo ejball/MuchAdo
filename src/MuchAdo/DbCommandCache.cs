@@ -2,14 +2,7 @@ namespace MuchAdo;
 
 internal sealed class DbCommandCache
 {
-	public object? TryRemoveCommand(object key)
-	{
-		if (!m_dictionary.TryGetValue(key, out var command))
-			return null;
-
-		m_dictionary.Remove(key);
-		return command;
-	}
+	public object? TryRemoveCommand(object key) => m_dictionary.Remove(key, out var command) ? command : null;
 
 	public void AddCommand(object key, object command) => m_dictionary.Add(key, command);
 

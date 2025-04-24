@@ -1,3 +1,7 @@
+#if NETSTANDARD2_0
+using System.Diagnostics.CodeAnalysis;
+#endif
+
 namespace MuchAdo;
 
 internal static class Utility
@@ -52,5 +56,14 @@ internal static class Utility
 #if NETSTANDARD2_0
 	public static TValue? GetValueOrDefault<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, TKey key) =>
 		dictionary.TryGetValue(key, out var obj) ? obj : default;
+
+	public static bool Remove<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, [MaybeNullWhen(false)] out TValue value)
+	{
+		if (!dictionary.TryGetValue(key, out value))
+			return false;
+
+		dictionary.Remove(key);
+		return true;
+	}
 #endif
 }

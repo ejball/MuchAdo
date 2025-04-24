@@ -10,63 +10,6 @@ public abstract class SqlParamSource : SqlSource
 	/// </summary>
 	public static readonly SqlParamSource Empty = new EmptySqlParamSource();
 
-#if false
-	/// <summary>
-	/// Creates one parameter.
-	/// </summary>
-	public static NamedSqlParam<T> Create<T>(string name, T value) => new(name, value);
-
-	/// <summary>
-	/// Creates one parameter.
-	/// </summary>
-	public static SingleTypedSqlParam<T> Create<T>(string name, T value, SqlParamType? type) => new(name, value, type);
-
-	/// <summary>
-	/// Creates parameters from a sequence of parameters.
-	/// </summary>
-	public static SqlParamSource Create(params ReadOnlySpan<SqlParamSource> parameters) =>
-		parameters.Length switch
-		{
-			0 => Empty,
-			1 => parameters[0],
-			_ => new SqlParamSources(parameters),
-		};
-
-	/// <summary>
-	/// Creates parameters from a sequence of parameters.
-	/// </summary>
-	public static SqlParamSource Create(IEnumerable<SqlParamSource> parameters) =>
-		new SqlParamSources(parameters ?? throw new ArgumentNullException(nameof(parameters)));
-
-	/// <summary>
-	/// Creates parameters from a sequence of parameters.
-	/// </summary>
-	public static SqlParamSource Create<T>(params ReadOnlySpan<(string Name, T Value)> parameters) =>
-		parameters.Length switch
-		{
-			0 => Empty,
-			1 => Create(parameters[0].Name, parameters[0].Value),
-			_ => new TuplesSqlParamSource<T>(parameters.ToArray()),
-		};
-
-	/// <summary>
-	/// Creates parameters from a sequence of name/value pairs.
-	/// </summary>
-	public static SqlParamSource Create<T>(IEnumerable<(string Name, T Value)> parameters) =>
-		new TuplesSqlParamSource<T>(parameters ?? throw new ArgumentNullException(nameof(parameters)));
-
-	/// <summary>
-	/// Creates a list of parameters from the properties of a DTO.
-	/// </summary>
-	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
-	public static SqlParamSource FromDto<T>(T dto)
-	{
-		if (dto is null)
-			throw new ArgumentNullException(nameof(dto));
-		return new DtoSqlParamSource<T>(dto);
-	}
-#endif
-
 	public IEnumerable<SqlParam<object?>> Enumerate()
 	{
 		var target = new EnumerateParameterTarget();
