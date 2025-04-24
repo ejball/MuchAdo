@@ -19,12 +19,12 @@ internal sealed class SqliteTests
 		connector.CommandFormat($"create table {tableName} (ItemId integer primary key, Name text not null);").Execute();
 
 		var insertSql = Sql.Format($"insert into {tableName} (Name) values (@itemA); insert into {tableName} (Name) values (@itemB);");
-		connector.Command(insertSql).WithParameter("itemA", "one").WithParameter("itemB", "two").Prepare().Cache().Execute().Should().Be(2);
-		connector.Command(insertSql).WithParameter("itemA", "three").WithParameter("itemB", "four").Prepare().Cache().Execute().Should().Be(2);
+		connector.Command(insertSql, Sql.NamedParam("itemA", "one"), Sql.NamedParam("itemB", "two")).Prepare().Cache().Execute().Should().Be(2);
+		connector.Command(insertSql, Sql.NamedParam("itemA", "three"), Sql.NamedParam("itemB", "four")).Prepare().Cache().Execute().Should().Be(2);
 
-		Invoking(() => connector.Command(insertSql).WithParameters(("itemA", "five"), ("itemB", "six"), ("itemC", "seven")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
-		Invoking(() => connector.Command(insertSql).WithParameters(("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
-		Invoking(() => connector.Command(insertSql).WithParameters(("itemB", "six"), ("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql, Sql.NamedParam("itemA", "five"), Sql.NamedParam("itemB", "six"), Sql.NamedParam("itemC", "seven")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql, Sql.NamedParam("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql, Sql.NamedParam("itemB", "six"), Sql.NamedParam("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
 
 		connector.Command(Sql.Format($"select Name from {tableName} order by ItemId;"))
 			.Query<string>().Should().Equal("one", "two", "three", "four");

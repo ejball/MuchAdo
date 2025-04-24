@@ -262,63 +262,6 @@ public sealed class DbConnectorCommandBatch
 		return this;
 	}
 
-	public DbConnectorCommandBatch WithParameter<T>(string key, T value) =>
-		WithParameters(DbParameterSource.Create(key, value));
-
-	public DbConnectorCommandBatch WithParameter<T>(string key, T value, IDbParameterType? type) =>
-		WithParameters(DbParameterSource.Create(key, value, type));
-
-	public DbConnectorCommandBatch WithParameter(IDataParameter parameter) =>
-		WithParameters(DbParameterSource.Create("", parameter));
-
-	public DbConnectorCommandBatch WithParameterValue<T>(T value) =>
-		WithParameters(DbParameterSource.Create("", value));
-
-	public DbConnectorCommandBatch WithParameters(IDbParameterSource source)
-	{
-		ParameterSources.Add(source);
-		return this;
-	}
-
-	public DbConnectorCommandBatch WithParameters(DbParameterSources sources)
-	{
-		ParameterSources.Add(sources);
-		return this;
-	}
-
-	public DbConnectorCommandBatch WithParameters(params ReadOnlySpan<IDbParameterSource> sources)
-	{
-		foreach (var source in sources)
-			ParameterSources.Add(source);
-		return this;
-	}
-
-	public DbConnectorCommandBatch WithParameters(IEnumerable<IDbParameterSource> sources)
-	{
-		foreach (var source in sources)
-			ParameterSources.Add(source);
-		return this;
-	}
-
-	public DbConnectorCommandBatch WithParameters<T>(params ReadOnlySpan<(string Name, T Value)> parameters) =>
-		WithParameters(DbParameterSource.Create(parameters));
-
-	public DbConnectorCommandBatch WithParameters<T>(IEnumerable<(string Name, T Value)> parameters) =>
-		WithParameters(DbParameterSource.Create(parameters));
-
-	public DbConnectorCommandBatch WithParameters<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		WithParameters(DbParameterSource.Create(parameters));
-
-	public DbConnectorCommandBatch WithParametersFromDto<T>(T dto, Func<string, bool>? where = null, Func<string, string>? renamed = null)
-	{
-		var parameters = DbParameterSource.FromDto(dto);
-		if (where is not null)
-			parameters = parameters.Where(where);
-		if (renamed is not null)
-			parameters = parameters.Renamed(renamed);
-		return WithParameters(parameters);
-	}
-
 	/// <summary>
 	/// Caches the command batch.
 	/// </summary>
@@ -344,17 +287,60 @@ public sealed class DbConnectorCommandBatch
 	public DbConnectorCommandBatch Command(string text) => StartNextCommand(CommandType.Text, text);
 
 	/// <summary>
+	/// Creates the next command.
+	/// </summary>
+	/// <param name="text">The text of the command.</param>
+	/// <param name="parameters">The parameters of the command.</param>
+	public DbConnectorCommandBatch Command(string text, SqlParamSource parameters) => StartNextCommand(CommandType.Text, text, parameters);
+
+	/// <summary>
+	/// Creates the next command.
+	/// </summary>
+	/// <param name="text">The text of the command.</param>
+	/// <param name="parameters">The parameters of the command.</param>
+	public DbConnectorCommandBatch Command(string text, params ReadOnlySpan<SqlParamSource> parameters) => StartNextCommand(CommandType.Text, text, new SqlParamSources(parameters));
+
+	/// <summary>
 	/// Creates the next command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
 	public DbConnectorCommandBatch Command(Sql sql) => StartNextCommand(CommandType.Text, sql);
 
 	/// <summary>
+	/// Creates the next command from parameterized SQL.
+	/// </summary>
+	/// <param name="sql">The parameterized SQL.</param>
+	/// <param name="parameters">Additional parameters.</param>
+	public DbConnectorCommandBatch Command(Sql sql, SqlParamSource parameters) => StartNextCommand(CommandType.Text, sql, parameters);
+
+	/// <summary>
+	/// Creates the next command from parameterized SQL.
+	/// </summary>
+	/// <param name="sql">The parameterized SQL.</param>
+	/// <param name="parameters">The parameters of the command.</param>
+	public DbConnectorCommandBatch Command(Sql sql, params ReadOnlySpan<SqlParamSource> parameters) => StartNextCommand(CommandType.Text, sql, new SqlParamSources(parameters));
+
+	/// <summary>
 	/// Creates the next command from a formatted SQL string.
 	/// </summary>
 	/// <param name="sql">The formatted SQL string.</param>
-	/// <remarks>Shorthand for <c>Command(Sql.Format($"..."))</c>.</remarks>
+	/// <remarks>Shorthand for <c>Command(Sql.Format(...))</c>.</remarks>
 	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql) => Command(Sql.Format(sql));
+
+	/// <summary>
+	/// Creates the next command from a formatted SQL string.
+	/// </summary>
+	/// <param name="sql">The formatted SQL string.</param>
+	/// <param name="parameters">Additional parameters.</param>
+	/// <remarks>Shorthand for <c>Command(Sql.Format(...))</c>.</remarks>
+	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql, SqlParamSource parameters) => Command(Sql.Format(sql), parameters);
+
+	/// <summary>
+	/// Creates the next command from a formatted SQL string.
+	/// </summary>
+	/// <param name="sql">The formatted SQL string.</param>
+	/// <param name="parameters">The parameters of the command.</param>
+	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql, params ReadOnlySpan<SqlParamSource> parameters) => Command(Sql.Format(sql), parameters);
 
 	/// <summary>
 	/// Creates the next command to access a stored procedure.
@@ -363,9 +349,23 @@ public sealed class DbConnectorCommandBatch
 	public DbConnectorCommandBatch StoredProcedure(string name) => StartNextCommand(CommandType.StoredProcedure, name);
 
 	/// <summary>
+	/// Creates the next command to access a stored procedure.
+	/// </summary>
+	/// <param name="name">The name of the stored procedure.</param>
+	/// <param name="parameters">The parameters of the stored procedure.</param>
+	public DbConnectorCommandBatch StoredProcedure(string name, SqlParamSource parameters) => StartNextCommand(CommandType.StoredProcedure, name, parameters);
+
+	/// <summary>
+	/// Creates the next command to access a stored procedure.
+	/// </summary>
+	/// <param name="name">The name of the stored procedure.</param>
+	/// <param name="parameters">The parameters of the stored procedure.</param>
+	public DbConnectorCommandBatch StoredProcedure(string name, params ReadOnlySpan<SqlParamSource> parameters) => StartNextCommand(CommandType.StoredProcedure, name, new SqlParamSources(parameters));
+
+	/// <summary>
 	/// Gets the current command.
 	/// </summary>
-	public DbConnectorCommand CurrentCommand => new(m_commandType, m_textOrSql, m_parameterSource ?? m_parameterSources ?? DbParameterSource.Empty);
+	public DbConnectorCommand CurrentCommand => new(m_commandType, m_textOrSql, m_parameterSource ?? SqlParamSource.Empty);
 
 	/// <summary>
 	/// Gets the command at the specified index.
@@ -391,7 +391,6 @@ public sealed class DbConnectorCommandBatch
 			m_commandType = command.Type;
 			m_textOrSql = command.TextOrSql;
 			m_parameterSource = command.Parameters;
-			m_parameterSources = null;
 		}
 		else
 		{
@@ -404,7 +403,7 @@ public sealed class DbConnectorCommandBatch
 		return this;
 	}
 
-	internal DbConnectorCommandBatch(DbConnector connector, CommandType commandType, object textOrSql, IDbParameterSource? parameterSource = null)
+	internal DbConnectorCommandBatch(DbConnector connector, CommandType commandType, object textOrSql, SqlParamSource? parameterSource = null)
 	{
 		Connector = connector;
 		m_commandType = commandType;
@@ -412,21 +411,7 @@ public sealed class DbConnectorCommandBatch
 		m_parameterSource = parameterSource;
 	}
 
-	private DbParameterSources ParameterSources
-	{
-		get
-		{
-			if (m_parameterSources is null)
-			{
-				m_parameterSources = m_parameterSource is not null ? [m_parameterSource] : [];
-				m_parameterSource = null;
-			}
-
-			return m_parameterSources;
-		}
-	}
-
-	private DbConnectorCommandBatch StartNextCommand(CommandType commandType, object textOrSql, IDbParameterSource? parameterSource = null)
+	private DbConnectorCommandBatch StartNextCommand(CommandType commandType, object textOrSql, SqlParamSource? parameterSource = null)
 	{
 		m_batchedCommands ??= [];
 		m_batchedCommands.Add(CurrentCommand);
@@ -434,14 +419,12 @@ public sealed class DbConnectorCommandBatch
 		m_commandType = commandType;
 		m_textOrSql = textOrSql;
 		m_parameterSource = parameterSource;
-		m_parameterSources = null;
 
 		return this;
 	}
 
 	private CommandType m_commandType;
 	private object m_textOrSql;
-	private IDbParameterSource? m_parameterSource;
-	private DbParameterSources? m_parameterSources;
+	private SqlParamSource? m_parameterSource;
 	private List<DbConnectorCommand>? m_batchedCommands;
 }

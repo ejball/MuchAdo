@@ -19,7 +19,7 @@ internal sealed class SqlSyntaxTests
 		var sql = Sql.Empty;
 		var (text, parameters) = Render(sql);
 		text.Should().Be("");
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 		sql.ToString().Should().Be("");
 	}
 
@@ -30,7 +30,7 @@ internal sealed class SqlSyntaxTests
 		var sql = Sql.Raw(raw);
 		var (text, parameters) = Render(sql);
 		text.Should().Be(raw);
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 		sql.ToString().Should().Be(raw);
 	}
 
@@ -168,7 +168,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Format($""));
 		text.Should().Be("");
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 	}
 
 	[Test]
@@ -176,7 +176,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Format($"select * from widgets"));
 		text.Should().Be("select * from widgets");
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 	}
 
 	[Test]
@@ -273,7 +273,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.Join("/", Sql.Raw("one"), Sql.Empty, Sql.Raw("two")));
 		text.Should().Be("one/two");
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 	}
 
 	[Test]
@@ -428,7 +428,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.And(values.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 	}
 
 	[TestCase("", "")]
@@ -440,7 +440,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.Or(values.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 	}
 
 	[Test]
@@ -448,7 +448,7 @@ internal sealed class SqlSyntaxTests
 	{
 		var (text, parameters) = Render(Sql.And(Sql.Raw("one"), Sql.Or(Sql.Raw("two"), Sql.And(Sql.Raw("three")))));
 		text.Should().Be("(one AND (two OR three))");
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 	}
 
 	[TestCase("", "")]
@@ -459,7 +459,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.Where(Sql.Raw(condition)), syntax);
 		text.Should().Be(sql);
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 	}
 
 	[TestCase("", "")]
@@ -470,7 +470,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.OrderBy(columns.Split([';'], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 	}
 
 	[TestCase("", "")]
@@ -481,7 +481,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.GroupBy(columns.Split([';'], StringSplitOptions.RemoveEmptyEntries).Select(Sql.Raw)), syntax);
 		text.Should().Be(sql);
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 	}
 
 	[TestCase("", "")]
@@ -492,7 +492,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = lowercase ? SqlSyntax.Default.WithLowercaseKeywords() : SqlSyntax.Default;
 		var (text, parameters) = Render(Sql.Having(Sql.Raw(condition)), syntax);
 		text.Should().Be(sql);
-		parameters.Count().Should().Be(0);
+		parameters.Enumerate().Should().Equal();
 	}
 
 	[Test]
@@ -502,12 +502,12 @@ internal sealed class SqlSyntaxTests
 		sql.ToString().Should().Be("select *\nfrom Widgets");
 	}
 
-	private static (string Text, IDbParameterSource Parameters) Render(Sql sql, SqlSyntax? syntax = null)
+	private static (string Text, SqlParamSource Parameters) Render(Sql sql, SqlSyntax? syntax = null)
 	{
-		var target = new ParameterTarget();
+		var target = new ParamTarget();
 		var commandBuilder = new DbConnectorCommandBuilder(syntax ?? SqlSyntax.Default, true, target);
 		sql.Render(commandBuilder);
-		return (commandBuilder.GetText(), target.Parameters);
+		return (commandBuilder.GetText(), target.Params);
 	}
 
 	private sealed class ItemDto
@@ -520,10 +520,10 @@ internal sealed class SqlSyntaxTests
 		public bool IsActive { get; set; }
 	}
 
-	private sealed class ParameterTarget : IDbParameterTarget
+	private sealed class ParamTarget : ISqlParamTarget
 	{
-		public DbParameterSources Parameters { get; } = new();
+		public SqlParamSources Params { get; } = new();
 
-		public void AcceptParameter<T>(string name, T value, IDbParameterType? type) => Parameters.Add(DbParameterSource.Create(name, value, type));
+		public void AcceptParameter<T>(string name, T value, SqlParamType? type) => Params.Add(Sql.NamedParam(name, value, type));
 	}
 }

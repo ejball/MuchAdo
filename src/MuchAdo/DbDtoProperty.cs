@@ -35,31 +35,31 @@ internal sealed class DbDtoProperty<T>
 
 	public string? ColumnName { get; }
 
-	public void SubmitParameter(IDbParameterTarget target, string name, T source, IDbParameterType? type) => m_lazySubmitParameter.Value(target, name, source, type);
+	public void SubmitParameter(ISqlParamTarget target, string name, T source, SqlParamType? type) => m_lazySubmitParameter.Value(target, name, source, type);
 
-	private Action<IDbParameterTarget, string, T, IDbParameterType?> CreateSubmitParameter()
+	private Action<ISqlParamTarget, string, T, SqlParamType?> CreateSubmitParameter()
 	{
-		var targetParam = Expression.Parameter(typeof(IDbParameterTarget), "target");
+		var targetParam = Expression.Parameter(typeof(ISqlParamTarget), "target");
 		var nameParam = Expression.Parameter(typeof(string), "name");
 		var sourceParam = Expression.Parameter(typeof(T), "source");
-		var typeParam = Expression.Parameter(typeof(IDbParameterType), "type");
+		var typeParam = Expression.Parameter(typeof(SqlParamType), "type");
 
 		var getValue = MemberInfo is PropertyInfo propertyInfo
 			? Expression.Property(sourceParam, propertyInfo)
 			: Expression.Field(sourceParam, (FieldInfo) MemberInfo);
 
-		var acceptMethod = typeof(IDbParameterTarget)
+		var acceptMethod = typeof(ISqlParamTarget)
 			.GetMethods(BindingFlags.Public | BindingFlags.Instance)
 			.Single(x => x is { Name: "AcceptParameter", IsGenericMethod: true } &&
 				x.GetGenericArguments().Length == 1 &&
 				x.GetParameters() is [var p0, var p1, var p2] &&
 				p0.ParameterType == typeof(string) &&
 				p1.ParameterType.IsGenericParameter &&
-				p2.ParameterType == typeof(IDbParameterType)).MakeGenericMethod(ValueType);
+				p2.ParameterType == typeof(SqlParamType)).MakeGenericMethod(ValueType);
 
-		return Expression.Lambda<Action<IDbParameterTarget, string, T, IDbParameterType?>>(
+		return Expression.Lambda<Action<ISqlParamTarget, string, T, SqlParamType?>>(
 			Expression.Call(targetParam, acceptMethod, nameParam, getValue, typeParam), targetParam, nameParam, sourceParam, typeParam).Compile();
 	}
 
-	private readonly Lazy<Action<IDbParameterTarget, string, T, IDbParameterType?>> m_lazySubmitParameter;
+	private readonly Lazy<Action<ISqlParamTarget, string, T, SqlParamType?>> m_lazySubmitParameter;
 }

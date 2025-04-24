@@ -1,16 +1,17 @@
-#if false
 using System.Collections.ObjectModel;
 using MuchAdo.Parameters;
+using MuchAdo.SqlFormatting;
 
 namespace MuchAdo;
 
-public static class DbParameterSource
+public abstract class SqlParamSource : Sql
 {
 	/// <summary>
 	/// An empty list of parameters.
 	/// </summary>
-	public static readonly SqlParamSource Empty = new EmptySqlParamSource();
+	public new static readonly SqlParamSource Empty = new EmptySqlParamSource();
 
+#if false
 	/// <summary>
 	/// Creates one parameter.
 	/// </summary>
@@ -71,25 +72,12 @@ public static class DbParameterSource
 			throw new ArgumentNullException(nameof(dto));
 		return new DtoSqlParamSource<T>(dto);
 	}
+#endif
 
-	public static int Count(this SqlParamSource source)
-	{
-		var target = new CountParameterTarget();
-		source.Submit(target);
-		return target.Count;
-	}
-
-	private sealed class CountParameterTarget : ISqlParamTarget
-	{
-		public int Count { get; private set; }
-
-		public void AcceptParameter<T>(string name, T value, SqlParamType? type) => Count++;
-	}
-
-	public static IEnumerable<(string Name, object? Value)> Enumerate(this SqlParamSource source)
+	public IEnumerable<(string Name, object? Value)> Enumerate()
 	{
 		var target = new EnumerateParameterTarget();
-		source.Submit(target);
+		Submit(target);
 		return target.Items;
 	}
 
@@ -103,28 +91,34 @@ public static class DbParameterSource
 	/// <summary>
 	/// Filters the parameters by name.
 	/// </summary>
-	public static SqlParamSource Where(this SqlParamSource source, Func<string, bool> nameMatches)
+	public SqlParamSource Where(Func<string, bool> nameMatches)
 	{
 		if (nameMatches is null)
 			throw new ArgumentNullException(nameof(nameMatches));
-		return new FilteredSqlParamSource(source, nameMatches);
+		return new FilteredSqlParamSource(this, nameMatches);
 	}
 
 	/// <summary>
 	/// Transforms the parameter names using the specified function.
 	/// </summary>
-	public static SqlParamSource Renamed(this SqlParamSource source, Func<string, string> transform)
+	public SqlParamSource Renamed(Func<string, string> transform)
 	{
 		if (transform is null)
 			throw new ArgumentNullException(nameof(transform));
-		return new RenamedSqlParamSource(source, transform);
+		return new RenamedSqlParamSource(this, transform);
+	}
+
+	internal abstract void Submit(ISqlParamTarget target);
+
+	internal override void Render(DbConnectorCommandBuilder builder)
+	{
+		throw new NotSupportedException("SqlParamSource cannot be rendered directly.");
 	}
 
 	private sealed class EmptySqlParamSource : SqlParamSource
 	{
-		public void SubmitParameters(ISqlParamTarget target)
+		internal override void Submit(ISqlParamTarget target)
 		{
 		}
 	}
 }
-#endif

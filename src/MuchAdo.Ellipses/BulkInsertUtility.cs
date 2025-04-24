@@ -10,7 +10,7 @@ public static class BulkInsertUtility
 	/// <summary>
 	/// Efficiently inserts multiple rows, in batches as necessary.
 	/// </summary>
-	public static int BulkInsert(this DbConnectorCommandBatch commandBatch, IEnumerable<IDbParameterSource> rows, BulkInsertSettings? settings = null)
+	public static int BulkInsert(this DbConnectorCommandBatch commandBatch, IEnumerable<SqlParamSource> rows, BulkInsertSettings? settings = null)
 	{
 		if (commandBatch.CommandCount != 1)
 			throw new ArgumentException("Command batch must contain exactly one command.", nameof(commandBatch));
@@ -27,13 +27,13 @@ public static class BulkInsertUtility
 	/// <summary>
 	/// Efficiently inserts multiple rows, in batches as necessary.
 	/// </summary>
-	public static Task<int> BulkInsertAsync(this DbConnectorCommandBatch commandBatch, IEnumerable<IDbParameterSource> rows, CancellationToken cancellationToken) =>
+	public static Task<int> BulkInsertAsync(this DbConnectorCommandBatch commandBatch, IEnumerable<SqlParamSource> rows, CancellationToken cancellationToken) =>
 		commandBatch.BulkInsertAsync(rows, settings: null, cancellationToken);
 
 	/// <summary>
 	/// Efficiently inserts multiple rows, in batches as necessary.
 	/// </summary>
-	public static async Task<int> BulkInsertAsync(this DbConnectorCommandBatch commandBatch, IEnumerable<IDbParameterSource> rows, BulkInsertSettings? settings = null, CancellationToken cancellationToken = default)
+	public static async Task<int> BulkInsertAsync(this DbConnectorCommandBatch commandBatch, IEnumerable<SqlParamSource> rows, BulkInsertSettings? settings = null, CancellationToken cancellationToken = default)
 	{
 		if (commandBatch.CommandCount != 1)
 			throw new ArgumentException("Command batch must contain exactly one command.", nameof(commandBatch));
@@ -48,7 +48,7 @@ public static class BulkInsertUtility
 	}
 
 	// internal for unit testing
-	internal static IEnumerable<(string Sql, IDbParameterSource Parameters)> GetBulkInsertCommands(string sql, IDbParameterSource commonParameters, IEnumerable<IDbParameterSource> rows, BulkInsertSettings? settings = null)
+	internal static IEnumerable<(string Sql, SqlParamSource Parameters)> GetBulkInsertCommands(string sql, SqlParamSource commonParameters, IEnumerable<SqlParamSource> rows, BulkInsertSettings? settings = null)
 	{
 		if (rows is null)
 			throw new ArgumentNullException(nameof(rows));
@@ -120,7 +120,7 @@ public static class BulkInsertUtility
 			yield return (GetBatchSql(), DbParameterSource.Create(batchParameters!));
 	}
 
-	private static DbConnectorCommandBatch CreateBatchCommand(DbConnectorCommandBatch commandBatch, string sql, IDbParameterSource parameters)
+	private static DbConnectorCommandBatch CreateBatchCommand(DbConnectorCommandBatch commandBatch, string sql, SqlParamSource parameters)
 	{
 		var batchCommand = commandBatch.Connector.Command(sql).WithParameters(parameters);
 		if (commandBatch.IsCached)

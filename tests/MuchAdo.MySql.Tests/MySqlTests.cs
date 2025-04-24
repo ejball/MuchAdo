@@ -22,12 +22,12 @@ internal sealed class MySqlTests
 		connector.Command(Sql.Format($"create table {tableName} (Id int not null auto_increment primary key, Name varchar(100) not null);")).Execute();
 
 		var insertSql = Sql.Format($"insert into {tableName} (Name) values (@itemA); insert into {tableName} (Name) values (@itemB);");
-		connector.Command(insertSql).WithParameters(("itemA", "one"), ("itemB", "two")).Prepare().Cache().Execute().Should().Be(2);
-		connector.Command(insertSql).WithParameters(("itemA", "three"), ("itemB", "four")).Prepare().Cache().Execute().Should().Be(2);
+		connector.Command(insertSql, Sql.NamedParam("itemA", "one"), Sql.NamedParam("itemB", "two")).Prepare().Cache().Execute().Should().Be(2);
+		connector.Command(insertSql, Sql.NamedParam("itemA", "three"), Sql.NamedParam("itemB", "four")).Prepare().Cache().Execute().Should().Be(2);
 
-		Invoking(() => connector.Command(insertSql).WithParameters(("itemA", "five"), ("itemB", "six"), ("itemC", "seven")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
-		Invoking(() => connector.Command(insertSql).WithParameters(("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
-		Invoking(() => connector.Command(insertSql).WithParameters(("itemB", "six"), ("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql, Sql.NamedParam("itemA", "five"), Sql.NamedParam("itemB", "six"), Sql.NamedParam("itemC", "seven")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql, Sql.NamedParam("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql, Sql.NamedParam("itemB", "six"), Sql.NamedParam("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
 
 		connector.Command(Sql.Format($"select Name from {tableName} order by Id;")).Query<string>().Should().Equal("one", "two", "three", "four");
 	}
@@ -67,7 +67,7 @@ internal sealed class MySqlTests
 		connector.Command(Sql.Format($"create procedure {Sql.Name(sprocName)} (inout Value int) begin set Value = Value * Value; end;")).Execute();
 
 		var param = new MySqlParameter { DbType = DbType.Int32, Direction = ParameterDirection.InputOutput, Value = 11 };
-		connector.StoredProcedure(sprocName).WithParameter("Value", param).Execute();
+		connector.StoredProcedure(sprocName, Sql.NamedParam("Value", param)).Execute();
 		param.Value.Should().Be(121);
 	}
 
@@ -80,7 +80,7 @@ internal sealed class MySqlTests
 		connector.Command(Sql.Format($"drop procedure if exists {Sql.Name(sprocName)};")).Execute();
 		connector.Command(Sql.Format($"create procedure {Sql.Name(sprocName)} (in Value int) begin select Value, Value * Value; end;")).Execute();
 
-		connector.StoredProcedure(sprocName).WithParameter("Value", 11).QuerySingle<(int, long)>().Should().Be((11, 121));
+		connector.StoredProcedure(sprocName, Sql.NamedParam("Value", 11)).QuerySingle<(int, long)>().Should().Be((11, 121));
 	}
 
 	[Test]
@@ -96,9 +96,7 @@ internal sealed class MySqlTests
 		connector
 			.CommandFormat($"drop table if exists {tableName};")
 			.CommandFormat($"create table {tableName} (Id int not null auto_increment primary key, Name varchar(100) not null);")
-			.CommandFormat($"insert into {tableName} (Name) values (?), (?);")
-			.WithParameter("", "one")
-			.WithParameter("", "two")
+			.CommandFormat($"insert into {tableName} (Name) values (?), (?);", Sql.Param("one"), Sql.Param("two"))
 			.Execute();
 
 		var three = Sql.Param("three");
@@ -119,8 +117,7 @@ internal sealed class MySqlTests
 		connector
 			.CommandFormat($"drop table if exists {tableName}")
 			.CommandFormat($"create table {tableName} (Id int not null auto_increment primary key, Value decimal(10, 2) not null)")
-			.CommandFormat($"insert into {tableName} (Value) values (?)")
-			.WithParameterValue(6.875m)
+			.CommandFormat($"insert into {tableName} (Value) values (?)", Sql.Param(6.875m))
 			.Execute();
 
 		connector.Command(Sql.Format($"select Value from {tableName}")).QuerySingle<decimal>().Should().Be(6.88m);

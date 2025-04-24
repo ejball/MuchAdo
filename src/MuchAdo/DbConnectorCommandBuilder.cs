@@ -7,7 +7,7 @@ namespace MuchAdo;
 
 internal sealed class DbConnectorCommandBuilder
 {
-	public DbConnectorCommandBuilder(SqlSyntax syntax, bool buildText, IDbParameterTarget? parameterTarget)
+	public DbConnectorCommandBuilder(SqlSyntax syntax, bool buildText, ISqlParamTarget? parameterTarget)
 	{
 		Syntax = syntax;
 		m_textBuilder = buildText ? new StringBuilder(capacity: 128) : null;
@@ -30,13 +30,13 @@ internal sealed class DbConnectorCommandBuilder
 		}
 	}
 
-	public void SubmitParameters(IDbParameterSource parameters)
+	public void SubmitParameters(SqlParamSource parameters)
 	{
 		if (m_parameterTarget is not null)
-			parameters.SubmitParameters(m_parameterTarget);
+			parameters.Submit(m_parameterTarget);
 	}
 
-	public void AppendParameterValue<T>(object? identity, T value, IDbParameterType? type = null)
+	public void AppendParameterValue<T>(object? identity, T value, SqlParamType? type = null)
 	{
 		DoAppendParameter(identity, out var needsParameterNamed);
 		if (m_parameterTarget is not null && needsParameterNamed is not null)
@@ -145,7 +145,7 @@ internal sealed class DbConnectorCommandBuilder
 	}
 
 	private readonly StringBuilder? m_textBuilder;
-	private readonly IDbParameterTarget? m_parameterTarget;
+	private readonly ISqlParamTarget? m_parameterTarget;
 	private int m_textLength;
 	private int m_parameterCount;
 	private List<(string? Prefix, string? Suffix)>? m_brackets;

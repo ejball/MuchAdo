@@ -85,10 +85,38 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	public DbConnectorCommandBatch Command(string text) => new(this, CommandType.Text, text ?? throw new ArgumentNullException(nameof(text)));
 
 	/// <summary>
+	/// Creates a new command.
+	/// </summary>
+	/// <param name="text">The text of the command.</param>
+	/// <param name="parameters">The parameters of the command.</param>
+	public DbConnectorCommandBatch Command(string text, SqlParamSource parameters) => new(this, CommandType.Text, text ?? throw new ArgumentNullException(nameof(text)), parameters);
+
+	/// <summary>
+	/// Creates a new command.
+	/// </summary>
+	/// <param name="text">The text of the command.</param>
+	/// <param name="parameters">The parameters of the command.</param>
+	public DbConnectorCommandBatch Command(string text, params ReadOnlySpan<SqlParamSource> parameters) => new(this, CommandType.Text, text ?? throw new ArgumentNullException(nameof(text)), new SqlParamSources(parameters));
+
+	/// <summary>
 	/// Creates a new command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
 	public DbConnectorCommandBatch Command(Sql sql) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)));
+
+	/// <summary>
+	/// Creates a new command from parameterized SQL.
+	/// </summary>
+	/// <param name="sql">The parameterized SQL.</param>
+	/// <param name="parameters">The parameters of the command.</param>
+	public DbConnectorCommandBatch Command(Sql sql, SqlParamSource parameters) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)), parameters);
+
+	/// <summary>
+	/// Creates a new command from parameterized SQL.
+	/// </summary>
+	/// <param name="sql">The parameterized SQL.</param>
+	/// <param name="parameters">The parameters of the command.</param>
+	public DbConnectorCommandBatch Command(Sql sql, params ReadOnlySpan<SqlParamSource> parameters) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)), new SqlParamSources(parameters));
 
 	/// <summary>
 	/// Creates a new command from a formatted SQL string.
@@ -98,10 +126,38 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql) => Command(Sql.Format(sql));
 
 	/// <summary>
+	/// Creates a new command from a formatted SQL string.
+	/// </summary>
+	/// <param name="sql">The formatted SQL string.</param>
+	/// <param name="parameters">The parameters of the command.</param>
+	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql, SqlParamSource parameters) => Command(Sql.Format(sql), parameters);
+
+	/// <summary>
+	/// Creates a new command from a formatted SQL string.
+	/// </summary>
+	/// <param name="sql">The formatted SQL string.</param>
+	/// <param name="parameters">The parameters of the command.</param>
+	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql, params ReadOnlySpan<SqlParamSource> parameters) => Command(Sql.Format(sql), parameters);
+
+	/// <summary>
 	/// Creates a new command to access a stored procedure.
 	/// </summary>
 	/// <param name="name">The name of the stored procedure.</param>
 	public DbConnectorCommandBatch StoredProcedure(string name) => new(this, CommandType.StoredProcedure, name ?? throw new ArgumentNullException(nameof(name)));
+
+	/// <summary>
+	/// Creates a new command to access a stored procedure.
+	/// </summary>
+	/// <param name="name">The name of the stored procedure.</param>
+	/// <param name="parameters">The parameters of the stored procedure.</param>
+	public DbConnectorCommandBatch StoredProcedure(string name, SqlParamSource parameters) => new(this, CommandType.StoredProcedure, name ?? throw new ArgumentNullException(nameof(name)), parameters);
+
+	/// <summary>
+	/// Creates a new command to access a stored procedure.
+	/// </summary>
+	/// <param name="name">The name of the stored procedure.</param>
+	/// <param name="parameters">The parameters of the stored procedure.</param>
+	public DbConnectorCommandBatch StoredProcedure(string name, params ReadOnlySpan<SqlParamSource> parameters) => new(this, CommandType.StoredProcedure, name ?? throw new ArgumentNullException(nameof(name)), new SqlParamSources(parameters));
 
 	/// <summary>
 	/// Begins a transaction.
@@ -1454,12 +1510,12 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			if (!wasCached)
 				SetCommandTextCore(commandIndex, commandText);
 
-			command.Parameters.SubmitParameters(m_parameterTarget);
+			command.Parameters.Submit(m_parameterTarget);
 		}
 		m_parameterTarget.Finish();
 	}
 
-	private string BuildCommand(object textOrSql, bool buildText, IDbParameterTarget? parameterTarget = null)
+	private string BuildCommand(object textOrSql, bool buildText, ISqlParamTarget? parameterTarget = null)
 	{
 		if (textOrSql is string text)
 			return text;
@@ -1569,7 +1625,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 	private static InvalidOperationException CreateTooManyRecordsException() => new("Additional records were found; use 'First' to permit this.");
 
-	private sealed class ParameterTarget(DbConnector connector) : IDbParameterTarget
+	private sealed class ParameterTarget(DbConnector connector) : ISqlParamTarget
 	{
 		public void Reset(bool wasCached) => m_cachedIndex = wasCached ? 0 : -1;
 
@@ -1581,7 +1637,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 				throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters (expected {Parameters.Count}, actual {m_cachedIndex}).");
 		}
 
-		public void AcceptParameter<T>(string name, T value, IDbParameterType? type)
+		public void AcceptParameter<T>(string name, T value, SqlParamType? type)
 		{
 			if (m_cachedIndex == -1)
 			{
@@ -1595,7 +1651,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 					dbParameter = connector.CreateParameterCore(name, value);
 				}
 
-				type?.ApplyToParameter(dbParameter);
+				type?.Apply(dbParameter);
 
 				Parameters.Add(dbParameter);
 			}
@@ -1609,7 +1665,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 				connector.SetParameterValueCore(dbParameter, value);
 
-				type?.ApplyToParameter(dbParameter);
+				type?.Apply(dbParameter);
 
 				m_cachedIndex++;
 			}

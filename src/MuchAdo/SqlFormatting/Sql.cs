@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using MuchAdo.Parameters;
 
 namespace MuchAdo.SqlFormatting;
 
@@ -47,14 +48,14 @@ public abstract class Sql
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
 	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameterSource"/>.</remarks>
 	public static DtoParamNamesSql<T> DtoParamNames<T>() => new();
 
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
 	/// </summary>
-	/// <remarks>The parameter names are the same as those used by the <c>Dto</c> methods of <see cref="DbParameterSource"/>.</remarks>
 	public static DtoParamNamesSql<T> DtoParamNames<T>(T dto) => new();
+
+	public static SqlParamSource NamedDtoParams<T>(T dto) => new DtoSqlParamSource<T>(dto);
 
 	/// <summary>
 	/// Creates SQL from a formatted string.
@@ -110,22 +111,22 @@ public abstract class Sql
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified value.
 	/// </summary>
-	public static ParamSql<T> Param<T>(T value) => value is not Sql ? new ParamSql<T>(value) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
+	public static SqlParam<T> Param<T>(T value) => value is not Sql ? new SqlParam<T>(value) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
 
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified value.
 	/// </summary>
-	public static TypedParamSql<T> Param<T>(T value, IDbParameterType? type) => value is not Sql ? new TypedParamSql<T>(value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
+	public static SqlParam<T> Param<T>(T value, SqlParamType? type) => value is not Sql ? new TypedSqlParam<T>(value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
 
 	/// <summary>
 	/// Creates SQL for a named parameter with the specified value.
 	/// </summary>
-	public static NamedParamSql<T> NamedParam<T>(string name, T value) => value is not Sql ? new NamedParamSql<T>(name, value) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
+	public static SqlParam<T> NamedParam<T>(string name, T value) => value is not Sql ? new NamedSqlParam<T>(name, value) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
 
 	/// <summary>
 	/// Creates SQL for a named parameter with the specified value.
 	/// </summary>
-	public static NamedTypedParamSql<T> NamedParam<T>(string name, T value, IDbParameterType? type) => value is not Sql ? new NamedTypedParamSql<T>(name, value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
+	public static SqlParam<T> NamedParam<T>(string name, T value, SqlParamType? type) => value is not Sql ? new NamedTypedSqlParam<T>(name, value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
 
 	/// <summary>
 	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values.

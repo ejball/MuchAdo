@@ -1,3 +1,4 @@
+#if false
 using FluentAssertions;
 using NUnit.Framework;
 using static FluentAssertions.FluentActions;
@@ -106,7 +107,7 @@ internal sealed class DbParameterSourceTests
 	[Test]
 	public void Nulls()
 	{
-		Invoking(() => DbParameterSource.Create(default(IEnumerable<IDbParameterSource>)!)).Should().Throw<ArgumentNullException>();
+		Invoking(() => DbParameterSource.Create(default(IEnumerable<SqlParamSource>)!)).Should().Throw<ArgumentNullException>();
 		Invoking(() => DbParameterSource.Create(default((string, string)[])!)).Should().Throw<ArgumentNullException>();
 		Invoking(() => DbParameterSource.Create(default(Dictionary<string, string>)!)).Should().Throw<ArgumentNullException>();
 		Invoking(() => DbParameterSource.FromDto(default(object?))).Should().Throw<ArgumentNullException>();
@@ -117,3 +118,4 @@ internal sealed class DbParameterSourceTests
 		public int Two { get; } = 2;
 	}
 }
+#endif
