@@ -55,8 +55,6 @@ public abstract class Sql
 	/// </summary>
 	public static DtoParamNamesSql<T> DtoParamNames<T>(T dto) => new();
 
-	public static SqlParamSource NamedParamsFromDto<T>(T dto) => new NamedFromDtoSqlParamSource<T>(dto);
-
 	/// <summary>
 	/// Creates SQL from a formatted string.
 	/// </summary>
@@ -133,6 +131,8 @@ public abstract class Sql
 	/// </summary>
 	public static SqlParamSource NamedParams<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
 		new DictionarySqlParamSource<T>(parameters ?? throw new ArgumentNullException(nameof(parameters)));
+
+	public static SqlParamSource NamedParamsFromDto<T>(T dto) => new NamedFromDtoSqlParamSource<T>(dto);
 
 	/// <summary>
 	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values.

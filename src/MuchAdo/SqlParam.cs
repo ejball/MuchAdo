@@ -8,6 +8,10 @@ public class SqlParam<T> : SqlParamSource
 
 	public virtual SqlParamType? Type => null;
 
+#pragma warning disable CA2225
+	public static implicit operator SqlParam<T>((string Name, T Value) tuple) => NamedParam(tuple.Name, tuple.Value);
+#pragma warning restore CA2225
+
 	internal override void SubmitParameters(ISqlParamTarget target) => target.AcceptParameter(Name, Value, Type);
 
 	internal override void Render(DbConnectorCommandBuilder builder)
