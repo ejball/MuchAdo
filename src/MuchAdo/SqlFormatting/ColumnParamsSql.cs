@@ -1,6 +1,6 @@
 namespace MuchAdo.SqlFormatting;
 
-public sealed class ColumnParamsSql<T> : Sql
+public sealed class ColumnParamsSql<T> : SqlSource
 {
 	public ColumnParamsSql<T> Where(Func<string, bool> filter) =>
 		new(m_dto, m_filter is null ? filter : x => m_filter(x) && filter(x));

@@ -12,7 +12,7 @@ public readonly ref struct SqlFormatStringHandler
 
 	public void AppendLiteral(string s) => m_parts.Add(s);
 
-	public void AppendFormatted<T>(T t) => m_parts.Add(t as Sql ?? new FormatParamSql<T>(t));
+	public void AppendFormatted<T>(T t) => m_parts.Add(t as SqlSource ?? new FormatParamSql<T>(t));
 
 	public void AppendFormatted<T>(T t, string? format)
 	{
@@ -22,7 +22,7 @@ public readonly ref struct SqlFormatStringHandler
 			throw new NotSupportedException($"Format '{format}' not supported for {typeof(T).FullName}.");
 	}
 
-	internal Sql ToSql() => new FormatSql(m_parts);
+	internal SqlSource ToSql() => new FormatSql(m_parts);
 
 	private readonly List<object> m_parts;
 }

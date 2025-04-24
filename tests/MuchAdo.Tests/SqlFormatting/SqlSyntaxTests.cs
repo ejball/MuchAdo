@@ -256,9 +256,9 @@ internal sealed class SqlSyntaxTests
 		Render(CreateSql(null, 24)).Text.Should().Be("select * from widgets where height = @ado1;");
 		Render(CreateSql(null, null)).Text.Should().Be("select * from widgets ;");
 
-		Sql CreateSql(int? width, int? height)
+		SqlSource CreateSql(int? width, int? height)
 		{
-			var sqls = new List<Sql>();
+			var sqls = new List<SqlSource>();
 			if (width is not null)
 				sqls.Add(Sql.Format($"width = {width}"));
 			if (height is not null)
@@ -502,7 +502,7 @@ internal sealed class SqlSyntaxTests
 		sql.ToString().Should().Be("select *\nfrom Widgets");
 	}
 
-	private static (string Text, SqlParamSource Parameters) Render(Sql sql, SqlSyntax? syntax = null)
+	private static (string Text, SqlParamSource Parameters) Render(SqlSource sql, SqlSyntax? syntax = null)
 	{
 		var target = new ParamTarget();
 		var commandBuilder = new DbConnectorCommandBuilder(syntax ?? SqlSyntax.Default, true, target);

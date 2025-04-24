@@ -1,6 +1,6 @@
 namespace MuchAdo.SqlFormatting;
 
-internal abstract class BinaryOperatorSql(IReadOnlyList<Sql> sqls) : Sql
+internal abstract class BinaryOperatorSql(IReadOnlyList<SqlSource> sqls) : SqlSource
 {
 	public abstract string Lowercase { get; }
 

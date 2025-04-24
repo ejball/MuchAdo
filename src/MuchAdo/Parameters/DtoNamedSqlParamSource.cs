@@ -1,6 +1,6 @@
 namespace MuchAdo.Parameters;
 
-internal sealed class NamedFromDtoSqlParamSource<T>(T dto) : SqlParamSource
+internal sealed class DtoNamedSqlParamSource<T>(T dto) : SqlParamSource
 {
 	internal override void SubmitParameters(ISqlParamTarget target)
 	{

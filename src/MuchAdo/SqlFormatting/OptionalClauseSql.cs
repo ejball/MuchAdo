@@ -1,6 +1,6 @@
 namespace MuchAdo.SqlFormatting;
 
-internal abstract class OptionalClauseSql(Sql sql) : Sql
+internal abstract class OptionalClauseSql(SqlSource sql) : SqlSource
 {
 	public abstract string Lowercase { get; }
 

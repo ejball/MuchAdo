@@ -1,6 +1,6 @@
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class AndOperatorSql(IReadOnlyList<Sql> sqls) : BinaryOperatorSql(sqls)
+internal sealed class AndOperatorSql(IReadOnlyList<SqlSource> sqls) : BinaryOperatorSql(sqls)
 {
 	public override string Lowercase => " and ";
 

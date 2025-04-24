@@ -13,7 +13,7 @@ public readonly struct DbConnectorCommand
 	{
 	}
 
-	public DbConnectorCommand(CommandType type, Sql sql, SqlParamSource parameters)
+	public DbConnectorCommand(CommandType type, SqlSource sql, SqlParamSource parameters)
 		: this(type, (object) sql, parameters)
 	{
 	}
@@ -31,7 +31,7 @@ public readonly struct DbConnectorCommand
 	/// <summary>
 	/// Gets the parameterized SQL for the command.
 	/// </summary>
-	public Sql? Sql => m_textOrSql as Sql;
+	public SqlSource? Sql => m_textOrSql as SqlSource;
 
 	/// <summary>
 	/// Gets the parameters.

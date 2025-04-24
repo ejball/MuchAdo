@@ -1,6 +1,6 @@
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class ConcatSql(IReadOnlyList<Sql> sqls) : Sql
+internal sealed class ConcatSql(IReadOnlyList<SqlSource> sqls) : SqlSource
 {
 	internal override void Render(DbConnectorCommandBuilder builder)
 	{

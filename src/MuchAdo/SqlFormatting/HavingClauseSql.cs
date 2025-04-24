@@ -1,6 +1,6 @@
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class HavingClauseSql(Sql sql) : OptionalClauseSql(sql)
+internal sealed class HavingClauseSql(SqlSource sql) : OptionalClauseSql(sql)
 {
 	public override string Lowercase => "having ";
 

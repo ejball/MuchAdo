@@ -59,38 +59,38 @@ internal sealed class SqlParamSourceTests
 	[Test]
 	public void CreateFromDto()
 	{
-		var parameters = new SqlParamSources(Sql.NamedParamsFromDto(new { one = 1 }), Sql.NamedParamsFromDto(new HasTwo()));
+		var parameters = new SqlParamSources(Sql.DtoNamedParams(new { one = 1 }), Sql.DtoNamedParams(new HasTwo()));
 		parameters.EnumeratePairs().Should().Equal(("one", 1), ("Two", 2));
 	}
 
 	[Test]
 	public void CreateFromDtoRenamed()
 	{
-		var parameters = Sql.NamedParamsFromDto(new { one = 1, Two = 2 }).Renamed(x => $"it's {x}");
+		var parameters = Sql.DtoNamedParams(new { one = 1, Two = 2 }).Renamed(x => $"it's {x}");
 		parameters.EnumeratePairs().Should().Equal(("it's one", 1), ("it's Two", 2));
 	}
 
 	[Test]
 	public void CreateFromDtoWhere()
 	{
-		var parameters = Sql.NamedParamsFromDto(new { one = 1, two = 2, three = 3 }).Where(x => x[0] == 't');
+		var parameters = Sql.DtoNamedParams(new { one = 1, two = 2, three = 3 }).Where(x => x[0] == 't');
 		parameters.EnumeratePairs().Should().Equal(("two", 2), ("three", 3));
 	}
 
 	[Test]
 	public void CreateFromDtoWhereRenamedWhereRenamed()
 	{
-		var parameters = Sql.NamedParamsFromDto(new { one = 1, Two = 2, three = 3 }).Where(x => x[0] == 't').Renamed(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Renamed(x => x.ToLowerInvariant());
+		var parameters = Sql.DtoNamedParams(new { one = 1, Two = 2, three = 3 }).Where(x => x[0] == 't').Renamed(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Renamed(x => x.ToLowerInvariant());
 		parameters.EnumeratePairs().Should().Equal(("three", 3));
 
-		parameters = Sql.NamedParamsFromDto(new { one = 10, Two = 20, three = 30 }).Where(x => x[0] == 't').Renamed(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Renamed(x => x.ToLowerInvariant());
+		parameters = Sql.DtoNamedParams(new { one = 10, Two = 20, three = 30 }).Where(x => x[0] == 't').Renamed(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Renamed(x => x.ToLowerInvariant());
 		parameters.EnumeratePairs().Should().Equal(("three", 30));
 	}
 
 	[Test]
 	public void CreateFromDtoNamedWhereNamedWhere()
 	{
-		var parameters = Sql.NamedParamsFromDto(new { one = 1, Two = 2, three = 3 }).Renamed(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Renamed(x => x.ToLowerInvariant()).Where(x => x[0] == 't');
+		var parameters = Sql.DtoNamedParams(new { one = 1, Two = 2, three = 3 }).Renamed(x => x.ToUpperInvariant()).Where(x => x[0] == 'T').Renamed(x => x.ToLowerInvariant()).Where(x => x[0] == 't');
 		parameters.EnumeratePairs().Should().Equal(("two", 2), ("three", 3));
 	}
 

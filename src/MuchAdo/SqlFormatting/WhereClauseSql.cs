@@ -1,6 +1,6 @@
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class WhereClauseSql(Sql sql) : OptionalClauseSql(sql)
+internal sealed class WhereClauseSql(SqlSource sql) : OptionalClauseSql(sql)
 {
 	public override string Lowercase => "where ";
 

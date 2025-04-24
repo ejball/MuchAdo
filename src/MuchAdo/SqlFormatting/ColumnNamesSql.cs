@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace MuchAdo.SqlFormatting;
 
 [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1402:File may only contain a single type", Justification = "Same name.")]
-public sealed class ColumnNamesSql<T> : Sql
+public sealed class ColumnNamesSql<T> : SqlSource
 {
 	public ColumnNamesSql<T> From(string tableName) =>
 		new(tableName, m_filterName);

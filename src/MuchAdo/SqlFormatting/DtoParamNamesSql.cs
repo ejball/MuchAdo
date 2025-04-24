@@ -1,6 +1,6 @@
 namespace MuchAdo.SqlFormatting;
 
-public sealed class DtoParamNamesSql<T> : Sql
+public sealed class DtoParamNamesSql<T> : SqlSource
 {
 	public DtoParamNamesSql<T> Where(Func<string, bool> nameMatches)
 	{

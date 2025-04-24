@@ -1,6 +1,6 @@
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class JoinSql(string separator, IReadOnlyList<Sql> sqls, string? throwMessageIfEmpty = null) : Sql
+internal sealed class JoinSql(string separator, IReadOnlyList<SqlSource> sqls, string? throwMessageIfEmpty = null) : SqlSource
 {
 	internal override void Render(DbConnectorCommandBuilder builder)
 	{

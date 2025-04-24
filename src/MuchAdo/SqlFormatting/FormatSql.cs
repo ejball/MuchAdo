@@ -1,6 +1,6 @@
 namespace MuchAdo.SqlFormatting;
 
-internal sealed class FormatSql(List<object> parts) : Sql
+internal sealed class FormatSql(List<object> parts) : SqlSource
 {
 	internal override void Render(DbConnectorCommandBuilder builder)
 	{
@@ -9,7 +9,7 @@ internal sealed class FormatSql(List<object> parts) : Sql
 			if (part is string text)
 				builder.AppendText(text);
 			else
-				((Sql) part).Render(builder);
+				((SqlSource) part).Render(builder);
 		}
 	}
 }

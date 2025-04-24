@@ -190,7 +190,7 @@ internal sealed class DbConnectorTests
 		const string item1 = "one";
 		const string item2 = "two";
 		connector.Command("create table Items (ItemId integer primary key, Name text not null);").Execute().Should().Be(0);
-		connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);", Sql.NamedParamsFromDto(new { item1, item2 })).Execute().Should().Be(2);
+		connector.Command("insert into Items (Name) values (@item1); insert into Items (Name) values (@item2);", Sql.DtoNamedParams(new { item1, item2 })).Execute().Should().Be(2);
 		connector.Command("select Name from Items order by ItemId;").Query<string>().Should().Equal(item1, item2);
 	}
 

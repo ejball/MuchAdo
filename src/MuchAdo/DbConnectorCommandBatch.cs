@@ -304,21 +304,21 @@ public sealed class DbConnectorCommandBatch
 	/// Creates the next command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
-	public DbConnectorCommandBatch Command(Sql sql) => StartNextCommand(CommandType.Text, sql);
+	public DbConnectorCommandBatch Command(SqlSource sql) => StartNextCommand(CommandType.Text, sql);
 
 	/// <summary>
 	/// Creates the next command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
 	/// <param name="parameters">Additional parameters.</param>
-	public DbConnectorCommandBatch Command(Sql sql, SqlParamSource parameters) => StartNextCommand(CommandType.Text, sql, parameters);
+	public DbConnectorCommandBatch Command(SqlSource sql, SqlParamSource parameters) => StartNextCommand(CommandType.Text, sql, parameters);
 
 	/// <summary>
 	/// Creates the next command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
 	/// <param name="parameters">The parameters of the command.</param>
-	public DbConnectorCommandBatch Command(Sql sql, params ReadOnlySpan<SqlParamSource> parameters) => StartNextCommand(CommandType.Text, sql, new SqlParamSources(parameters));
+	public DbConnectorCommandBatch Command(SqlSource sql, params ReadOnlySpan<SqlParamSource> parameters) => StartNextCommand(CommandType.Text, sql, new SqlParamSources(parameters));
 
 	/// <summary>
 	/// Creates the next command from a formatted SQL string.

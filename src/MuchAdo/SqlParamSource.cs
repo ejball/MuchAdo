@@ -4,12 +4,12 @@ using MuchAdo.SqlFormatting;
 
 namespace MuchAdo;
 
-public abstract class SqlParamSource : Sql
+public abstract class SqlParamSource : SqlSource
 {
 	/// <summary>
 	/// An empty list of parameters.
 	/// </summary>
-	public new static readonly SqlParamSource Empty = new EmptySqlParamSource();
+	public static readonly SqlParamSource Empty = new EmptySqlParamSource();
 
 #if false
 	/// <summary>
@@ -82,9 +82,9 @@ public abstract class SqlParamSource : Sql
 		public void AcceptParameter<T>(string name, T value, SqlParamType? type)
 		{
 			if (string.IsNullOrEmpty(name))
-				Items.Add(type is null ? Param<object?>(value) : Param<object?>(value, type));
+				Items.Add(type is null ? Sql.Param<object?>(value) : Sql.Param<object?>(value, type));
 			else
-				Items.Add(type is null ? NamedParam<object?>(name, value) : NamedParam<object?>(name, value, type));
+				Items.Add(type is null ? Sql.NamedParam<object?>(name, value) : Sql.NamedParam<object?>(name, value, type));
 		}
 	}
 

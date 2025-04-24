@@ -102,21 +102,21 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// Creates a new command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
-	public DbConnectorCommandBatch Command(Sql sql) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)));
+	public DbConnectorCommandBatch Command(SqlSource sql) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)));
 
 	/// <summary>
 	/// Creates a new command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
 	/// <param name="parameters">The parameters of the command.</param>
-	public DbConnectorCommandBatch Command(Sql sql, SqlParamSource parameters) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)), parameters);
+	public DbConnectorCommandBatch Command(SqlSource sql, SqlParamSource parameters) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)), parameters);
 
 	/// <summary>
 	/// Creates a new command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
 	/// <param name="parameters">The parameters of the command.</param>
-	public DbConnectorCommandBatch Command(Sql sql, params ReadOnlySpan<SqlParamSource> parameters) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)), new SqlParamSources(parameters));
+	public DbConnectorCommandBatch Command(SqlSource sql, params ReadOnlySpan<SqlParamSource> parameters) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)), new SqlParamSources(parameters));
 
 	/// <summary>
 	/// Creates a new command from a formatted SQL string.
@@ -1520,7 +1520,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		if (textOrSql is string text)
 			return text;
 
-		if (textOrSql is Sql sql)
+		if (textOrSql is SqlSource sql)
 		{
 			var builder = new DbConnectorCommandBuilder(SqlSyntax, buildText, parameterTarget);
 			sql.Render(builder);
