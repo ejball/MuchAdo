@@ -1,6 +1,6 @@
 namespace MuchAdo.Sources;
 
-internal sealed class OrOperatorSqlSource(IReadOnlyList<SqlSource> sqls) : BinaryOperatorSqlSource(sqls)
+internal sealed class OrOperatorSqlSource(IEnumerable<SqlSource> sqls) : BinaryOperatorSqlSource(sqls)
 {
 	public override string Lowercase => " or ";
 

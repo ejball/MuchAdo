@@ -6,8 +6,6 @@ namespace MuchAdo;
 
 internal static class Utility
 {
-	public static IReadOnlyList<T> AsReadOnlyList<T>(this IEnumerable<T> items) => (items as IReadOnlyList<T>) ?? [.. items];
-
 	public static bool ContainsOrdinal(this string str, char value)
 	{
 #if !NETSTANDARD2_0

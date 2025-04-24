@@ -17,7 +17,7 @@ public static class Sql
 	/// <summary>
 	/// Joins the specified SQL fragments with the AND operator.
 	/// </summary>
-	public static SqlSource And(params IEnumerable<SqlSource> sqls) => new AndOperatorSqlSource(sqls.AsReadOnlyList());
+	public static SqlSource And(params IEnumerable<SqlSource> sqls) => new AndOperatorSqlSource(sqls);
 
 	/// <summary>
 	/// Joins the specified SQL fragments with newlines.
@@ -43,7 +43,7 @@ public static class Sql
 	/// Concatenates SQL fragments.
 	/// </summary>
 	public static SqlSource Concat(params IEnumerable<SqlSource> sqls) =>
-		new ConcatSqlSource((sqls ?? throw new ArgumentNullException(nameof(sqls))).AsReadOnlyList());
+		new ConcatSqlSource(sqls ?? throw new ArgumentNullException(nameof(sqls)));
 
 	/// <summary>
 	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
@@ -75,7 +75,7 @@ public static class Sql
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored.</remarks>
 	public static SqlSource Join(string separator, params IEnumerable<SqlSource> sqls) =>
-		new JoinSqlSource(separator ?? throw new ArgumentNullException(nameof(separator)), (sqls ?? throw new ArgumentNullException(nameof(sqls))).AsReadOnlyList());
+		new JoinSqlSource(separator ?? throw new ArgumentNullException(nameof(separator)), sqls ?? throw new ArgumentNullException(nameof(sqls)));
 
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified fragment of a LIKE pattern followed by a trailing <c>%</c>.
@@ -99,7 +99,7 @@ public static class Sql
 	/// <summary>
 	/// Joins the specified SQL fragments with the OR operator.
 	/// </summary>
-	public static SqlSource Or(params IEnumerable<SqlSource> sqls) => new OrOperatorSqlSource(sqls.AsReadOnlyList());
+	public static SqlSource Or(params IEnumerable<SqlSource> sqls) => new OrOperatorSqlSource(sqls);
 
 	/// <summary>
 	/// Creates SQL for an ORDER BY clause. If the SQLs are empty, the ORDER BY clause is omitted.
@@ -166,7 +166,7 @@ public static class Sql
 	public static SqlSource Where(SqlSource sql) => new WhereClauseSqlSource(sql);
 
 	private static JoinSqlSource JoinOrThrow(string separator, IEnumerable<SqlSource> sqls, string throwMessageIfEmpty) =>
-		new(separator ?? throw new ArgumentNullException(nameof(separator)), (sqls ?? throw new ArgumentNullException(nameof(sqls))).AsReadOnlyList(), throwMessageIfEmpty);
+		new(separator ?? throw new ArgumentNullException(nameof(separator)), sqls ?? throw new ArgumentNullException(nameof(sqls)), throwMessageIfEmpty);
 
 	private const string c_paramIsSqlMessage = "Parameters may not be created from Sql instances.";
 }

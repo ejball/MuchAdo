@@ -1,6 +1,6 @@
 namespace MuchAdo.Sources;
 
-internal sealed class JoinSqlSource(string separator, IReadOnlyList<SqlSource> sqls, string? throwMessageIfEmpty = null) : SqlSource
+internal sealed class JoinSqlSource(string separator, IEnumerable<SqlSource> sqls, string? throwMessageIfEmpty = null) : SqlSource
 {
 	internal override void Render(DbConnectorCommandBuilder builder)
 	{

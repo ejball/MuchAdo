@@ -1,6 +1,6 @@
 namespace MuchAdo.Sources;
 
-internal abstract class BinaryOperatorSqlSource(IReadOnlyList<SqlSource> sqls) : SqlSource
+internal abstract class BinaryOperatorSqlSource(IEnumerable<SqlSource> sqls) : SqlSource
 {
 	public abstract string Lowercase { get; }
 
@@ -8,22 +8,31 @@ internal abstract class BinaryOperatorSqlSource(IReadOnlyList<SqlSource> sqls) :
 
 	internal override void Render(DbConnectorCommandBuilder builder)
 	{
-		if (sqls.Count == 0)
-			return;
-
-		if (sqls.Count == 1)
-		{
-			sqls[0].Render(builder);
-			return;
-		}
-
 		var oldTextLength = builder.TextLength;
-		using var outerScope = builder.Bracket("(", ")");
+		SqlSource? firstSql = null;
+		DbConnectorBracketScope? outerScope = null;
 
 		foreach (var sql in sqls)
 		{
+			if (firstSql is null)
+			{
+				firstSql = sql;
+				continue;
+			}
+
+			if (outerScope is null)
+			{
+				outerScope = builder.Bracket("(", ")");
+				firstSql.Render(builder);
+			}
+
 			using var innerScope = builder.Prefix(builder.TextLength != oldTextLength ? builder.Syntax.LowercaseKeywords ? Lowercase : Uppercase : "");
 			sql.Render(builder);
 		}
+
+		if (outerScope is { } scope)
+			scope.Dispose();
+		else if (firstSql is not null)
+			firstSql.Render(builder);
 	}
 }
