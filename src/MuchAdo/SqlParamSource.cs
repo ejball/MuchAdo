@@ -11,6 +11,12 @@ public abstract class SqlParamSource : Sql
 	/// </summary>
 	public new static readonly SqlParamSource Empty = new EmptySqlParamSource();
 
+	/// <summary>
+	/// Creates parameters from a dictionary.
+	/// </summary>
+	public static SqlParamSource Create<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
+		new DictionarySqlParamSource<T>(parameters ?? throw new ArgumentNullException(nameof(parameters)));
+
 #if false
 	/// <summary>
 	/// Creates one parameter.
@@ -57,12 +63,6 @@ public abstract class SqlParamSource : Sql
 		new TuplesSqlParamSource<T>(parameters ?? throw new ArgumentNullException(nameof(parameters)));
 
 	/// <summary>
-	/// Creates parameters from a dictionary.
-	/// </summary>
-	public static SqlParamSource Create<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		new DictionarySqlParamSource<T>(parameters ?? throw new ArgumentNullException(nameof(parameters)));
-
-	/// <summary>
 	/// Creates a list of parameters from the properties of a DTO.
 	/// </summary>
 	/// <remarks>The name of each parameter is the name of the corresponding DTO property.</remarks>
@@ -74,7 +74,7 @@ public abstract class SqlParamSource : Sql
 	}
 #endif
 
-	public IEnumerable<(string Name, object? Value)> Enumerate()
+	public IEnumerable<SqlParam<object?>> Enumerate()
 	{
 		var target = new EnumerateParameterTarget();
 		Submit(target);
@@ -83,9 +83,15 @@ public abstract class SqlParamSource : Sql
 
 	private sealed class EnumerateParameterTarget : ISqlParamTarget
 	{
-		public Collection<(string Name, object? Value)> Items { get; } = new();
+		public Collection<SqlParam<object?>> Items { get; } = new();
 
-		public void AcceptParameter<T>(string name, T value, SqlParamType? type) => Items.Add((name, value));
+		public void AcceptParameter<T>(string name, T value, SqlParamType? type)
+		{
+			if (string.IsNullOrEmpty(name))
+				Items.Add(type is null ? Param<object?>(value) : Param<object?>(value, type));
+			else
+				Items.Add(type is null ? NamedParam<object?>(name, value) : NamedParam<object?>(name, value, type));
+		}
 	}
 
 	/// <summary>

@@ -94,14 +94,14 @@ public static class BulkInsertUtility
 			var recordIndex = batchSqls.Count;
 			Array.Copy(tupleParts, rowParts, tupleParts.Length);
 
-			foreach (var (rowParameterName, rowParameterValue) in rowParameters.Enumerate())
+			foreach (var rowParameter in rowParameters.Enumerate())
 			{
-				if (tupleParameters.TryGetValue(rowParameterName, out var indices))
+				if (tupleParameters.TryGetValue(rowParameter.Name, out var indices))
 				{
 					foreach (var index in indices)
 					{
 						rowParts[index] = $"{rowParts[index]}_{recordIndex}";
-						batchParameters[$"{rowParameterName}_{recordIndex}"] = rowParameterValue;
+						batchParameters[$"{rowParameter.Name}_{recordIndex}"] = rowParameter.Value;
 					}
 				}
 			}
@@ -110,19 +110,19 @@ public static class BulkInsertUtility
 
 			if (batchSqls.Count == maxRowsPerBatch || batchParameters.Count + tupleParts.Length / 2 > maxParametersPerBatch)
 			{
-				yield return (GetBatchSql(), DbParameterSource.Create(batchParameters));
+				yield return (GetBatchSql(), SqlParamSource.Create(batchParameters));
 				batchSqls.Clear();
 				batchParameters = null;
 			}
 		}
 
 		if (batchSqls.Count != 0)
-			yield return (GetBatchSql(), DbParameterSource.Create(batchParameters!));
+			yield return (GetBatchSql(), SqlParamSource.Create(batchParameters!));
 	}
 
 	private static DbConnectorCommandBatch CreateBatchCommand(DbConnectorCommandBatch commandBatch, string sql, SqlParamSource parameters)
 	{
-		var batchCommand = commandBatch.Connector.Command(sql).WithParameters(parameters);
+		var batchCommand = commandBatch.Connector.Command(sql, parameters);
 		if (commandBatch.IsCached)
 			batchCommand = batchCommand.Cache();
 		if (commandBatch.IsPrepared)

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Text.RegularExpressions;
+using MuchAdo.SqlFormatting;
 
 namespace MuchAdo.Ellipses;
 
@@ -18,16 +19,16 @@ public static class EllipsesExtensions
 
 			if (commandText.ContainsOrdinal("..."))
 			{
-				var nameValuePairs = parameters.Enumerate().ToList();
+				var parameterList = parameters.Enumerate().ToList();
 				var parameterIndex = 0;
-				while (parameterIndex < nameValuePairs.Count)
+				while (parameterIndex < parameterList.Count)
 				{
 					// look for @name... in SQL for collection parameters
-					var (name, value) = nameValuePairs[parameterIndex];
-					if (!string.IsNullOrEmpty(name) && value is not string && value is not byte[] && value is IEnumerable list)
+					var parameter = parameterList[parameterIndex];
+					if (!string.IsNullOrEmpty(parameter.Name) && parameter.Value is not string && parameter.Value is not byte[] && parameter.Value is IEnumerable list)
 					{
 						var itemCount = -1;
-						var replacements = new List<(string Name, object? Value)>();
+						var replacements = new List<SqlParam<object?>>();
 
 						string Replacement(Match match)
 						{
@@ -37,24 +38,24 @@ public static class EllipsesExtensions
 
 								foreach (var item in list)
 								{
-									replacements.Add(($"{name}_{itemCount}", item));
+									replacements.Add(Sql.NamedParam<object?>($"{parameter.Name}_{itemCount}", item, parameter.Type));
 									itemCount++;
 								}
 
 								if (itemCount == 0)
-									throw new InvalidOperationException($"Collection parameter '{name}' must not be empty.");
+									throw new InvalidOperationException($"Collection parameter '{parameter.Name}' must not be empty.");
 							}
 
 							return string.Join(",", Enumerable.Range(0, itemCount).Select(x => $"{match.Groups[1]}_{x}"));
 						}
 
-						commandText = Regex.Replace(commandText, $@"([?@:]{Regex.Escape(name)})\.\.\.",
+						commandText = Regex.Replace(commandText, $@"([?@:]{Regex.Escape(parameter.Name)})\.\.\.",
 							Replacement, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
 						// if special syntax wasn't found, leave the parameter alone, for databases that support collections directly
 						if (itemCount != -1)
 						{
-							parameters = DbParameterSource.Create(nameValuePairs.Take(parameterIndex).Concat(replacements).Concat(nameValuePairs.Skip(parameterIndex + 1)));
+							parameters = new SqlParamSources(parameterList.Take(parameterIndex).Concat(replacements).Concat(parameterList.Skip(parameterIndex + 1)));
 							parameterIndex += replacements.Count;
 						}
 						else
