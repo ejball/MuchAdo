@@ -2,7 +2,7 @@ namespace MuchAdo.Parameters;
 
 internal sealed class DictionarySqlParamSource<T>(IEnumerable<KeyValuePair<string, T>> pairs) : SqlParamSource
 {
-	internal override void Submit(ISqlParamTarget target)
+	internal override void SubmitParameters(ISqlParamTarget target)
 	{
 		foreach (var pair in pairs)
 			target.AcceptParameter(pair.Key, pair.Value, type: null);

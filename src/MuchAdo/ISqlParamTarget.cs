@@ -1,6 +1,6 @@
 namespace MuchAdo;
 
-public interface ISqlParamTarget
+internal interface ISqlParamTarget
 {
 	void AcceptParameter<T>(string name, T value, SqlParamType? type);
 }

@@ -8,7 +8,7 @@ public class SqlParam<T> : SqlParamSource
 
 	public virtual SqlParamType? Type => null;
 
-	internal override void Submit(ISqlParamTarget target) => target.AcceptParameter(Name, Value, Type);
+	internal override void SubmitParameters(ISqlParamTarget target) => target.AcceptParameter(Name, Value, Type);
 
 	internal override void Render(DbConnectorCommandBuilder builder)
 	{

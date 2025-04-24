@@ -1510,7 +1510,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			if (!wasCached)
 				SetCommandTextCore(commandIndex, commandText);
 
-			command.Parameters.Submit(m_parameterTarget);
+			command.Parameters.SubmitParameters(m_parameterTarget);
 		}
 		m_parameterTarget.Finish();
 	}

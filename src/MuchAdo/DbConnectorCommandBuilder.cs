@@ -33,7 +33,7 @@ internal sealed class DbConnectorCommandBuilder
 	public void SubmitParameters(SqlParamSource parameters)
 	{
 		if (m_parameterTarget is not null)
-			parameters.Submit(m_parameterTarget);
+			parameters.SubmitParameters(m_parameterTarget);
 	}
 
 	public void AppendParameterValue<T>(object? identity, T value, SqlParamType? type = null)

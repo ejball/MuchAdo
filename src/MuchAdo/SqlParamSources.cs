@@ -63,10 +63,10 @@ public sealed class SqlParamSources : SqlParamSource, IList<SqlParamSource>, IRe
 	/// <inheritdoc />
 	bool ICollection<SqlParamSource>.IsReadOnly => false;
 
-	internal override void Submit(ISqlParamTarget target)
+	internal override void SubmitParameters(ISqlParamTarget target)
 	{
 		foreach (var source in m_sources)
-			source.Submit(target);
+			source.SubmitParameters(target);
 	}
 
 	private readonly List<SqlParamSource> m_sources;

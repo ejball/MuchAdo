@@ -2,7 +2,7 @@ namespace MuchAdo.Parameters;
 
 internal sealed class FilteredSqlParamSource(SqlParamSource source, Func<string, bool> nameMatches) : SqlParamSource
 {
-	internal override void Submit(ISqlParamTarget target) => source.Submit(new FilteredSqlParamTarget(target, nameMatches));
+	internal override void SubmitParameters(ISqlParamTarget target) => source.SubmitParameters(new FilteredSqlParamTarget(target, nameMatches));
 
 	private sealed class FilteredSqlParamTarget(ISqlParamTarget target, Func<string, bool> where) : ISqlParamTarget
 	{

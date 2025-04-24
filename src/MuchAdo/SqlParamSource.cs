@@ -77,7 +77,7 @@ public abstract class SqlParamSource : Sql
 	public IEnumerable<SqlParam<object?>> Enumerate()
 	{
 		var target = new EnumerateParameterTarget();
-		Submit(target);
+		SubmitParameters(target);
 		return target.Items;
 	}
 
@@ -114,7 +114,7 @@ public abstract class SqlParamSource : Sql
 		return new RenamedSqlParamSource(this, transform);
 	}
 
-	internal abstract void Submit(ISqlParamTarget target);
+	internal abstract void SubmitParameters(ISqlParamTarget target);
 
 	internal override void Render(DbConnectorCommandBuilder builder)
 	{
@@ -123,7 +123,7 @@ public abstract class SqlParamSource : Sql
 
 	private sealed class EmptySqlParamSource : SqlParamSource
 	{
-		internal override void Submit(ISqlParamTarget target)
+		internal override void SubmitParameters(ISqlParamTarget target)
 		{
 		}
 	}

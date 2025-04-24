@@ -2,7 +2,7 @@ namespace MuchAdo.Parameters;
 
 internal sealed class RenamedSqlParamSource(SqlParamSource source, Func<string, string> rename) : SqlParamSource
 {
-	internal override void Submit(ISqlParamTarget target) => source.Submit(new RenamedSqlParamTarget(target, rename));
+	internal override void SubmitParameters(ISqlParamTarget target) => source.SubmitParameters(new RenamedSqlParamTarget(target, rename));
 
 	private sealed class RenamedSqlParamTarget(ISqlParamTarget target, Func<string, string> rename) : ISqlParamTarget
 	{
