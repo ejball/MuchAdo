@@ -2,7 +2,6 @@
 using System.Data;
 using System.Diagnostics;
 using FluentAssertions;
-using MuchAdo.SqlFormatting;
 using MySqlConnector;
 using NUnit.Framework;
 using static FluentAssertions.FluentActions;

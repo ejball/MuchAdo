@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Text.RegularExpressions;
-using MuchAdo.SqlFormatting;
 
 namespace MuchAdo.Ellipses;
 

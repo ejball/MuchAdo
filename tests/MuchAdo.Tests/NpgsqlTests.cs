@@ -1,6 +1,5 @@
 #if NPGSQL
 using FluentAssertions;
-using MuchAdo.SqlFormatting;
 using Npgsql;
 using NUnit.Framework;
 using static FluentAssertions.FluentActions;

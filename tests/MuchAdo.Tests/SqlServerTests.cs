@@ -2,7 +2,6 @@
 using System.Data;
 using FluentAssertions;
 using Microsoft.Data.SqlClient;
-using MuchAdo.SqlFormatting;
 using NUnit.Framework;
 using static FluentAssertions.FluentActions;
 

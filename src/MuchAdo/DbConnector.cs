@@ -2,7 +2,6 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using MuchAdo.SqlFormatting;
 
 namespace MuchAdo;
 

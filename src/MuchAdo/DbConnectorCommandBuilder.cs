@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using MuchAdo.SqlFormatting;
 using static System.FormattableString;
 
 namespace MuchAdo;

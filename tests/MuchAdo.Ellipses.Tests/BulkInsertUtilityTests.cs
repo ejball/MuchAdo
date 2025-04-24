@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
-using MuchAdo.SqlFormatting;
 using MuchAdo.Tests;
 using NUnit.Framework;
 using static FluentAssertions.FluentActions;

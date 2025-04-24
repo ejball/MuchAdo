@@ -1,5 +1,4 @@
 using FluentAssertions;
-using MuchAdo.SqlFormatting;
 using NUnit.Framework;
 using static FluentAssertions.FluentActions;
 
