@@ -6,7 +6,6 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using MuchAdo;
 using MuchAdo.Ellipses;
-using MuchAdo.SqlFormatting;
 #if MYSQL
 using MySqlConnector;
 #endif

@@ -20,10 +20,10 @@ public class DataMapperBenchmark : IDisposable
 			.Command("insert into DataMapperBenchmark (AnInteger, AReal, AString, ABlob) values (@AnInteger, @AReal, @AString, @ABlob)...;")
 			.BulkInsert(Enumerable.Range(0, recordCount)
 				.Select(x => new SqlParamSources(
-					DbParameterSource.Create("AnInteger", x < recordCount ? x : (int?) null),
-					DbParameterSource.Create("AReal", x < recordCount ? 1.0 / (x + 1.0) : (double?) null),
-					DbParameterSource.Create("AString", x < recordCount ? $"{x:0000}" : null),
-					DbParameterSource.Create("ABlob", x < recordCount ? Encoding.UTF8.GetBytes($"{x:0000}") : null))));
+					Sql.NamedParam("AnInteger", x < recordCount ? x : (int?) null),
+					Sql.NamedParam("AReal", x < recordCount ? 1.0 / (x + 1.0) : (double?) null),
+					Sql.NamedParam("AString", x < recordCount ? $"{x:0000}" : null),
+					Sql.NamedParam("ABlob", x < recordCount ? Encoding.UTF8.GetBytes($"{x:0000}") : null))));
 	}
 
 	[Benchmark]
