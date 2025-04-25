@@ -49,13 +49,29 @@ public abstract class SqlParamSource : SqlSource
 
 	internal override void Render(DbConnectorCommandBuilder builder)
 	{
-		throw new NotSupportedException("SqlParamSource cannot be rendered directly.");
+		var target = new ParamTarget(builder);
+		SubmitParameters(target);
 	}
 
-	private sealed class EmptySqlParamSource : SqlParamSource
+	private readonly struct ParamTarget(DbConnectorCommandBuilder builder) : ISqlParamTarget
 	{
-		internal override void SubmitParameters(ISqlParamTarget target)
+		public void AcceptParameter<T>(string name, T value, SqlParamType? type)
 		{
+			if (m_originalTextLength != builder.TextLength)
+				builder.AppendText(", ");
+
+			if (string.IsNullOrEmpty(name))
+			{
+				builder.AppendParameterValue(null, value, type);
+			}
+			else
+			{
+				builder.AppendText(builder.Syntax.NamedParameterPrefix);
+				builder.AppendText(name);
+				builder.SubmitParameters(Sql.NamedParam(name, value, type));
+			}
 		}
+
+		private readonly int m_originalTextLength = builder.TextLength;
 	}
 }

@@ -105,41 +105,49 @@ internal sealed class SqlSyntaxTests
 	}
 
 	[Test]
-	public void ParamListSqlStrings()
+	public void ParamsStrings()
 	{
-		var (text, parameters) = Render(Sql.ParamList(["one", "two", "three"]));
+		var (text, parameters) = Render(Sql.Params(["one", "two", "three"]));
 		text.Should().Be("@ado1, @ado2, @ado3");
 		parameters.EnumeratePairs().Should().Equal(("ado1", "one"), ("ado2", "two"), ("ado3", "three"));
 	}
 
 	[Test]
-	public void ParamListSqlNumbers()
+	public void ParamsNumbers()
 	{
-		var (text, parameters) = Render(Sql.ParamList([1, 2]));
+		var (text, parameters) = Render(Sql.Params([1, 2]));
 		text.Should().Be("@ado1, @ado2");
 		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("ado2", 2));
 	}
 
 	[Test]
-	public void ParamListSqlMixedNumbers()
+	public void ParamsParams()
 	{
-		var (text, parameters) = Render(Sql.ParamList<object>([1, 2L]));
+		var (text, parameters) = Render(Sql.Params([Sql.Param(1), Sql.NamedParam("two", 2), Sql.Params([3, 4])]));
+		text.Should().Be("@ado1, @two, @ado2, @ado3");
+		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("two", 2), ("ado2", 3), ("ado3", 4));
+	}
+
+	[Test]
+	public void ParamsMixedNumbers()
+	{
+		var (text, parameters) = Render(Sql.Params<object>([1, 2L]));
 		text.Should().Be("@ado1, @ado2");
 		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("ado2", 2L));
 	}
 
 	[Test]
-	public void ParamListSqlMixedObjects()
+	public void ParamsMixedObjects()
 	{
-		var (text, parameters) = Render(Sql.ParamList<object?>(["one", 2, null]));
-		text.Should().Be("@ado1, @ado2, @ado3");
-		parameters.EnumeratePairs().Should().Equal(("ado1", "one"), ("ado2", 2), ("ado3", null));
+		var (text, parameters) = Render(Sql.Params<object?>(["one", 2, null, Sql.Params([3])]));
+		text.Should().Be("@ado1, @ado2, @ado3, @ado4");
+		parameters.EnumeratePairs().Should().Equal(("ado1", "one"), ("ado2", 2), ("ado3", null), ("ado4", 3));
 	}
 
 	[Test]
-	public void ParamListNone()
+	public void ParamsNone()
 	{
-		var (text, parameters) = Render(Sql.ParamList<object?>([]));
+		var (text, parameters) = Render(Sql.Params<object?>([]));
 		text.Should().Be("");
 		parameters.EnumeratePairs().Should().Equal();
 	}

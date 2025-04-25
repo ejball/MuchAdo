@@ -138,7 +138,7 @@ public static class Sql
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
 	/// is thrown if the collection of values is empty. Use <c>Sql.Join(", ", values.Select(Sql.Param))")</c> to allow an empty collection.</remarks>
-	public static SqlSource ParamList<T>(IEnumerable<T> values) => List(values.Select(Param));
+	public static SqlParamSource Params<T>(IEnumerable<T> values) => new ParamsSqlParamSource<T>(values.Memoize());
 
 	/// <summary>
 	/// Creates SQL from a raw string.
