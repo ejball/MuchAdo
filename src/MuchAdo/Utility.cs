@@ -6,6 +6,9 @@ namespace MuchAdo;
 
 internal static class Utility
 {
+	public static IEnumerable<T> Memoize<T>(this IEnumerable<T> items) =>
+		items is IReadOnlyCollection<T> or ICollection<T> ? items : [.. items];
+
 	public static bool ContainsOrdinal(this string str, char value)
 	{
 #if !NETSTANDARD2_0
