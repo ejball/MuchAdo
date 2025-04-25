@@ -72,8 +72,17 @@ public sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
 			return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(NumericEnumMapper<,>).MakeGenericType(typeof(T), underlyingType), dataMapper.GetTypeMapper(underlyingType))!);
 		}
 
-		if (typeof(T) == typeof(Dictionary<string, object?>))
-			return (DbTypeMapper<T>) (object) new DictionaryMapper<Dictionary<string, object?>, object?>(dataMapper);
+		if (typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(Dictionary<,>))
+		{
+			var typeArgs = typeof(T).GetGenericArguments();
+			if (typeArgs.Length == 2 && typeArgs[0] == typeof(string))
+			{
+				var valueType = typeArgs[1];
+				var dictionaryMapperType = typeof(DictionaryMapper<,>).MakeGenericType(typeof(T), valueType);
+				return (DbTypeMapper<T>) Activator.CreateInstance(dictionaryMapperType, dataMapper)!;
+			}
+		}
+
 		if (typeof(T) == typeof(IDictionary<string, object?>))
 			return (DbTypeMapper<T>) (object) new DictionaryMapper<IDictionary<string, object?>, object?>(dataMapper);
 		if (typeof(T) == typeof(IReadOnlyDictionary<string, object?>))
