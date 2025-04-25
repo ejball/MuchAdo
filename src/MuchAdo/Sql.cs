@@ -98,6 +98,28 @@ public static class Sql
 	public static SqlSource Name(string identifier) => new NameSqlSource(identifier ?? throw new ArgumentNullException(nameof(identifier)));
 
 	/// <summary>
+	/// Creates SQL for a named parameter with the specified value.
+	/// </summary>
+	public static SqlParam<T> NamedParam<T>(string name, T value) => value is not SqlSource ? new NamedSqlParam<T>(name, value) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
+
+	/// <summary>
+	/// Creates SQL for a named parameter with the specified value.
+	/// </summary>
+	public static SqlParam<T> NamedParam<T>(string name, T value, SqlParamType? type) => value is not SqlSource ? new NamedTypedSqlParam<T>(name, value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
+
+	/// <summary>
+	/// Creates parameters from tuples.
+	/// </summary>
+	public static SqlParamSource NamedParams<T>(params IEnumerable<(string Name, T Value)> parameters) =>
+		new TuplesSqlParamSource<T>(parameters.Memoize());
+
+	/// <summary>
+	/// Creates parameters from a dictionary.
+	/// </summary>
+	public static SqlParamSource NamedParams<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
+		new DictionarySqlParamSource<T>(parameters.Memoize());
+
+	/// <summary>
 	/// Joins the specified SQL fragments with the OR operator.
 	/// </summary>
 	public static SqlSource Or(params IEnumerable<SqlSource> sqls) => new OrOperatorSqlSource(sqls.Memoize());
@@ -116,22 +138,6 @@ public static class Sql
 	/// Creates SQL for an unnamed parameter with the specified value.
 	/// </summary>
 	public static SqlParam<T> Param<T>(T value, SqlParamType? type) => value is not SqlSource ? new TypedSqlParam<T>(value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
-
-	/// <summary>
-	/// Creates SQL for a named parameter with the specified value.
-	/// </summary>
-	public static SqlParam<T> NamedParam<T>(string name, T value) => value is not SqlSource ? new NamedSqlParam<T>(name, value) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
-
-	/// <summary>
-	/// Creates SQL for a named parameter with the specified value.
-	/// </summary>
-	public static SqlParam<T> NamedParam<T>(string name, T value, SqlParamType? type) => value is not SqlSource ? new NamedTypedSqlParam<T>(name, value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
-
-	/// <summary>
-	/// Creates parameters from a dictionary.
-	/// </summary>
-	public static SqlParamSource NamedParams<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		new DictionarySqlParamSource<T>(parameters.Memoize());
 
 	/// <summary>
 	/// Creates SQL for a comma-separated list of unnamed parameters with the specified values.

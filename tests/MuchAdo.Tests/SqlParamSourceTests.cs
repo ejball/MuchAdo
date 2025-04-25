@@ -19,32 +19,29 @@ internal sealed class SqlParamSourceTests
 		Sql.NamedParam("one", 1).EnumeratePairs().Should().Equal(("one", 1));
 	}
 
-#if false
 	[Test]
 	public void CreateFromPairParams()
 	{
-		SqlParamSource.Create().Count().Should().Be(0);
-		SqlParamSource.Create(("one", 1)).Enumerate().Should().Equal(("one", 1));
-		SqlParamSource.Create(("one", 1), ("two", 2L)).Enumerate().Should().Equal(("one", 1L), ("two", 2L));
-		SqlParamSource.Create<object>(("one", 1), ("two", 2L)).Enumerate().Should().Equal(("one", 1), ("two", 2L));
-		SqlParamSource.Create<object?>(("one", 1), ("null", null)).Enumerate().Should().Equal(("one", 1), ("null", null));
+		Sql.NamedParams(("one", 1)).EnumeratePairs().Should().Equal(("one", 1));
+		Sql.NamedParams(("one", 1), ("two", 2L)).EnumeratePairs().Should().Equal(("one", 1L), ("two", 2L));
+		Sql.NamedParams<object>(("one", 1), ("two", 2L)).EnumeratePairs().Should().Equal(("one", 1), ("two", 2L));
+		Sql.NamedParams<object?>(("one", 1), ("null", null)).EnumeratePairs().Should().Equal(("one", 1), ("null", null));
 	}
 
 	[Test]
 	public void CreateFromPairList()
 	{
-		SqlParamSource.Create([("one", "1"), ("two", "2")]).Enumerate().Should().Equal(("one", "1"), ("two", "2"));
-		SqlParamSource.Create([("one", 1), ("two", 2L)]).Enumerate().Should().Equal(("one", 1L), ("two", 2L));
+		Sql.NamedParams([("one", "1"), ("two", "2")]).EnumeratePairs().Should().Equal(("one", "1"), ("two", "2"));
+		Sql.NamedParams([("one", 1), ("two", 2L)]).EnumeratePairs().Should().Equal(("one", 1L), ("two", 2L));
 		var array1 = new (string, object)[] { ("one", 1), ("two", 2L) };
-		SqlParamSource.Create(array1).Enumerate().Should().Equal(("one", 1), ("two", 2L));
+		Sql.NamedParams(array1).EnumeratePairs().Should().Equal(("one", 1), ("two", 2L));
 		var array2 = new (string, object?)[] { ("one", 1), ("two", 2L) };
-		SqlParamSource.Create(array2).Enumerate().Should().Equal(("one", 1), ("two", 2L));
+		Sql.NamedParams(array2).EnumeratePairs().Should().Equal(("one", 1), ("two", 2L));
 		var array3 = new[] { ("one", (object) 1), ("two", 2L) };
-		SqlParamSource.Create(array3).Enumerate().Should().Equal(("one", 1), ("two", 2L));
+		Sql.NamedParams(array3).EnumeratePairs().Should().Equal(("one", 1), ("two", 2L));
 		var array4 = new[] { ("one", (object?) 1), ("two", 2L) };
-		SqlParamSource.Create(array4).Enumerate().Should().Equal(("one", 1), ("two", 2L));
+		Sql.NamedParams(array4).EnumeratePairs().Should().Equal(("one", 1), ("two", 2L));
 	}
-#endif
 
 	[Test]
 	public void CreateFromDictionary()
