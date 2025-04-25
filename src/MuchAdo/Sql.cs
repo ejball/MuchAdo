@@ -108,12 +108,12 @@ public static class Sql
 	public static SqlSource OrderBy(params IEnumerable<SqlSource> sqls) => new OrderByClauseSqlSource(List(sqls));
 
 	/// <summary>
-	/// Creates SQL for an arbitrarily-named parameter with the specified value.
+	/// Creates SQL for an unnamed parameter with the specified value.
 	/// </summary>
 	public static SqlParam<T> Param<T>(T value) => value is not SqlSource ? new SqlParam<T>(value) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
 
 	/// <summary>
-	/// Creates SQL for an arbitrarily-named parameter with the specified value.
+	/// Creates SQL for an unnamed parameter with the specified value.
 	/// </summary>
 	public static SqlParam<T> Param<T>(T value, SqlParamType? type) => value is not SqlSource ? new TypedSqlParam<T>(value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
 
@@ -134,10 +134,15 @@ public static class Sql
 		new DictionarySqlParamSource<T>(parameters.Memoize());
 
 	/// <summary>
-	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values.
+	/// Creates SQL for a comma-separated list of unnamed parameters with the specified values.
 	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
-	/// is thrown if the collection of values is empty. Use <c>Sql.Join(", ", values.Select(Sql.Param))")</c> to allow an empty collection.</remarks>
+	/// <remarks>Empty SQL fragments are ignored.</remarks>
+	public static SqlParamSource Params<T>(T value1, T value2, params ReadOnlySpan<T> values) => new ParamsSqlParamSource<T>([value1, value2, .. values]);
+
+	/// <summary>
+	/// Creates SQL for a comma-separated list of unnamed parameters with the specified values.
+	/// </summary>
+	/// <remarks>Empty SQL fragments are ignored.</remarks>
 	public static SqlParamSource Params<T>(IEnumerable<T> values) => new ParamsSqlParamSource<T>(values.Memoize());
 
 	/// <summary>
