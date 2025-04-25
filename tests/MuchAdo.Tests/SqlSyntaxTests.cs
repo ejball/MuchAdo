@@ -145,46 +145,6 @@ internal sealed class SqlSyntaxTests
 	}
 
 	[Test]
-	public void ParamTupleSqlStrings()
-	{
-		var (text, parameters) = Render(Sql.ParamTuple(["one", "two", "three"]));
-		text.Should().Be("(@ado1, @ado2, @ado3)");
-		parameters.EnumeratePairs().Should().Equal(("ado1", "one"), ("ado2", "two"), ("ado3", "three"));
-	}
-
-	[Test]
-	public void ParamTupleSqlNumbers()
-	{
-		var (text, parameters) = Render(Sql.ParamTuple([1, 2]));
-		text.Should().Be("(@ado1, @ado2)");
-		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("ado2", 2));
-	}
-
-	[Test]
-	public void ParamTupleSqlMixedNumbers()
-	{
-		var (text, parameters) = Render(Sql.ParamTuple<object>([1, 2L]));
-		text.Should().Be("(@ado1, @ado2)");
-		parameters.EnumeratePairs().Should().Equal(("ado1", 1), ("ado2", 2L));
-	}
-
-	[Test]
-	public void ParamTupleSqlMixedObjects()
-	{
-		var (text, parameters) = Render(Sql.ParamTuple<object?>(["one", 2, null]));
-		text.Should().Be("(@ado1, @ado2, @ado3)");
-		parameters.EnumeratePairs().Should().Equal(("ado1", "one"), ("ado2", 2), ("ado3", null));
-	}
-
-	[Test]
-	public void ParamTupleNone()
-	{
-		var (text, parameters) = Render(Sql.ParamTuple<object?>([]));
-		text.Should().Be("()");
-		parameters.EnumeratePairs().Should().Equal();
-	}
-
-	[Test]
 	public void FormatEmpty()
 	{
 		var (text, parameters) = Render(Sql.Format($""));

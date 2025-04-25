@@ -17,12 +17,12 @@ public static class Sql
 	/// <summary>
 	/// Joins the specified SQL fragments with the AND operator.
 	/// </summary>
-	public static SqlSource And(params IEnumerable<SqlSource> sqls) => new AndOperatorSqlSource(sqls);
+	public static SqlSource And(params IEnumerable<SqlSource> sqls) => new AndOperatorSqlSource(sqls.Memoize());
 
 	/// <summary>
 	/// Joins the specified SQL fragments with newlines.
 	/// </summary>
-	public static SqlSource Clauses(params IEnumerable<SqlSource> sqls) => new ClausesSqlSource(sqls);
+	public static SqlSource Clauses(params IEnumerable<SqlSource> sqls) => new ClausesSqlSource(sqls.Memoize());
 
 	/// <summary>
 	/// Returns a comma-separated list of column names for a DTO of the specified type.
@@ -43,7 +43,9 @@ public static class Sql
 	/// Concatenates SQL fragments.
 	/// </summary>
 	public static SqlSource Concat(params IEnumerable<SqlSource> sqls) =>
-		new ConcatSqlSource(sqls ?? throw new ArgumentNullException(nameof(sqls)));
+		new ConcatSqlSource(sqls.Memoize());
+
+	public static SqlParamSource DtoNamedParams<T>(T dto) => new DtoNamedSqlParamSource<T>(dto);
 
 	/// <summary>
 	/// Returns a comma-separated list of named parameters for the properties of the specified DTO.
@@ -75,7 +77,7 @@ public static class Sql
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored.</remarks>
 	public static SqlSource Join(string separator, params IEnumerable<SqlSource> sqls) =>
-		new JoinSqlSource(separator ?? throw new ArgumentNullException(nameof(separator)), sqls ?? throw new ArgumentNullException(nameof(sqls)));
+		new JoinSqlSource(separator ?? throw new ArgumentNullException(nameof(separator)), sqls.Memoize());
 
 	/// <summary>
 	/// Creates SQL for an unnamed parameter with the specified fragment of a LIKE pattern followed by a trailing <c>%</c>.
@@ -88,7 +90,7 @@ public static class Sql
 	/// Creates SQL for a comma-separated list of SQL fragments.
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored.</remarks>
-	public static SqlSource List(params IEnumerable<SqlSource> sqls) => new ListSqlSource(sqls);
+	public static SqlSource List(params IEnumerable<SqlSource> sqls) => new ListSqlSource(sqls.Memoize());
 
 	/// <summary>
 	/// Creates SQL for a quoted identifier.
@@ -98,7 +100,7 @@ public static class Sql
 	/// <summary>
 	/// Joins the specified SQL fragments with the OR operator.
 	/// </summary>
-	public static SqlSource Or(params IEnumerable<SqlSource> sqls) => new OrOperatorSqlSource(sqls);
+	public static SqlSource Or(params IEnumerable<SqlSource> sqls) => new OrOperatorSqlSource(sqls.Memoize());
 
 	/// <summary>
 	/// Creates SQL for an ORDER BY clause. If the SQLs are empty, the ORDER BY clause is omitted.
@@ -129,9 +131,7 @@ public static class Sql
 	/// Creates parameters from a dictionary.
 	/// </summary>
 	public static SqlParamSource NamedParams<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
-		new DictionarySqlParamSource<T>(parameters ?? throw new ArgumentNullException(nameof(parameters)));
-
-	public static SqlParamSource DtoNamedParams<T>(T dto) => new DtoNamedSqlParamSource<T>(dto);
+		new DictionarySqlParamSource<T>(parameters.Memoize());
 
 	/// <summary>
 	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values.
@@ -141,20 +141,13 @@ public static class Sql
 	public static SqlSource ParamList<T>(IEnumerable<T> values) => List(values.Select(Param));
 
 	/// <summary>
-	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values, surrounded by parentheses.
-	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored.</remarks>
-	public static SqlSource ParamTuple<T>(IEnumerable<T> values) => Format($"({List(values.Select(Param))})");
-
-	/// <summary>
 	/// Creates SQL from a raw string.
 	/// </summary>
 	public static SqlSource Raw(string text) => new RawSqlSource(text ?? throw new ArgumentNullException(nameof(text)));
 
 	/// <summary>
-	/// Creates SQL for a comma-delimited list of SQL fragments, surrounded by parentheses.
+	/// Creates SQL for a comma-separated list of SQL fragments, surrounded by parentheses.
 	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored.</remarks>
 	public static SqlSource Tuple(params IEnumerable<SqlSource> sqls) => Format($"({List(sqls)})");
 
 	/// <summary>
