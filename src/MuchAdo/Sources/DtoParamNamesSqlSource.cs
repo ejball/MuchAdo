@@ -36,18 +36,17 @@ public sealed class DtoParamNamesSqlSource<T> : SqlSource
 		if (properties.Count == 0)
 			throw new InvalidOperationException($"The specified type has no columns: {typeof(T).FullName}");
 
-		var filteredProperties = properties.AsEnumerable();
-		if (m_filterName is not null)
-			filteredProperties = filteredProperties.Where(x => m_filterName(x.Name));
-
 		var oldTextLength = builder.TextLength;
 
-		foreach (var filteredProperty in filteredProperties)
+		foreach (var property in properties)
 		{
-			if (builder.TextLength != oldTextLength)
-				builder.AppendText(", ");
-			builder.AppendText(builder.Syntax.NamedParameterPrefix);
-			builder.AppendText(GetName(filteredProperty.Name));
+			if (m_filterName is null || m_filterName(property.Name))
+			{
+				if (builder.TextLength != oldTextLength)
+					builder.AppendText(", ");
+				builder.AppendText(builder.Syntax.NamedParameterPrefix);
+				builder.AppendText(GetName(property.Name));
+			}
 		}
 
 		if (builder.TextLength == oldTextLength)

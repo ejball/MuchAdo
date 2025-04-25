@@ -12,7 +12,7 @@ public static class Sql
 	/// <summary>
 	/// An empty SQL string.
 	/// </summary>
-	public static readonly SqlSource Empty = Raw("");
+	public static readonly SqlSource Empty = new EmptySqlSource();
 
 	/// <summary>
 	/// Joins the specified SQL fragments with the AND operator.
@@ -22,20 +22,20 @@ public static class Sql
 	/// <summary>
 	/// Joins the specified SQL fragments with newlines.
 	/// </summary>
-	public static SqlSource Clauses(params IEnumerable<SqlSource> sqls) => Join("\n", sqls);
+	public static SqlSource Clauses(params IEnumerable<SqlSource> sqls) => new ClausesSqlSource(sqls);
 
 	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type.
+	/// Returns a comma-separated list of column names for a DTO of the specified type.
 	/// </summary>
 	public static ColumnNamesSqlSource<T> ColumnNames<T>() => new();
 
 	/// <summary>
-	/// Returns a comma-delimited list of column names for a DTO of the specified type.
+	/// Returns a comma-separated list of column names for a DTO of the specified type.
 	/// </summary>
 	public static ColumnNamesSqlSource<T> ColumnNames<T>(T dto) => new();
 
 	/// <summary>
-	/// Returns a comma-delimited list of arbitrarily-named parameters for the column values of the specified DTO.
+	/// Returns a comma-separated list of unnamed parameters for the column values of the specified DTO.
 	/// </summary>
 	public static ColumnParamsSqlSource<T> ColumnParams<T>(T dto) => new(dto ?? throw new ArgumentNullException(nameof(dto)));
 
@@ -46,24 +46,24 @@ public static class Sql
 		new ConcatSqlSource(sqls ?? throw new ArgumentNullException(nameof(sqls)));
 
 	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
+	/// Returns a comma-separated list of named parameters for the properties of the specified DTO.
 	/// </summary>
 	public static DtoParamNamesSqlSource<T> DtoParamNames<T>() => new();
 
 	/// <summary>
-	/// Returns a comma-delimited list of named parameters for the properties of the specified DTO.
+	/// Returns a comma-separated list of named parameters for the properties of the specified DTO.
 	/// </summary>
 	public static DtoParamNamesSqlSource<T> DtoParamNames<T>(T dto) => new();
 
 	/// <summary>
 	/// Creates SQL from a formatted string.
 	/// </summary>
-	public static SqlSource Format(SqlFormatStringHandler stringHandler) => stringHandler.ToSql();
+	public static SqlSource Format(SqlFormatStringHandler stringHandler) => stringHandler.ToSqlSource();
 
 	/// <summary>
 	/// Creates SQL for a GROUP BY clause. If the SQLs are empty, the GROUP BY clause is omitted.
 	/// </summary>
-	public static SqlSource GroupBy(params IEnumerable<SqlSource> sqls) => new GroupByClauseSqlSource(Join(", ", sqls));
+	public static SqlSource GroupBy(params IEnumerable<SqlSource> sqls) => new GroupByClauseSqlSource(ListOrEmpty(sqls));
 
 	/// <summary>
 	/// Creates SQL for a HAVING clause. If the SQL is empty, the HAVING clause is omitted.
@@ -71,25 +71,24 @@ public static class Sql
 	public static SqlSource Having(SqlSource sql) => new HavingClauseSqlSource(sql);
 
 	/// <summary>
-	/// Joins SQL fragments with the specified separator.
-	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored.</remarks>
-	public static SqlSource Join(string separator, params IEnumerable<SqlSource> sqls) =>
-		new JoinSqlSource(separator ?? throw new ArgumentNullException(nameof(separator)), sqls ?? throw new ArgumentNullException(nameof(sqls)));
-
-	/// <summary>
-	/// Creates SQL for an arbitrarily-named parameter with the specified fragment of a LIKE pattern followed by a trailing <c>%</c>.
+	/// Creates SQL for an unnamed parameter with the specified fragment of a LIKE pattern followed by a trailing <c>%</c>.
 	/// </summary>
 	/// <remarks>This SQL fragment escapes <c>%</c> and <c>_</c> in the prefix with <c>\</c>. Depending on the database
 	/// and its settings, <c>escape '\'</c> may be needed after the parameter.</remarks>
 	public static SqlSource LikeParamStartsWith(string prefix) => new LikeParamStartsWithSqlSource(prefix ?? throw new ArgumentNullException(nameof(prefix)));
 
 	/// <summary>
-	/// Creates SQL for a comma-delimited list of SQL fragments.
+	/// Creates SQL for a comma-separated list of SQL fragments.
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
-	/// is thrown if the SQL fragments are missing or all empty. Use <c>Sql.Join(", ", sqls)</c> to permit an empty SQL fragment.</remarks>
-	public static SqlSource List(params IEnumerable<SqlSource> sqls) => JoinOrThrow(", ", sqls, "Sql.List was empty.");
+	/// is thrown if the SQL fragments are missing or all empty. Use <c>Sql.ListOrEmpty(", ", sqls)</c> to permit an empty SQL fragment.</remarks>
+	public static SqlSource List(params IEnumerable<SqlSource> sqls) => new ListSqlSource(sqls);
+
+	/// <summary>
+	/// Creates SQL for a comma-separated list of SQL fragments.
+	/// </summary>
+	/// <remarks>Empty SQL fragments are ignored.</remarks>
+	public static SqlSource ListOrEmpty(params IEnumerable<SqlSource> sqls) => new ListOrEmptySqlSource(sqls);
 
 	/// <summary>
 	/// Creates SQL for a quoted identifier.
@@ -104,7 +103,7 @@ public static class Sql
 	/// <summary>
 	/// Creates SQL for an ORDER BY clause. If the SQLs are empty, the ORDER BY clause is omitted.
 	/// </summary>
-	public static SqlSource OrderBy(params IEnumerable<SqlSource> sqls) => new OrderByClauseSqlSource(Join(", ", sqls));
+	public static SqlSource OrderBy(params IEnumerable<SqlSource> sqls) => new OrderByClauseSqlSource(ListOrEmpty(sqls));
 
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified value.
@@ -164,9 +163,6 @@ public static class Sql
 	/// Creates SQL for a WHERE clause. If the SQL is empty, the WHERE clause is omitted.
 	/// </summary>
 	public static SqlSource Where(SqlSource sql) => new WhereClauseSqlSource(sql);
-
-	private static JoinSqlSource JoinOrThrow(string separator, IEnumerable<SqlSource> sqls, string throwMessageIfEmpty) =>
-		new(separator ?? throw new ArgumentNullException(nameof(separator)), sqls ?? throw new ArgumentNullException(nameof(sqls)), throwMessageIfEmpty);
 
 	private const string c_paramIsSqlMessage = "Parameters may not be created from Sql instances.";
 }

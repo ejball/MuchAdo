@@ -17,16 +17,16 @@ public sealed class ColumnParamsSqlSource<T> : SqlSource
 		if (properties.Count == 0)
 			throw new InvalidOperationException($"The specified type has no columns: {typeof(T).FullName}");
 
-		var filteredProperties = properties.AsEnumerable();
-		if (m_filter is not null)
-			filteredProperties = filteredProperties.Where(x => m_filter(x.Name));
-
 		var oldTextLength = builder.TextLength;
 
-		foreach (var filteredProperty in filteredProperties)
+		foreach (var property in properties)
 		{
-			using var scope = builder.Prefix(builder.TextLength != oldTextLength ? ", " : "");
-			builder.AppendParameterValue(null, m_dto, filteredProperty);
+			if (m_filter is null || m_filter(property.Name))
+			{
+				if (builder.TextLength != oldTextLength)
+					builder.AppendText(", ");
+				builder.AppendParameterValue(null, m_dto, property);
+			}
 		}
 
 		if (builder.TextLength == oldTextLength)

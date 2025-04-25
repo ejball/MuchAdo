@@ -19,11 +19,13 @@ public readonly ref struct SqlFormatStringHandler
 	{
 		if (format == "raw" && t is string { } text)
 			m_parts.Add(text);
+		else if (string.IsNullOrEmpty(format))
+			AppendFormatted<T>(t);
 		else
 			throw new NotSupportedException($"Format '{format}' not supported for {typeof(T).FullName}.");
 	}
 
-	internal SqlSource ToSql() => new FormatSqlSource(m_parts);
+	internal SqlSource ToSqlSource() => new FormatSqlSource(m_parts);
 
 	private readonly List<object> m_parts;
 }
