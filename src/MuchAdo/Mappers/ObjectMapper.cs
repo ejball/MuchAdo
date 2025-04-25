@@ -3,7 +3,7 @@ using System.Dynamic;
 
 namespace MuchAdo.Mappers;
 
-internal sealed class ObjectMapper : DbTypeMapper<object>
+internal sealed class ObjectMapper(DbDataMapper dataMapper) : DbTypeMapper<object>
 {
 	public override int? FieldCount => null;
 
@@ -14,24 +14,22 @@ internal sealed class ObjectMapper : DbTypeMapper<object>
 			var value = record.GetValue(index);
 			return value == DBNull.Value ? null! : value;
 		}
-		else
+
+		IDictionary<string, object?> obj = new ExpandoObject();
+		var notNull = false;
+		for (var i = index; i < index + count; i++)
 		{
-			IDictionary<string, object?> obj = new ExpandoObject();
-			var notNull = false;
-			for (var i = index; i < index + count; i++)
+			var name = record.GetName(i);
+			if (!record.IsDBNull(i))
 			{
-				var name = record.GetName(i);
-				if (!record.IsDBNull(i))
-				{
-					obj[name] = record.GetValue(i);
-					notNull = true;
-				}
-				else
-				{
-					obj[name] = null;
-				}
+				obj[name] = dataMapper.GetTypeMapper<object>().Map(record, i, state);
+				notNull = true;
 			}
-			return notNull ? obj : null!;
+			else
+			{
+				obj[name] = null;
+			}
 		}
+		return notNull ? obj : null!;
 	}
 }

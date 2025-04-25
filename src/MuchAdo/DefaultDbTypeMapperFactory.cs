@@ -61,7 +61,7 @@ public sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
 			return (DbTypeMapper<T>) (object) new ByteArrayMapper();
 
 		if (typeof(T) == typeof(object))
-			return (DbTypeMapper<T>) (object) new ObjectMapper();
+			return (DbTypeMapper<T>) (object) new ObjectMapper(dataMapper);
 
 		if (typeof(T).IsEnum)
 		{
