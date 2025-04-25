@@ -72,21 +72,17 @@ public sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
 			return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(NumericEnumMapper<,>).MakeGenericType(typeof(T), underlyingType), dataMapper.GetTypeMapper(underlyingType))!);
 		}
 
-		if (typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(Dictionary<,>))
+		if (typeof(T).IsGenericType &&
+			typeof(T).GetGenericTypeDefinition() is { } genericType &&
+			(genericType == typeof(Dictionary<,>) ||
+				genericType == typeof(IDictionary<,>) ||
+				genericType == typeof(IReadOnlyDictionary<,>)) &&
+			typeof(T).GetGenericArguments() is [var keyType, var valueType] &&
+			keyType == typeof(string))
 		{
-			var typeArgs = typeof(T).GetGenericArguments();
-			if (typeArgs.Length == 2 && typeArgs[0] == typeof(string))
-			{
-				var valueType = typeArgs[1];
-				var dictionaryMapperType = typeof(DictionaryMapper<,>).MakeGenericType(typeof(T), valueType);
-				return (DbTypeMapper<T>) Activator.CreateInstance(dictionaryMapperType, dataMapper)!;
-			}
+			var dictionaryMapperType = typeof(DictionaryMapper<,>).MakeGenericType(typeof(T), valueType);
+			return (DbTypeMapper<T>) Activator.CreateInstance(dictionaryMapperType, dataMapper)!;
 		}
-
-		if (typeof(T) == typeof(IDictionary<string, object?>))
-			return (DbTypeMapper<T>) (object) new DictionaryMapper<IDictionary<string, object?>, object?>(dataMapper);
-		if (typeof(T) == typeof(IReadOnlyDictionary<string, object?>))
-			return (DbTypeMapper<T>) (object) new DictionaryMapper<IReadOnlyDictionary<string, object?>, object?>(dataMapper);
 
 		if (typeof(T) == typeof(IDictionary))
 			return (DbTypeMapper<T>) (object) new DictionaryMapper<IDictionary, object?>(dataMapper);

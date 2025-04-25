@@ -491,6 +491,8 @@ internal sealed class DbDataMapperTests
 						((long) record.Get<IDictionary<string, object?>>(0, 4)["TheInteger"]!).Should().Be(s_dto.TheInteger);
 						((long) record.Get<IReadOnlyDictionary<string, object?>>(0, 4)["TheInteger"]!).Should().Be(s_dto.TheInteger);
 						((double) record.Get<IDictionary>(0, 4)["TheReal"]!).Should().Be(s_dto.TheReal);
+						record.Get<Dictionary<string, double>>(1, 2)["TheInteger"].Should().Be(s_dto.TheInteger);
+						record.Get<Dictionary<string, double>>(1, 2)["TheReal"].Should().Be(s_dto.TheReal);
 					}
 					else
 					{
