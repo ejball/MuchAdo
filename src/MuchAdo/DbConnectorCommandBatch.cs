@@ -364,7 +364,7 @@ public sealed class DbConnectorCommandBatch
 	/// <summary>
 	/// Gets the current command.
 	/// </summary>
-	public DbConnectorCommand CurrentCommand => new(m_commandType, m_textOrSql, m_paramSource ?? SqlParamSource.Empty);
+	public DbConnectorCommand CurrentCommand => new(m_commandType, m_textOrSql, m_paramSource ?? Sql.Empty);
 
 	/// <summary>
 	/// Gets the command at the specified index.

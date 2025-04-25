@@ -10,9 +10,9 @@ namespace MuchAdo;
 public static class Sql
 {
 	/// <summary>
-	/// An empty SQL string.
+	/// Empty SQL/parameters.
 	/// </summary>
-	public static readonly SqlSource Empty = new EmptySqlSource();
+	public static readonly SqlParamSource Empty = new EmptySqlParamSource();
 
 	/// <summary>
 	/// Joins the specified SQL fragments with the AND operator.
@@ -63,12 +63,19 @@ public static class Sql
 	/// <summary>
 	/// Creates SQL for a GROUP BY clause. If the SQLs are empty, the GROUP BY clause is omitted.
 	/// </summary>
-	public static SqlSource GroupBy(params IEnumerable<SqlSource> sqls) => new GroupByClauseSqlSource(ListOrEmpty(sqls));
+	public static SqlSource GroupBy(params IEnumerable<SqlSource> sqls) => new GroupByClauseSqlSource(List(sqls));
 
 	/// <summary>
 	/// Creates SQL for a HAVING clause. If the SQL is empty, the HAVING clause is omitted.
 	/// </summary>
 	public static SqlSource Having(SqlSource sql) => new HavingClauseSqlSource(sql);
+
+	/// <summary>
+	/// Joins SQL fragments with the specified separator.
+	/// </summary>
+	/// <remarks>Empty SQL fragments are ignored.</remarks>
+	public static SqlSource Join(string separator, params IEnumerable<SqlSource> sqls) =>
+		new JoinSqlSource(separator ?? throw new ArgumentNullException(nameof(separator)), sqls ?? throw new ArgumentNullException(nameof(sqls)));
 
 	/// <summary>
 	/// Creates SQL for an unnamed parameter with the specified fragment of a LIKE pattern followed by a trailing <c>%</c>.
@@ -80,15 +87,8 @@ public static class Sql
 	/// <summary>
 	/// Creates SQL for a comma-separated list of SQL fragments.
 	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
-	/// is thrown if the SQL fragments are missing or all empty. Use <c>Sql.ListOrEmpty(", ", sqls)</c> to permit an empty SQL fragment.</remarks>
-	public static SqlSource List(params IEnumerable<SqlSource> sqls) => new ListSqlSource(sqls);
-
-	/// <summary>
-	/// Creates SQL for a comma-separated list of SQL fragments.
-	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored.</remarks>
-	public static SqlSource ListOrEmpty(params IEnumerable<SqlSource> sqls) => new ListOrEmptySqlSource(sqls);
+	public static SqlSource List(params IEnumerable<SqlSource> sqls) => new ListSqlSource(sqls);
 
 	/// <summary>
 	/// Creates SQL for a quoted identifier.
@@ -103,7 +103,7 @@ public static class Sql
 	/// <summary>
 	/// Creates SQL for an ORDER BY clause. If the SQLs are empty, the ORDER BY clause is omitted.
 	/// </summary>
-	public static SqlSource OrderBy(params IEnumerable<SqlSource> sqls) => new OrderByClauseSqlSource(ListOrEmpty(sqls));
+	public static SqlSource OrderBy(params IEnumerable<SqlSource> sqls) => new OrderByClauseSqlSource(List(sqls));
 
 	/// <summary>
 	/// Creates SQL for an arbitrarily-named parameter with the specified value.
@@ -138,14 +138,13 @@ public static class Sql
 	/// </summary>
 	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
 	/// is thrown if the collection of values is empty. Use <c>Sql.Join(", ", values.Select(Sql.Param))")</c> to allow an empty collection.</remarks>
-	public static SqlSource ParamList<T>(IEnumerable<T> values) => JoinOrThrow(", ", values.Select(Param), "Sql.ParamList was empty.");
+	public static SqlSource ParamList<T>(IEnumerable<T> values) => List(values.Select(Param));
 
 	/// <summary>
 	/// Creates SQL for a comma-delimted list of arbitrarily-named parameters with the specified values, surrounded by parentheses.
 	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
-	/// is thrown if the collection of values is empty. Use <c>Sql.Format($"({Sql.Join(", ", values.Select(Sql.Param))})")</c> to permit an empty tuple.</remarks>
-	public static SqlSource ParamTuple<T>(IEnumerable<T> values) => Format($"({JoinOrThrow(", ", values.Select(Param), "Sql.ParamTuple was empty.")})");
+	/// <remarks>Empty SQL fragments are ignored.</remarks>
+	public static SqlSource ParamTuple<T>(IEnumerable<T> values) => Format($"({List(values.Select(Param))})");
 
 	/// <summary>
 	/// Creates SQL from a raw string.
@@ -155,9 +154,8 @@ public static class Sql
 	/// <summary>
 	/// Creates SQL for a comma-delimited list of SQL fragments, surrounded by parentheses.
 	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored. Since it would otherwise result in a confusing SQL syntax error, an <see cref="InvalidOperationException" />
-	/// is thrown if the SQL fragments are missing or all empty. Use <c>Sql.Format($"({Sql.Join(", ", sqls)})")</c> to permit an empty tuple.</remarks>
-	public static SqlSource Tuple(params IEnumerable<SqlSource> sqls) => Format($"({JoinOrThrow(", ", sqls, "Sql.Tuple was empty.")})");
+	/// <remarks>Empty SQL fragments are ignored.</remarks>
+	public static SqlSource Tuple(params IEnumerable<SqlSource> sqls) => Format($"({List(sqls)})");
 
 	/// <summary>
 	/// Creates SQL for a WHERE clause. If the SQL is empty, the WHERE clause is omitted.

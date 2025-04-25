@@ -42,7 +42,7 @@ internal sealed class SqliteTests
 
 		connector.Command(Sql.Format($@"
 				insert into {tableName} ({Sql.ColumnNames<NameValue>()})
-				values {Sql.Join(", ", items.Select(item => Sql.Format($"({Sql.ColumnParams(item)})")))};
+				values {Sql.List(items.Select(item => Sql.Format($"({Sql.ColumnParams(item)})")))};
 				")).Execute();
 
 		connector.Command(Sql.Format($"select {Sql.ColumnNames<NameValue>()} from {tableName} t order by ItemId;"))

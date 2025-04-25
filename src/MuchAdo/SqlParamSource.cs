@@ -5,11 +5,6 @@ namespace MuchAdo;
 
 public abstract class SqlParamSource : SqlSource
 {
-	/// <summary>
-	/// An empty list of parameters.
-	/// </summary>
-	public static readonly SqlParamSource Empty = new EmptySqlParamSource();
-
 	public IEnumerable<SqlParam<object?>> Enumerate()
 	{
 		var target = new EnumerateParameterTarget();

@@ -67,8 +67,17 @@ internal sealed class SqlSyntaxTests
 	[Test]
 	public void ListNone()
 	{
-		Invoking(() => Render(Sql.List())).Should().Throw<InvalidOperationException>();
-		Invoking(() => Render(Sql.List(Sql.Empty))).Should().Throw<InvalidOperationException>();
+		var (text, parameters) = Render(Sql.List());
+		text.Should().Be("");
+		parameters.EnumeratePairs().Should().Equal();
+	}
+
+	[Test]
+	public void ListEmpty()
+	{
+		var (text, parameters) = Render(Sql.List(Sql.Empty));
+		text.Should().Be("");
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[Test]
@@ -82,8 +91,17 @@ internal sealed class SqlSyntaxTests
 	[Test]
 	public void TupleNone()
 	{
-		Invoking(() => Render(Sql.Tuple())).Should().Throw<InvalidOperationException>();
-		Invoking(() => Render(Sql.Tuple(Sql.Empty))).Should().Throw<InvalidOperationException>();
+		var (text, parameters) = Render(Sql.Tuple());
+		text.Should().Be("()");
+		parameters.EnumeratePairs().Should().Equal();
+	}
+
+	[Test]
+	public void TupleEmpty()
+	{
+		var (text, parameters) = Render(Sql.Tuple(Sql.Empty));
+		text.Should().Be("()");
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[Test]
@@ -121,7 +139,9 @@ internal sealed class SqlSyntaxTests
 	[Test]
 	public void ParamListNone()
 	{
-		Invoking(() => Render(Sql.ParamList<object?>([]))).Should().Throw<InvalidOperationException>();
+		var (text, parameters) = Render(Sql.ParamList<object?>([]));
+		text.Should().Be("");
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[Test]
@@ -159,7 +179,9 @@ internal sealed class SqlSyntaxTests
 	[Test]
 	public void ParamTupleNone()
 	{
-		Invoking(() => Render(Sql.ParamTuple<object?>([]))).Should().Throw<InvalidOperationException>();
+		var (text, parameters) = Render(Sql.ParamTuple<object?>([]));
+		text.Should().Be("()");
+		parameters.EnumeratePairs().Should().Equal();
 	}
 
 	[Test]
@@ -243,7 +265,7 @@ internal sealed class SqlSyntaxTests
 	[Test]
 	public void JoinParams()
 	{
-		var (text, parameters) = Render(Sql.Join(", ", Sql.Param(42), Sql.Param(-42)));
+		var (text, parameters) = Render(Sql.List(Sql.Param(42), Sql.Param(-42)));
 		text.Should().Be("@ado1, @ado2");
 		parameters.EnumeratePairs().Should().Equal(("ado1", 42), ("ado2", -42));
 	}

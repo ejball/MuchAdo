@@ -10,7 +10,7 @@ internal sealed class SqlParamSourceTests
 	[Test]
 	public void Empty()
 	{
-		SqlParamSource.Empty.Enumerate().Should().Equal();
+		Sql.Empty.Enumerate().Should().Equal();
 	}
 
 	[Test]
