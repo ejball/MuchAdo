@@ -73,13 +73,14 @@ public sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
 		}
 
 		if (typeof(T) == typeof(Dictionary<string, object?>))
-			return (DbTypeMapper<T>) (object) new DictionaryMapper<Dictionary<string, object?>>();
+			return (DbTypeMapper<T>) (object) new DictionaryMapper<Dictionary<string, object?>, object?>(dataMapper);
 		if (typeof(T) == typeof(IDictionary<string, object?>))
-			return (DbTypeMapper<T>) (object) new DictionaryMapper<IDictionary<string, object?>>();
+			return (DbTypeMapper<T>) (object) new DictionaryMapper<IDictionary<string, object?>, object?>(dataMapper);
 		if (typeof(T) == typeof(IReadOnlyDictionary<string, object?>))
-			return (DbTypeMapper<T>) (object) new DictionaryMapper<IReadOnlyDictionary<string, object?>>();
+			return (DbTypeMapper<T>) (object) new DictionaryMapper<IReadOnlyDictionary<string, object?>, object?>(dataMapper);
+
 		if (typeof(T) == typeof(IDictionary))
-			return (DbTypeMapper<T>) (object) new DictionaryMapper<IDictionary>();
+			return (DbTypeMapper<T>) (object) new DictionaryMapper<IDictionary, object?>(dataMapper);
 
 		if (typeof(T) == typeof(Stream))
 			return (DbTypeMapper<T>) (object) new StreamMapper();

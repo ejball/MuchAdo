@@ -16,19 +16,14 @@ internal sealed class ObjectMapper(DbDataMapper dataMapper) : DbTypeMapper<objec
 		}
 
 		IDictionary<string, object?> obj = new ExpandoObject();
+		var typeMapper = dataMapper.GetTypeMapper<object>();
 		var notNull = false;
 		for (var i = index; i < index + count; i++)
 		{
 			var name = record.GetName(i);
-			if (!record.IsDBNull(i))
-			{
-				obj[name] = dataMapper.GetTypeMapper<object>().Map(record, i, state);
+			obj[name] = typeMapper.Map(record, i, state);
+			if (!notNull && !record.IsDBNull(i))
 				notNull = true;
-			}
-			else
-			{
-				obj[name] = null;
-			}
 		}
 		return notNull ? obj : null!;
 	}
