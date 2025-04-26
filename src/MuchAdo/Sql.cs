@@ -83,7 +83,13 @@ public static class Sql
 	/// </summary>
 	/// <remarks>This SQL fragment escapes <c>%</c> and <c>_</c> in the prefix with <c>\</c>. Depending on the database
 	/// and its settings, <c>escape '\'</c> may be needed after the parameter.</remarks>
-	public static SqlSource LikeParamStartsWith(string prefix) => new LikeParamStartsWithSqlSource(prefix ?? throw new ArgumentNullException(nameof(prefix)));
+	public static SqlSource LikeParamStartsWith(string prefix) => new LikeParamSqlSource(escape => $"{escape(prefix)}%");
+
+	public static SqlSource LikeParamEndsWith(string suffix) => new LikeParamSqlSource(escape => $"%{escape(suffix)}");
+
+	public static SqlSource LikeParamContains(string substring) => new LikeParamSqlSource(escape => $"%{escape(substring)}%");
+
+	public static SqlSource LikeParamContains(Func<Func<string, string>, string> escaper) => new LikeParamSqlSource(escaper);
 
 	/// <summary>
 	/// Creates SQL for a comma-separated list of SQL fragments.
