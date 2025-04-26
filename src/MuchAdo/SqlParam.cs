@@ -14,7 +14,7 @@ public class SqlParam<T> : SqlParamSource
 	{
 		if (string.IsNullOrEmpty(Name))
 		{
-			builder.AppendParameterValue(this, Value, Type);
+			builder.AppendParameterValue(identity: this, Value, Type);
 		}
 		else
 		{
