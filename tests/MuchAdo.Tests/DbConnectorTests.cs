@@ -211,7 +211,7 @@ internal sealed class DbConnectorTests
 	{
 		using var connector = CreateConnector();
 		var createCmd = connector.Command("create table Items (ItemId integer primary key, Name text not null);");
-		createCmd.IsPrepared.Should().Be(false);
+		createCmd.IsPrepared.Should().Be(null);
 		createCmd.Execute().Should().Be(0);
 
 		string insertStmt = "insert into Items (Name) values (@item);";

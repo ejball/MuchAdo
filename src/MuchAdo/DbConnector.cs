@@ -1389,7 +1389,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		try
 		{
 			DoCreateCommand(commandBatch);
-			if (commandBatch.IsPrepared)
+			if (ShouldPrepare(commandBatch))
 				PrepareCore();
 			return new DbActiveCommandDisposer(this);
 		}
@@ -1407,7 +1407,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		try
 		{
 			DoCreateCommand(commandBatch);
-			if (commandBatch.IsPrepared)
+			if (ShouldPrepare(commandBatch))
 				await PrepareCoreAsync(cancellationToken).ConfigureAwait(false);
 			return new DbActiveCommandDisposer(this);
 		}
@@ -1417,6 +1417,10 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			throw;
 		}
 	}
+
+	private bool ShouldPrepare(DbConnectorCommandBatch commandBatch) => commandBatch.IsPrepared ?? (m_settings.PrepareCachedCommands && ShouldCache(commandBatch));
+
+	private bool ShouldCache(DbConnectorCommandBatch commandBatch) => commandBatch.IsCached ?? m_settings.CacheCommands;
 
 	private void DoCreateCommand(DbConnectorCommandBatch commandBatch)
 	{
@@ -1428,7 +1432,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		var timeout = commandBatch.Timeout ?? m_settings.DefaultTimeout;
 
 		var wasCached = false;
-		if (commandBatch.IsCached)
+		if (ShouldCache(commandBatch))
 		{
 			if (commandCount == 1)
 			{

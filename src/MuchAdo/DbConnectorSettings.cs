@@ -30,6 +30,16 @@ public class DbConnectorSettings
 	public TimeSpan? DefaultTimeout { get; init; }
 
 	/// <summary>
+	/// If true, commands and command batches are cached by default.
+	/// </summary>
+	public bool CacheCommands { get; init; }
+
+	/// <summary>
+	/// If true, cached commands and command batches are prepared by default.
+	/// </summary>
+	public bool PrepareCachedCommands { get; init; }
+
+	/// <summary>
 	/// If true, does not dispose the connection when the connector is disposed.
 	/// </summary>
 	public bool NoDisposeConnection { get; init; }

@@ -14,14 +14,14 @@ public sealed class DbConnectorCommandBatch
 	public TimeSpan? Timeout { get; private set; }
 
 	/// <summary>
-	/// True after <see cref="Cache"/> is called.
+	/// True after <see cref="Cache" /> is called.
 	/// </summary>
-	public bool IsCached { get; private set; }
+	public bool? IsCached { get; private set; }
 
 	/// <summary>
-	/// True after <see cref="Prepare"/> is called.
+	/// True after <see cref="Prepare" /> is called.
 	/// </summary>
-	public bool IsPrepared { get; private set; }
+	public bool? IsPrepared { get; private set; }
 
 	/// <summary>
 	/// The connector.
