@@ -335,7 +335,7 @@ internal sealed class SqlSyntaxTests
 			""");
 
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
-		var (text, parameters) = Render(Sql.Format($"insert into Items ({Sql.ColumnNames<ItemDto>()}) values ({Sql.ColumnParams(item)});"), syntax);
+		var (text, parameters) = Render(Sql.Format($"insert into Items ({Sql.ColumnNames<ItemDto>()}) values ({Sql.DtoParams(item)});"), syntax);
 		text.Should().Be("""insert into Items ("ItemId", "DisplayName", "IsActive") values (@ado1, @ado2, @ado3);""");
 		parameters.EnumeratePairs().Should().Equal(("ado1", item.Id), ("ado2", item.DisplayName), ("ado3", item.IsActive));
 	}
@@ -364,7 +364,7 @@ internal sealed class SqlSyntaxTests
 		var item = new ItemDto { Id = 3, DisplayName = "three" };
 		var (text, parameters) = Render(Sql.Format($"""
 			insert into Items ({Sql.ColumnNames(item).Where(x => x is nameof(ItemDto.DisplayName))})
-			values ({Sql.ColumnParams(item).Where(x => x is nameof(ItemDto.DisplayName))});
+			values ({Sql.DtoParams(item).Where(x => x is nameof(ItemDto.DisplayName))});
 			"""), syntax);
 		text.Should().Be("""
 			insert into Items ("DisplayName")
@@ -395,8 +395,8 @@ internal sealed class SqlSyntaxTests
 	{
 		var syntax = SqlSyntax.MySql;
 
-		Invoking(() => Render(Sql.ColumnNames<ItemDto>().Where(_ => false), syntax)).Should().Throw<InvalidOperationException>();
-		Invoking(() => Render(Sql.ColumnParams(new ItemDto()).Where(_ => false), syntax)).Should().Throw<InvalidOperationException>();
+		Render(Sql.ColumnNames<ItemDto>().Where(_ => false), syntax).Text.Should().Be("");
+		Invoking(() => Render(Sql.DtoParams(new ItemDto()).Where(_ => false), syntax)).Should().Throw<InvalidOperationException>();
 	}
 
 	[Test]

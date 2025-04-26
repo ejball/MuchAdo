@@ -29,17 +29,22 @@ public sealed class ColumnNamesSqlSource<T> : SqlSource
 		var tablePrefix = m_tableName.Length == 0 ? "" : syntax.QuoteName(m_tableName) + ".";
 		var useSnakeCase = syntax.SnakeCaseColumnNames;
 
-		var filteredProperties = properties.AsEnumerable();
-		if (m_filterName is not null)
-			filteredProperties = filteredProperties.Where(x => m_filterName(x.Name));
+		var firstProperty = true;
+		foreach (var property in properties)
+		{
+			if (m_filterName is null || m_filterName(property.Name))
+			{
+				if (firstProperty)
+					firstProperty = false;
+				else
+					builder.AppendText(", ");
 
-		var text = string.Join(", ",
-			filteredProperties.Select(x => tablePrefix + syntax.QuoteName(
-				x.ColumnName ??
-				(useSnakeCase ? ColumnNamesSql.SnakeCaseCache.GetOrAdd(x.Name, JsonNamingPolicy.SnakeCaseLower.ConvertName) : x.Name))));
-		if (text.Length == 0)
-			throw new InvalidOperationException($"The specified type has no remaining columns: {typeof(T).FullName}");
-		builder.AppendText(text);
+				builder.AppendText(tablePrefix);
+				builder.AppendText(syntax.QuoteName(
+					property.ColumnName ??
+					(useSnakeCase ? ColumnNamesSql.SnakeCaseCache.GetOrAdd(property.Name, JsonNamingPolicy.SnakeCaseLower.ConvertName) : property.Name)));
+			}
+		}
 	}
 
 	private readonly string m_tableName;

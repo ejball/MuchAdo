@@ -25,25 +25,19 @@ public static class Sql
 	public static SqlSource Clauses(params IEnumerable<SqlSource> sqls) => new ClausesSqlSource(sqls.Memoize());
 
 	/// <summary>
-	/// Returns a comma-separated list of column names for a DTO of the specified type.
+	/// Returns a comma-separated list of column names corresponding to the properties of a DTO of the specified type.
 	/// </summary>
 	public static ColumnNamesSqlSource<T> ColumnNames<T>() => new();
 
 	/// <summary>
-	/// Returns a comma-separated list of column names for a DTO of the specified type.
+	/// Returns a comma-separated list of column names corresponding to the properties of a DTO of the specified type.
 	/// </summary>
 	public static ColumnNamesSqlSource<T> ColumnNames<T>(T dto) => new();
 
 	/// <summary>
-	/// Returns a comma-separated list of unnamed parameters for the column values of the specified DTO.
-	/// </summary>
-	public static ColumnParamsSqlSource<T> ColumnParams<T>(T dto) => new(dto ?? throw new ArgumentNullException(nameof(dto)));
-
-	/// <summary>
 	/// Concatenates SQL fragments.
 	/// </summary>
-	public static SqlSource Concat(params IEnumerable<SqlSource> sqls) =>
-		new ConcatSqlSource(sqls.Memoize());
+	public static SqlSource Concat(params IEnumerable<SqlSource> sqls) => new ConcatSqlSource(sqls.Memoize());
 
 	public static SqlParamSource DtoNamedParams<T>(T dto) => new DtoNamedSqlParamSource<T>(dto);
 
@@ -56,6 +50,11 @@ public static class Sql
 	/// Returns a comma-separated list of named parameters for the properties of the specified DTO.
 	/// </summary>
 	public static DtoParamNamesSqlSource<T> DtoParamNames<T>(T dto) => new();
+
+	/// <summary>
+	/// Returns a comma-separated list of unnamed parameters for the property values of the specified DTO.
+	/// </summary>
+	public static DtoParamsSqlSource<T> DtoParams<T>(T dto) => new(dto ?? throw new ArgumentNullException(nameof(dto)));
 
 	/// <summary>
 	/// Creates SQL from a formatted string.

@@ -1,11 +1,11 @@
 namespace MuchAdo.Sources;
 
-public sealed class ColumnParamsSqlSource<T> : SqlSource
+public sealed class DtoParamsSqlSource<T> : SqlSource
 {
-	public ColumnParamsSqlSource<T> Where(Func<string, bool> filter) =>
+	public DtoParamsSqlSource<T> Where(Func<string, bool> filter) =>
 		new(m_dto, m_filter is null ? filter : x => m_filter(x) && filter(x));
 
-	internal ColumnParamsSqlSource(T dto, Func<string, bool>? filter = null)
+	internal DtoParamsSqlSource(T dto, Func<string, bool>? filter = null)
 	{
 		m_dto = dto;
 		m_filter = filter;
