@@ -3,13 +3,8 @@ using MuchAdo.Mappers;
 
 namespace MuchAdo;
 
-public sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
+internal sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
 {
-	public DefaultDbTypeMapperFactory(DefaultDbTypeMapperSettings? settings = null)
-	{
-		m_allowStringToEnum = settings?.AllowStringToEnum is true;
-	}
-
 	public override DbTypeMapper<T>? TryCreateTypeMapper<T>(DbDataMapper dataMapper)
 	{
 		if (typeof(T) == typeof(bool))
@@ -65,7 +60,7 @@ public sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
 
 		if (typeof(T).IsEnum)
 		{
-			if (m_allowStringToEnum)
+			if (dataMapper.Settings.AllowStringToEnum)
 				return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(FlexibleEnumMapper<>).MakeGenericType(typeof(T)))!);
 
 			var underlyingType = Enum.GetUnderlyingType(typeof(T));
@@ -115,6 +110,4 @@ public sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
 
 		return null;
 	}
-
-	private readonly bool m_allowStringToEnum;
 }

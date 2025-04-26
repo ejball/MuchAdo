@@ -29,7 +29,6 @@ internal sealed class DtoMapper<T> : DbTypeMapper<T>
 	public DtoMapper(DbDataMapper mapper)
 	{
 		var properties = DbDtoInfo.GetInfo<T>().Properties;
-
 		var propertiesByNormalizedFieldName = new Dictionary<string, (DbDtoProperty<T> Property, DbTypeMapper Mapper)>(capacity: properties.Count, StringComparer.OrdinalIgnoreCase);
 		foreach (var property in properties)
 			propertiesByNormalizedFieldName.Add(NormalizeFieldName(property.ColumnName ?? property.Name), (property, mapper.GetTypeMapper(property.ValueType)));

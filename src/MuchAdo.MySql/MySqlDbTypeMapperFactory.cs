@@ -4,7 +4,7 @@ using MySqlConnector;
 
 namespace MuchAdo.MySql;
 
-public sealed class MySqlDbTypeMapperFactory : DbTypeMapperFactory
+internal sealed class MySqlDbTypeMapperFactory : DbTypeMapperFactory
 {
 	public override DbTypeMapper<T>? TryCreateTypeMapper<T>(DbDataMapper dataMapper)
 	{

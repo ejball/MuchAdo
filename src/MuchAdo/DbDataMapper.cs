@@ -7,25 +7,25 @@ namespace MuchAdo;
 /// <summary>
 /// Maps data record values to objects.
 /// </summary>
-public class DbDataMapper
+public sealed class DbDataMapper
 {
 	/// <summary>
 	/// The default data mapper allows the ADO.NET provider to convert values to the expected type.
 	/// </summary>
-	public static DbDataMapper Default { get; } = new(new DefaultDbTypeMapperFactory());
+	public static DbDataMapper Default { get; } = new(DbDataMapperSettings.Default);
 
 	/// <summary>
-	/// Creates a new data mapper.
+	/// Creates a new data mapper with the specified settings.
 	/// </summary>
-	public DbDataMapper(params IEnumerable<DbTypeMapperFactory> typeMapperFactories)
+	public DbDataMapper(DbDataMapperSettings settings)
 	{
-		TypeMapperFactories = typeMapperFactories.ToList().AsReadOnly();
+		Settings = settings;
 	}
 
 	/// <summary>
-	/// The type mapper factories used by this data mapper.
+	/// The settings used by this data mapper.
 	/// </summary>
-	public IReadOnlyList<DbTypeMapperFactory> TypeMapperFactories { get; }
+	public DbDataMapperSettings Settings { get; }
 
 	/// <summary>
 	/// Gets a type mapper for the specified type.
@@ -51,7 +51,7 @@ public class DbDataMapper
 
 	private DbTypeMapper<T> CreateTypeMapper<T>()
 	{
-		foreach (var factory in TypeMapperFactories)
+		foreach (var factory in Settings.TypeMapperFactories)
 		{
 			if (factory.TryCreateTypeMapper<T>(this) is { } mapper)
 				return mapper;
