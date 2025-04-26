@@ -605,7 +605,7 @@ internal sealed class DbConnectorTests
 
 	private static DbConnector CreateConnector(DefaultDbTypeMapperSettings? defaultTypeMapperSettings = null) =>
 		new(new SqliteConnection("Data Source=:memory:"),
-			new DbConnectorSettings { DataMapper = defaultTypeMapperSettings is null ? null : new DbDataMapper(new DefaultDbTypeMapperFactory(defaultTypeMapperSettings)) });
+			new DbConnectorSettings { DataMapper = defaultTypeMapperSettings is null ? DbDataMapper.Default : new DbDataMapper(new DefaultDbTypeMapperFactory(defaultTypeMapperSettings)) });
 
 	private static string ToUpper(DbConnectorRecord x) => x.Get<string>().ToUpperInvariant();
 }

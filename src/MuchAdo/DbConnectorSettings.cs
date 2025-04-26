@@ -10,12 +10,12 @@ public class DbConnectorSettings
 	/// <summary>
 	/// The SQL syntax to use when formatting SQL.
 	/// </summary>
-	public SqlSyntax? SqlSyntax { get; init; }
+	public SqlSyntax SqlSyntax { get; init; } = SqlSyntax.Default;
 
 	/// <summary>
 	/// Maps data record values to objects.
 	/// </summary>
-	public DbDataMapper? DataMapper { get; init; }
+	public DbDataMapper DataMapper { get; init; } = DbDataMapper.Default;
 
 	/// <summary>
 	/// The isolation level used when <c>BeginTransaction(Async)</c> is called without one.

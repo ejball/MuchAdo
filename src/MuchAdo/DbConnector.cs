@@ -28,17 +28,9 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	public DbConnector(IDbConnection connection, DbConnectorSettings settings)
 	{
 		m_connection = connection ?? throw new ArgumentNullException(nameof(connection));
-		if (settings is null)
-			throw new ArgumentNullException(nameof(settings));
-
+		m_settings = settings ?? throw new ArgumentNullException(nameof(settings));
 		m_isConnectionOpen = m_connection.State == ConnectionState.Open;
 		m_noCloseConnection = m_isConnectionOpen;
-		m_noDisposeConnection = settings.NoDisposeConnection;
-		m_defaultIsolationLevel = settings.DefaultIsolationLevel;
-		m_defaultTimeout = settings.DefaultTimeout;
-		m_cancelUnfinishedCommands = settings.CancelUnfinishedCommands;
-		SqlSyntax = settings.SqlSyntax ?? SqlSyntax.Default;
-		DataMapper = settings.DataMapper ?? DbDataMapper.Default;
 	}
 
 	/// <summary>
@@ -71,7 +63,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// <summary>
 	/// The SQL syntax used when formatting SQL.
 	/// </summary>
-	public SqlSyntax SqlSyntax { get; }
+	public SqlSyntax SqlSyntax => m_settings.SqlSyntax;
 
 	/// <summary>
 	/// Raised immediately before a command batch is executed.
@@ -168,7 +160,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	{
 		VerifyCanBeginTransaction();
 		OpenConnection();
-		m_transaction = m_defaultIsolationLevel is { } isolationLevel ? BeginTransactionCore(isolationLevel) : BeginTransactionCore();
+		m_transaction = m_settings.DefaultIsolationLevel is { } isolationLevel ? BeginTransactionCore(isolationLevel) : BeginTransactionCore();
 		return new DbTransactionDisposer(this);
 	}
 
@@ -196,7 +188,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	{
 		VerifyCanBeginTransaction();
 		await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
-		m_transaction = m_defaultIsolationLevel is { } isolationLevel
+		m_transaction = m_settings.DefaultIsolationLevel is { } isolationLevel
 			? await BeginTransactionCoreAsync(isolationLevel, cancellationToken).ConfigureAwait(false)
 			: await BeginTransactionCoreAsync(cancellationToken).ConfigureAwait(false);
 		return new DbTransactionDisposer(this);
@@ -429,7 +421,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		DisposeTransaction();
 		DisposeCachedCommands();
-		if (!m_noDisposeConnection)
+		if (!m_settings.NoDisposeConnection)
 			DisposeConnectionCore();
 		DisposeDisposables();
 		m_isDisposed = true;
@@ -454,7 +446,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		{
 			await DisposeTransactionAsync().ConfigureAwait(false);
 			await DisposeCachedCommandsAsync().ConfigureAwait(false);
-			if (!m_noDisposeConnection)
+			if (!m_settings.NoDisposeConnection)
 				await DisposeConnectionCoreAsync().ConfigureAwait(false);
 			await DisposeDisposablesAsync().ConfigureAwait(false);
 			m_isDisposed = true;
@@ -1077,7 +1069,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	protected virtual void OnExecuting(DbConnectorCommandBatch commandBatch) =>
 		Executing?.Invoke(this, new DbConnectorExecutingEventArgs(commandBatch));
 
-	internal DbDataMapper DataMapper { get; }
+	internal DbDataMapper DataMapper => m_settings.DataMapper;
 
 	internal DbConnectorPool? ConnectorPool { get; set; }
 
@@ -1352,7 +1344,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		if (m_activeReader is not null)
 		{
-			if (m_cancelUnfinishedCommands && !m_activeReader.IsClosed)
+			if (m_settings.CancelUnfinishedCommands && !m_activeReader.IsClosed)
 				CancelNoThrow();
 
 			DisposeReaderCore();
@@ -1366,7 +1358,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		if (m_activeReader is not null)
 		{
-			if (m_cancelUnfinishedCommands && !m_activeReader.IsClosed)
+			if (m_settings.CancelUnfinishedCommands && !m_activeReader.IsClosed)
 				CancelNoThrow();
 
 			await DisposeReaderCoreAsync().ConfigureAwait(false);
@@ -1433,7 +1425,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		var commandCount = commandBatch.CommandCount;
 		var transaction = Transaction;
-		var timeout = commandBatch.Timeout ?? m_defaultTimeout;
+		var timeout = commandBatch.Timeout ?? m_settings.DefaultTimeout;
 
 		var wasCached = false;
 		if (commandBatch.IsCached)
@@ -1676,18 +1668,15 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	private readonly IDbConnection m_connection;
+	private readonly DbConnectorSettings m_settings;
 	private IDbTransaction? m_transaction;
 	private object? m_activeCommandOrBatch;
 	private object? m_activeCommandOrBatchCacheKey;
 	private IDataReader? m_activeReader;
-	private readonly IsolationLevel? m_defaultIsolationLevel;
-	private readonly TimeSpan? m_defaultTimeout;
 	private DbCommandCache? m_commandCache;
 	private List<object?>? m_disposables;
 	private ParamTarget? m_parameterTarget;
-	private readonly bool m_noDisposeConnection;
 	private readonly bool m_noCloseConnection;
-	private readonly bool m_cancelUnfinishedCommands;
 	private bool m_isConnectionOpen;
 	private bool m_isDisposed;
 	private bool m_noDisposeTransaction;
