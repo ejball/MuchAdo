@@ -54,7 +54,7 @@ public static class Sql
 	/// <summary>
 	/// Returns a comma-separated list of unnamed parameters for the property values of the specified DTO.
 	/// </summary>
-	public static DtoParamsSqlSource<T> DtoParams<T>(T dto) => new(dto ?? throw new ArgumentNullException(nameof(dto)));
+	public static DtoSqlParamSource<T> DtoParams<T>(T dto) => new(dto ?? throw new ArgumentNullException(nameof(dto)));
 
 	/// <summary>
 	/// Creates SQL from a formatted string.

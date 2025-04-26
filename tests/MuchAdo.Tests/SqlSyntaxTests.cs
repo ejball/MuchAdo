@@ -396,7 +396,7 @@ internal sealed class SqlSyntaxTests
 		var syntax = SqlSyntax.MySql;
 
 		Render(Sql.ColumnNames<ItemDto>().Where(_ => false), syntax).Text.Should().Be("");
-		Invoking(() => Render(Sql.DtoParams(new ItemDto()).Where(_ => false), syntax)).Should().Throw<InvalidOperationException>();
+		Render(Sql.DtoParams(new ItemDto()).Where(_ => false), syntax).Text.Should().Be("");
 	}
 
 	[Test]
