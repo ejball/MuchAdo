@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 namespace MuchAdo;
 
 /// <summary>
@@ -100,25 +98,24 @@ public sealed class SqlSyntax
 	/// and <c>_</c> escaped as needed. This string is not raw SQL, but rather
 	/// a fragment of a LIKE pattern that should be concatenated with the rest of
 	/// the LIKE pattern and sent to the database via a string parameter.</returns>
-	[SuppressMessage("Globalization", "CA1307:Specify StringComparison for clarity", Justification = ".NET Standard 2.0")]
-	public string EscapeLikeFragment(string fragment)
+	internal string EscapeLikeFragment(string fragment)
 	{
 		const string escapeString = @"\";
 		return (fragment ?? throw new ArgumentNullException(nameof(fragment)))
-			.Replace(escapeString, escapeString + escapeString)
-			.Replace("%", escapeString + "%")
-			.Replace("_", escapeString + "_");
+			.ReplaceOrdinal(escapeString, escapeString + escapeString)
+			.ReplaceOrdinal("%", escapeString + "%")
+			.ReplaceOrdinal("_", escapeString + "_");
 	}
 
 	/// <summary>
 	/// Quotes the specified identifier so that it can be used as a schema/table/column name
 	/// even if it matches a keyword or has special characters.
 	/// </summary>
-	public string QuoteName(string name) => IdentifierQuoting switch
+	internal (string Start, string Escaped, string End) QuoteName(string name) => IdentifierQuoting switch
 	{
-		SqlIdentifierQuoting.DoubleQuotes => QuoteName(name, '"', '"'),
-		SqlIdentifierQuoting.Brackets => QuoteName(name, '[', ']'),
-		SqlIdentifierQuoting.Backticks => QuoteName(name, '`', '`'),
+		SqlIdentifierQuoting.DoubleQuotes => ("\"", EscapeName(name, '"'), "\""),
+		SqlIdentifierQuoting.Brackets => ("[", EscapeName(name, ']'), "]"),
+		SqlIdentifierQuoting.Backticks => ("`", EscapeName(name, '`'), "`"),
 		_ => throw new InvalidOperationException("The default SqlSyntax does not support quoted identifiers. Use a SqlSyntax that matches your database."),
 	};
 
@@ -140,10 +137,8 @@ public sealed class SqlSyntax
 		PositionalParameterStrategy = source.PositionalParameterStrategy;
 	}
 
-	private static string QuoteName(string name, char nameQuoteStart, char nameQuoteEnd) =>
-		nameQuoteStart +
-		(name.ContainsOrdinal(nameQuoteEnd)
+	private static string EscapeName(string name, char nameQuoteEnd) =>
+		name.ContainsOrdinal(nameQuoteEnd)
 			? name.ReplaceOrdinal(new string(nameQuoteEnd, 1), new string(nameQuoteEnd, 2))
-			: name) +
-		nameQuoteEnd;
+			: name;
 }

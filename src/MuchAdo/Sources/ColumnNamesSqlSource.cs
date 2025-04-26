@@ -26,7 +26,8 @@ public sealed class ColumnNamesSqlSource<T> : SqlSource
 			throw new InvalidOperationException($"The specified type has no columns: {typeof(T).FullName}");
 
 		var syntax = builder.Syntax;
-		var tablePrefix = m_tableName.Length == 0 ? "" : syntax.QuoteName(m_tableName) + ".";
+		var hasTableName = m_tableName.Length != 0;
+		var tablePrefixParts = hasTableName ? syntax.QuoteName(m_tableName) : default;
 		var useSnakeCase = syntax.SnakeCaseColumnNames;
 
 		var firstProperty = true;
@@ -39,10 +40,19 @@ public sealed class ColumnNamesSqlSource<T> : SqlSource
 				else
 					builder.AppendText(", ");
 
-				builder.AppendText(tablePrefix);
-				builder.AppendText(syntax.QuoteName(
-					property.ColumnName ??
-					(useSnakeCase ? ColumnNamesSql.SnakeCaseCache.GetOrAdd(property.Name, JsonNamingPolicy.SnakeCaseLower.ConvertName) : property.Name)));
+				if (hasTableName)
+				{
+					builder.AppendText(tablePrefixParts.Start!);
+					builder.AppendText(tablePrefixParts.Escaped!);
+					builder.AppendText(tablePrefixParts.End!);
+					builder.AppendText(".");
+				}
+
+				var columnNameParts = syntax.QuoteName(property.ColumnName ??
+					(useSnakeCase ? ColumnNamesSql.SnakeCaseCache.GetOrAdd(property.Name, JsonNamingPolicy.SnakeCaseLower.ConvertName) : property.Name));
+				builder.AppendText(columnNameParts.Start);
+				builder.AppendText(columnNameParts.Escaped);
+				builder.AppendText(columnNameParts.End);
 			}
 		}
 	}
