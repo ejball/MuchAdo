@@ -5,7 +5,7 @@ namespace MuchAdo.Mappers;
 internal sealed class FlexibleEnumMapper<T> : SingleFieldValueMapper<T>
 	where T : struct
 {
-	public override T MapNotNullField(IDataRecord record, int index)
+	public override T MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state)
 	{
 		var value = record.GetValue(index);
 		try

@@ -5,7 +5,7 @@ namespace MuchAdo.Mappers;
 
 internal sealed class StreamMapper : SingleFieldReferenceMapper<Stream>
 {
-	public override Stream MapNotNullField(IDataRecord record, int index)
+	public override Stream MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state)
 	{
 		if (record is DbDataReader dbReader)
 			return dbReader.GetStream(index);

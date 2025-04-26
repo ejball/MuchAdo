@@ -4,5 +4,5 @@ namespace MuchAdo.Mappers;
 
 internal sealed class CharMapper : SingleFieldValueMapper<char>
 {
-	public override char MapNotNullField(IDataRecord record, int index) => record.GetChar(index);
+	public override char MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state) => record.GetChar(index);
 }

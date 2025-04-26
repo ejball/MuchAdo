@@ -2,21 +2,14 @@ using System.Data;
 
 namespace MuchAdo.Mappers;
 
-internal abstract class ValueTupleMapperBase<T>(DbTypeMapper[] mappers) : DbTypeMapper<T>
+internal abstract class ValueTupleMapperBase<T> : DbTypeMapper<T>
 {
-	public override int? FieldCount
+	public override int? FieldCount { get; }
+
+	protected ValueTupleMapperBase(DbTypeMapper[] mappers)
 	{
-		get
-		{
-			var totalFieldCount = 0;
-			foreach (var mapper in mappers)
-			{
-				if (mapper.FieldCount is not { } fieldCount)
-					return null;
-				totalFieldCount += fieldCount;
-			}
-			return totalFieldCount;
-		}
+		m_mappers = mappers;
+		FieldCount = CalculateFieldCount();
 	}
 
 	protected void GetValueRanges(IDataRecord record, int index, int count, Span<(int Index, int Count)> valueRanges)
@@ -24,11 +17,11 @@ internal abstract class ValueTupleMapperBase<T>(DbTypeMapper[] mappers) : DbType
 		if (FieldCount is { } requiredFieldCount && count != requiredFieldCount)
 			throw BadFieldCount(count);
 
-		var valueCount = mappers.Length;
+		var valueCount = m_mappers.Length;
 		var recordIndex = index;
 		for (var valueIndex = 0; valueIndex < valueCount; valueIndex++)
 		{
-			var mapperFieldCount = mappers[valueIndex].FieldCount;
+			var mapperFieldCount = m_mappers[valueIndex].FieldCount;
 
 			int fieldCount;
 			int? nullIndex = null;
@@ -38,7 +31,7 @@ internal abstract class ValueTupleMapperBase<T>(DbTypeMapper[] mappers) : DbType
 				var minimumRemainingFieldCount = 0;
 				for (var nextValueIndex = valueIndex + 1; nextValueIndex < valueCount; nextValueIndex++)
 				{
-					var nextFieldCount = mappers[nextValueIndex].FieldCount;
+					var nextFieldCount = m_mappers[nextValueIndex].FieldCount;
 					if (nextFieldCount is not null)
 					{
 						remainingFieldCount += nextFieldCount.Value;
@@ -89,4 +82,18 @@ internal abstract class ValueTupleMapperBase<T>(DbTypeMapper[] mappers) : DbType
 			recordIndex = nullIndex + 1 ?? recordIndex + fieldCount;
 		}
 	}
+
+	private int? CalculateFieldCount()
+	{
+		var totalFieldCount = 0;
+		foreach (var mapper in m_mappers)
+		{
+			if (mapper.FieldCount is not { } fieldCount)
+				return null;
+			totalFieldCount += fieldCount;
+		}
+		return totalFieldCount;
+	}
+
+	private readonly DbTypeMapper[] m_mappers;
 }

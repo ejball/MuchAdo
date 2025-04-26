@@ -4,7 +4,7 @@ namespace MuchAdo.Mappers;
 
 internal sealed class ByteArrayMapper : SingleFieldReferenceMapper<byte[]>
 {
-	public override byte[] MapNotNullField(IDataRecord record, int index)
+	public override byte[] MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state)
 	{
 		if (record.GetValue(index) is byte[] blob)
 			return blob;

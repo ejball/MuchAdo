@@ -4,5 +4,5 @@ namespace MuchAdo.Mappers;
 
 internal sealed class DoubleMapper : SingleFieldValueMapper<double>
 {
-	public override double MapNotNullField(IDataRecord record, int index) => record.GetDouble(index);
+	public override double MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state) => record.GetDouble(index);
 }

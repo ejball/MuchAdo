@@ -5,7 +5,7 @@ namespace MuchAdo.Mappers;
 
 internal sealed class TextReaderMapper : SingleFieldReferenceMapper<TextReader>
 {
-	public override TextReader MapNotNullField(IDataRecord record, int index)
+	public override TextReader MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state)
 	{
 		if (record is DbDataReader dbReader)
 			return dbReader.GetTextReader(index);

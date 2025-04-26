@@ -20,16 +20,16 @@ internal sealed class MySqlDbTypeMapperFactory : DbTypeMapperFactory
 
 	private sealed class MySqlDateTimeMapper : SingleFieldValueMapper<MySqlDateTime>
 	{
-		public override MySqlDateTime MapNotNullField(IDataRecord record, int index) => ((MySqlDataReader) record).GetMySqlDateTime(index);
+		public override MySqlDateTime MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state) => ((MySqlDataReader) record).GetMySqlDateTime(index);
 	}
 
 	private sealed class MySqlDecimalMapper : SingleFieldValueMapper<MySqlDecimal>
 	{
-		public override MySqlDecimal MapNotNullField(IDataRecord record, int index) => ((MySqlDataReader) record).GetMySqlDecimal(index);
+		public override MySqlDecimal MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state) => ((MySqlDataReader) record).GetMySqlDecimal(index);
 	}
 
 	private sealed class MySqlGeometryMapper : SingleFieldReferenceMapper<MySqlGeometry>
 	{
-		public override MySqlGeometry MapNotNullField(IDataRecord record, int index) => ((MySqlDataReader) record).GetMySqlGeometry(index);
+		public override MySqlGeometry MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state) => ((MySqlDataReader) record).GetMySqlGeometry(index);
 	}
 }
