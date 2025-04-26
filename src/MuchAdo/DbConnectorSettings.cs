@@ -24,6 +24,12 @@ public class DbConnectorSettings
 	public IsolationLevel? DefaultIsolationLevel { get; init; }
 
 	/// <summary>
+	/// The default timeout.
+	/// </summary>
+	/// <remarks>If not specified, the behavior is provider-specific.</remarks>
+	public TimeSpan? DefaultTimeout { get; init; }
+
+	/// <summary>
 	/// If true, does not dispose the connection when the connector is disposed.
 	/// </summary>
 	public bool NoDisposeConnection { get; init; }

@@ -35,6 +35,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		m_noCloseConnection = m_isConnectionOpen;
 		m_noDisposeConnection = settings.NoDisposeConnection;
 		m_defaultIsolationLevel = settings.DefaultIsolationLevel;
+		m_defaultTimeout = settings.DefaultTimeout;
 		m_cancelUnfinishedCommands = settings.CancelUnfinishedCommands;
 		SqlSyntax = settings.SqlSyntax ?? SqlSyntax.Default;
 		DataMapper = settings.DataMapper ?? DbDataMapper.Default;
@@ -1432,7 +1433,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 		var commandCount = commandBatch.CommandCount;
 		var transaction = Transaction;
-		var timeout = commandBatch.Timeout;
+		var timeout = commandBatch.Timeout ?? m_defaultTimeout;
 
 		var wasCached = false;
 		if (commandBatch.IsCached)
@@ -1674,12 +1675,13 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		private int m_cachedIndex;
 	}
 
-	private readonly IsolationLevel? m_defaultIsolationLevel;
 	private readonly IDbConnection m_connection;
 	private IDbTransaction? m_transaction;
 	private object? m_activeCommandOrBatch;
 	private object? m_activeCommandOrBatchCacheKey;
 	private IDataReader? m_activeReader;
+	private readonly IsolationLevel? m_defaultIsolationLevel;
+	private readonly TimeSpan? m_defaultTimeout;
 	private DbCommandCache? m_commandCache;
 	private List<object?>? m_disposables;
 	private ParamTarget? m_parameterTarget;
