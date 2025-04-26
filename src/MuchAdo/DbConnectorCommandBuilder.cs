@@ -55,7 +55,7 @@ internal sealed class DbConnectorCommandBuilder
 
 		if (identity is null || m_placeholders is null || !m_placeholders.TryGetValue(identity, out var tuple))
 		{
-			if (Syntax.PositionalParameterStrategy.NamedParameterNamePrefix is { } namedPrefix)
+			if (Syntax.UnnamedParameterStrategy.NamedParameterNamePrefix is { } namedPrefix)
 			{
 				needsParameterNamed = Invariant($"{namedPrefix}{++m_parameterCount}");
 				tuple = (Syntax.NamedParameterPrefix, needsParameterNamed, -1);
@@ -63,21 +63,21 @@ internal sealed class DbConnectorCommandBuilder
 				if (identity is not null)
 					(m_placeholders ??= new()).Add(identity, tuple);
 			}
-			else if (Syntax.PositionalParameterStrategy.NumberedParameterPlaceholderPrefix is { } numberedPrefix)
+			else if (Syntax.UnnamedParameterStrategy.NumberedParameterPlaceholderPrefix is { } numberedPrefix)
 			{
 				needsParameterNamed = "";
 				tuple = (numberedPrefix, "", ++m_parameterCount);
 				if (identity is not null)
 					(m_placeholders ??= new()).Add(identity, tuple);
 			}
-			else if (Syntax.PositionalParameterStrategy.UnnumberedParameterPlaceholder is { } unnumberedPlaceholder)
+			else if (Syntax.UnnamedParameterStrategy.UnnumberedParameterPlaceholder is { } unnumberedPlaceholder)
 			{
 				needsParameterNamed = "";
 				tuple = (unnumberedPlaceholder, "", -1);
 			}
 			else
 			{
-				throw new InvalidOperationException($"Unexpected {nameof(Syntax.PositionalParameterStrategy)}.");
+				throw new InvalidOperationException($"Unexpected {nameof(Syntax.UnnamedParameterStrategy)}.");
 			}
 		}
 		else

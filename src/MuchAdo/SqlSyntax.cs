@@ -22,14 +22,14 @@ public sealed class SqlSyntax
 	/// </summary>
 	public static SqlSyntax MySql { get; } = Default
 		.WithIdentifierQuoting(SqlIdentifierQuoting.Backticks)
-		.WithPositionalParameterStrategy(SqlPositionalParameterStrategy.Unnumbered("?"));
+		.WithUnnamedParameterStrategy(SqlUnnamedParameterStrategy.Unnumbered("?"));
 
 	/// <summary>
 	/// The syntax for PostgreSQL.
 	/// </summary>
 	public static SqlSyntax Postgres { get; } = Default
 		.WithIdentifierQuoting(SqlIdentifierQuoting.DoubleQuotes)
-		.WithPositionalParameterStrategy(SqlPositionalParameterStrategy.Numbered("$"));
+		.WithUnnamedParameterStrategy(SqlUnnamedParameterStrategy.Numbered("$"));
 
 	/// <summary>
 	/// The syntax for Microsoft SQL Server.
@@ -82,14 +82,14 @@ public sealed class SqlSyntax
 	public SqlSyntax WithNamedParameterChar(string value) => new(this) { NamedParameterPrefix = value };
 
 	/// <summary>
-	/// The strategy for positional parameters.
+	/// The strategy for unnamed parameters.
 	/// </summary>
-	public SqlPositionalParameterStrategy PositionalParameterStrategy { get; private init; }
+	public SqlUnnamedParameterStrategy UnnamedParameterStrategy { get; private init; }
 
 	/// <summary>
 	/// Creates a new syntax with the specified strategy for unnamed parameters.
 	/// </summary>
-	public SqlSyntax WithPositionalParameterStrategy(SqlPositionalParameterStrategy value) => new(this) { PositionalParameterStrategy = value };
+	public SqlSyntax WithUnnamedParameterStrategy(SqlUnnamedParameterStrategy value) => new(this) { UnnamedParameterStrategy = value };
 
 	/// <summary>
 	/// Escapes a fragment of a LIKE pattern.
@@ -125,7 +125,7 @@ public sealed class SqlSyntax
 		SnakeCaseColumnNames = false;
 		LowercaseKeywords = false;
 		NamedParameterPrefix = "@";
-		PositionalParameterStrategy = SqlPositionalParameterStrategy.Named("ado");
+		UnnamedParameterStrategy = SqlUnnamedParameterStrategy.Named("ado");
 	}
 
 	private SqlSyntax(SqlSyntax source)
@@ -134,7 +134,7 @@ public sealed class SqlSyntax
 		SnakeCaseColumnNames = source.SnakeCaseColumnNames;
 		LowercaseKeywords = source.LowercaseKeywords;
 		NamedParameterPrefix = source.NamedParameterPrefix;
-		PositionalParameterStrategy = source.PositionalParameterStrategy;
+		UnnamedParameterStrategy = source.UnnamedParameterStrategy;
 	}
 
 	private static string EscapeName(string name, char nameQuoteEnd) =>

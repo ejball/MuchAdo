@@ -53,7 +53,7 @@ internal sealed class NpgsqlTests
 
 	private static DbConnector CreateConnector() => new(
 		new NpgsqlConnection("host=localhost;user id=root;password=test;database=test"),
-		new DbConnectorSettings { SqlSyntax = SqlSyntax.Postgres.WithPositionalParameterStrategy(SqlPositionalParameterStrategy.Numbered("$")) });
+		new DbConnectorSettings { SqlSyntax = SqlSyntax.Postgres.WithUnnamedParameterStrategy(SqlUnnamedParameterStrategy.Numbered("$")) });
 
 #if NET9_0
 	private const string c_suffix = "_net9";

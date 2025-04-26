@@ -1,14 +1,14 @@
 namespace MuchAdo;
 
-public sealed class SqlPositionalParameterStrategy
+public sealed class SqlUnnamedParameterStrategy
 {
-	public static SqlPositionalParameterStrategy Named(string namePrefix) =>
+	public static SqlUnnamedParameterStrategy Named(string namePrefix) =>
 		new() { NamedParameterNamePrefix = namePrefix };
 
-	public static SqlPositionalParameterStrategy Numbered(string placeholderPrefix) =>
+	public static SqlUnnamedParameterStrategy Numbered(string placeholderPrefix) =>
 		new() { NumberedParameterPlaceholderPrefix = placeholderPrefix };
 
-	public static SqlPositionalParameterStrategy Unnumbered(string placeholder) =>
+	public static SqlUnnamedParameterStrategy Unnumbered(string placeholder) =>
 		new() { UnnumberedParameterPlaceholder = placeholder };
 
 	internal string? NamedParameterNamePrefix { get; init; }
@@ -17,7 +17,7 @@ public sealed class SqlPositionalParameterStrategy
 
 	internal string? UnnumberedParameterPlaceholder { get; init; }
 
-	private SqlPositionalParameterStrategy()
+	private SqlUnnamedParameterStrategy()
 	{
 	}
 }
