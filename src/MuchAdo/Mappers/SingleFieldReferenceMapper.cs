@@ -2,7 +2,7 @@ using System.Data;
 
 namespace MuchAdo.Mappers;
 
-public abstract class SingleFieldReferenceMapper<T> : SingleFieldMapper<T?>
+public abstract class SingleFieldReferenceMapper<T>(DbDataMapper dataMapper) : SingleFieldMapper<T?>(dataMapper)
 	where T : class
 {
 	protected sealed override T? MapField(IDataRecord record, int index, DbConnectorRecordState? state) =>

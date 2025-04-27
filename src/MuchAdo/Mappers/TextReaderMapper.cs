@@ -3,7 +3,7 @@ using System.Data.Common;
 
 namespace MuchAdo.Mappers;
 
-internal sealed class TextReaderMapper : SingleFieldReferenceMapper<TextReader>
+internal sealed class TextReaderMapper(DbDataMapper dataMapper) : SingleFieldReferenceMapper<TextReader>(dataMapper)
 {
 	public override TextReader MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state)
 	{

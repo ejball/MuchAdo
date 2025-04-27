@@ -2,7 +2,7 @@ using System.Data;
 
 namespace MuchAdo.Mappers;
 
-public abstract class SingleFieldValueMapper<T> : SingleFieldMapper<T>
+public abstract class SingleFieldValueMapper<T>(DbDataMapper dataMapper) : SingleFieldMapper<T>(dataMapper)
 	where T : struct
 {
 	protected sealed override T MapField(IDataRecord record, int index, DbConnectorRecordState? state) =>

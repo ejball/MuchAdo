@@ -6,22 +6,23 @@ internal abstract class ValueTupleMapperBase<T> : DbTypeMapper<T>
 {
 	public override int? FieldCount { get; }
 
-	protected ValueTupleMapperBase(DbTypeMapper[] mappers)
+	protected ValueTupleMapperBase(DbDataMapper dataMapper, DbTypeMapper[] typeMappers)
 	{
-		m_mappers = mappers;
+		m_dataMapper = dataMapper;
+		m_typeMappers = typeMappers;
 		FieldCount = CalculateFieldCount();
 	}
 
 	protected void GetValueRanges(IDataRecord record, int index, int count, Span<(int Index, int Count)> valueRanges)
 	{
-		if (FieldCount is { } requiredFieldCount && count != requiredFieldCount)
+		if (FieldCount is { } requiredFieldCount && (count != requiredFieldCount && !(count > requiredFieldCount && m_dataMapper.Settings.IgnoreUnusedFields)))
 			throw BadFieldCount(count);
 
-		var valueCount = m_mappers.Length;
+		var valueCount = m_typeMappers.Length;
 		var recordIndex = index;
 		for (var valueIndex = 0; valueIndex < valueCount; valueIndex++)
 		{
-			var mapperFieldCount = m_mappers[valueIndex].FieldCount;
+			var mapperFieldCount = m_typeMappers[valueIndex].FieldCount;
 
 			int fieldCount;
 			int? nullIndex = null;
@@ -31,7 +32,7 @@ internal abstract class ValueTupleMapperBase<T> : DbTypeMapper<T>
 				var minimumRemainingFieldCount = 0;
 				for (var nextValueIndex = valueIndex + 1; nextValueIndex < valueCount; nextValueIndex++)
 				{
-					var nextFieldCount = m_mappers[nextValueIndex].FieldCount;
+					var nextFieldCount = m_typeMappers[nextValueIndex].FieldCount;
 					if (nextFieldCount is not null)
 					{
 						remainingFieldCount += nextFieldCount.Value;
@@ -86,14 +87,15 @@ internal abstract class ValueTupleMapperBase<T> : DbTypeMapper<T>
 	private int? CalculateFieldCount()
 	{
 		var totalFieldCount = 0;
-		foreach (var mapper in m_mappers)
+		foreach (var typeMapper in m_typeMappers)
 		{
-			if (mapper.FieldCount is not { } fieldCount)
+			if (typeMapper.FieldCount is not { } fieldCount)
 				return null;
 			totalFieldCount += fieldCount;
 		}
 		return totalFieldCount;
 	}
 
-	private readonly DbTypeMapper[] m_mappers;
+	private readonly DbDataMapper m_dataMapper;
+	private readonly DbTypeMapper[] m_typeMappers;
 }

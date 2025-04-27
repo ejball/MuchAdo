@@ -135,7 +135,10 @@ internal sealed class DbDataMapperTests
 				{
 					Invoking(() => record.Get<(string, long)>(0, 1)).Should().Throw<InvalidOperationException>();
 					record.Get<(string?, long)>(0, 2).Should().Be((s_dto.TheText, s_dto.TheInteger));
-					Invoking(() => record.Get<(string, long)>(0, 3)).Should().Throw<InvalidOperationException>();
+					if (ignore)
+						record.Get<(string?, long)>(0, 3).Should().Be((s_dto.TheText, s_dto.TheInteger));
+					else
+						Invoking(() => record.Get<(string?, long)>(0, 3)).Should().Throw<InvalidOperationException>();
 					return 1;
 				})
 			.Should().Be(1);

@@ -3,7 +3,7 @@ using System.Data.Common;
 
 namespace MuchAdo.Mappers;
 
-internal sealed class GetFieldValueMapper<T> : SingleFieldValueMapper<T>
+internal sealed class GetFieldValueMapper<T>(DbDataMapper dataMapper) : SingleFieldValueMapper<T>(dataMapper)
 	where T : struct
 {
 	public override T MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state) =>

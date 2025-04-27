@@ -2,7 +2,7 @@ using System.Data;
 
 namespace MuchAdo.Mappers;
 
-internal sealed class FlexibleEnumMapper<T> : SingleFieldValueMapper<T>
+internal sealed class FlexibleEnumMapper<T>(DbDataMapper dataMapper) : SingleFieldValueMapper<T>(dataMapper)
 	where T : struct
 {
 	public override T MapNotNullField(IDataRecord record, int index, DbConnectorRecordState? state)
