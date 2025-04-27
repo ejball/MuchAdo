@@ -48,13 +48,6 @@ internal sealed class SqlSyntaxTests
 	}
 
 	[Test]
-	public void ParamOfSql()
-	{
-		Invoking(() => Render(Sql.Param(Sql.Raw("xyzzy")))).Should().Throw<ArgumentException>();
-		Invoking(() => Render(Sql.NamedParam("abccb", Sql.Raw("xyzzy")))).Should().Throw<ArgumentException>();
-	}
-
-	[Test]
 	public void ListSql()
 	{
 		var (text, parameters) = Render(Sql.List(Sql.Param("one"), Sql.Param("two"), Sql.Raw("null")));

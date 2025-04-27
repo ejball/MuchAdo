@@ -105,12 +105,12 @@ public static class Sql
 	/// <summary>
 	/// Creates SQL for a named parameter with the specified value.
 	/// </summary>
-	public static SqlParam<T> NamedParam<T>(string name, T value) => value is not SqlSource ? new NamedSqlParam<T>(name, value) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
+	public static SqlParam<T> NamedParam<T>(string name, T value) => new NamedSqlParam<T>(name, value);
 
 	/// <summary>
 	/// Creates SQL for a named parameter with the specified value.
 	/// </summary>
-	public static SqlParam<T> NamedParam<T>(string name, T value, SqlParamType? type) => value is not SqlSource ? new NamedTypedSqlParam<T>(name, value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
+	public static SqlParam<T> NamedParam<T>(string name, T value, SqlParamType? type) => new NamedTypedSqlParam<T>(name, value, type);
 
 	/// <summary>
 	/// Creates parameters from tuples.
@@ -137,12 +137,12 @@ public static class Sql
 	/// <summary>
 	/// Creates SQL for an unnamed parameter with the specified value.
 	/// </summary>
-	public static SqlParam<T> Param<T>(T value) => value is not SqlSource ? new SqlParam<T>(value) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
+	public static SqlParam<T> Param<T>(T value) => new SqlParam<T>(value);
 
 	/// <summary>
 	/// Creates SQL for an unnamed parameter with the specified value.
 	/// </summary>
-	public static SqlParam<T> Param<T>(T value, SqlParamType? type) => value is not SqlSource ? new TypedSqlParam<T>(value, type) : throw new ArgumentException(c_paramIsSqlMessage, nameof(value));
+	public static SqlParam<T> Param<T>(T value, SqlParamType? type) => new TypedSqlParam<T>(value, type);
 
 	/// <summary>
 	/// Creates SQL for a comma-separated list of unnamed parameters with the specified values.
@@ -170,6 +170,4 @@ public static class Sql
 	/// Creates SQL for a WHERE clause. If the SQL is empty, the WHERE clause is omitted.
 	/// </summary>
 	public static SqlSource Where(SqlSource sql) => new WhereClauseSqlSource(sql);
-
-	private const string c_paramIsSqlMessage = "Parameters may not be created from Sql instances.";
 }
