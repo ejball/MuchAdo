@@ -1,6 +1,5 @@
 using System.Collections;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Data;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using NUnit.Framework;

@@ -6,8 +6,6 @@ using static FluentAssertions.FluentActions;
 
 namespace MuchAdo.Tests;
 
-#pragma warning disable FL0014 // Interpolated strings for literals
-
 [TestFixture]
 [SuppressMessage("Usage", "CA2263:Prefer generic overload when type is known", Justification = "Testing.")]
 internal sealed class SqlSyntaxTests
