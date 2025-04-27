@@ -17,18 +17,20 @@ internal sealed class MySqlTests
 		var tableName = Sql.Name($"{nameof(PrepareCacheTests)}_{c_framework}");
 
 		using var connector = CreateConnector();
-		connector.Command(Sql.Format($"drop table if exists {tableName};")).Execute();
-		connector.Command(Sql.Format($"create table {tableName} (Id int not null auto_increment primary key, Name varchar(100) not null);")).Execute();
+		connector
+			.CommandFormat($"drop table if exists {tableName}")
+			.CommandFormat($"create table {tableName} (Id int not null auto_increment primary key, Name varchar(100) not null)")
+			.Execute();
 
 		var insertSql = Sql.Format($"insert into {tableName} (Name) values (@itemA); insert into {tableName} (Name) values (@itemB);");
-		connector.Command(insertSql, Sql.NamedParam("itemA", "one"), Sql.NamedParam("itemB", "two")).Prepare().Cache().Execute().Should().Be(2);
-		connector.Command(insertSql, Sql.NamedParam("itemA", "three"), Sql.NamedParam("itemB", "four")).Prepare().Cache().Execute().Should().Be(2);
+		connector.Command(insertSql, Sql.NamedParams(("itemA", "one"), ("itemB", "two"))).Prepare().Cache().Execute().Should().Be(2);
+		connector.Command(insertSql, Sql.NamedParams(("itemA", "three"), ("itemB", "four"))).Prepare().Cache().Execute().Should().Be(2);
 
-		Invoking(() => connector.Command(insertSql, Sql.NamedParam("itemA", "five"), Sql.NamedParam("itemB", "six"), Sql.NamedParam("itemC", "seven")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql, Sql.NamedParams(("itemA", "five"), ("itemB", "six"), ("itemC", "seven"))).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
 		Invoking(() => connector.Command(insertSql, Sql.NamedParam("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
-		Invoking(() => connector.Command(insertSql, Sql.NamedParam("itemB", "six"), Sql.NamedParam("itemA", "five")).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
+		Invoking(() => connector.Command(insertSql, Sql.NamedParams(("itemB", "six"), ("itemA", "five"))).Prepare().Cache().Execute()).Should().Throw<InvalidOperationException>();
 
-		connector.Command(Sql.Format($"select Name from {tableName} order by Id;")).Query<string>().Should().Equal("one", "two", "three", "four");
+		connector.CommandFormat($"select Name from {tableName} order by Id").Query<string>().Should().Equal("one", "two", "three", "four");
 	}
 
 	[TestCase(false)]
@@ -62,8 +64,10 @@ internal sealed class MySqlTests
 		var sprocName = $"{nameof(SprocInOutTest)}_{c_framework}";
 
 		using var connector = CreateConnector();
-		connector.Command(Sql.Format($"drop procedure if exists {Sql.Name(sprocName)};")).Execute();
-		connector.Command(Sql.Format($"create procedure {Sql.Name(sprocName)} (inout Value int) begin set Value = Value * Value; end;")).Execute();
+		connector
+			.CommandFormat($"drop procedure if exists {Sql.Name(sprocName)}")
+			.CommandFormat($"create procedure {Sql.Name(sprocName)} (inout Value int) begin set Value = Value * Value; end")
+			.Execute();
 
 		var param = new MySqlParameter { DbType = DbType.Int32, Direction = ParameterDirection.InputOutput, Value = 11 };
 		connector.StoredProcedure(sprocName, Sql.NamedParam("Value", param)).Execute();
@@ -76,8 +80,10 @@ internal sealed class MySqlTests
 		var sprocName = $"{nameof(SprocInTest)}_{c_framework}";
 
 		using var connector = CreateConnector();
-		connector.Command(Sql.Format($"drop procedure if exists {Sql.Name(sprocName)};")).Execute();
-		connector.Command(Sql.Format($"create procedure {Sql.Name(sprocName)} (in Value int) begin select Value, Value * Value; end;")).Execute();
+		connector
+			.CommandFormat($"drop procedure if exists {Sql.Name(sprocName)}")
+			.CommandFormat($"create procedure {Sql.Name(sprocName)} (in Value int) begin select Value, Value * Value; end")
+			.Execute();
 
 		connector.StoredProcedure(sprocName, Sql.NamedParam("Value", 11)).QuerySingle<(int, long)>().Should().Be((11, 121));
 	}
@@ -93,17 +99,17 @@ internal sealed class MySqlTests
 		connector.Executing += (_, e) => lastCommandText = e.CommandBatch.CurrentCommand.BuildText(connector.SqlSyntax);
 
 		connector
-			.CommandFormat($"drop table if exists {tableName};")
-			.CommandFormat($"create table {tableName} (Id int not null auto_increment primary key, Name varchar(100) not null);")
-			.CommandFormat($"insert into {tableName} (Name) values (?), (?);", Sql.Param("one"), Sql.Param("two"))
+			.CommandFormat($"drop table if exists {tableName}")
+			.CommandFormat($"create table {tableName} (Id int not null auto_increment primary key, Name varchar(100) not null)")
+			.CommandFormat($"insert into {tableName} (Name) values (?), (?)", Sql.Param("one"), Sql.Param("two"))
 			.Execute();
 
 		var three = Sql.Param("three");
 		var four = "four";
-		connector.CommandFormat($"insert into {tableName} (Name) values ({three}), ({four}), ({three}), ({four});").Execute();
-		lastCommandText.Should().Contain("(Name) values (?), (?), (?), (?);");
+		connector.CommandFormat($"insert into {tableName} (Name) values ({three}), ({four}), ({three}), ({four})").Execute();
+		lastCommandText.Should().Contain("(Name) values (?), (?), (?), (?)");
 
-		connector.Command(Sql.Format($"select Name from {tableName} order by Id;")).Query<string>().Should().Equal("one", "two", "three", "four", "three", "four");
+		connector.CommandFormat($"select Name from {tableName} order by Id").Query<string>().Should().Equal("one", "two", "three", "four", "three", "four");
 	}
 
 	[Test]
