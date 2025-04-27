@@ -15,7 +15,7 @@ internal abstract class ValueTupleMapperBase<T> : DbTypeMapper<T>
 
 	protected void GetValueRanges(IDataRecord record, int index, int count, Span<(int Index, int Count)> valueRanges)
 	{
-		if (FieldCount is { } requiredFieldCount && (count != requiredFieldCount && !(count > requiredFieldCount && m_dataMapper.Settings.IgnoreUnusedFields)))
+		if (FieldCount is { } requiredFieldCount && !(count == requiredFieldCount || (count > requiredFieldCount && m_dataMapper.Settings.IgnoreUnusedFields)))
 			throw BadFieldCount(count);
 
 		var valueCount = m_typeMappers.Length;
