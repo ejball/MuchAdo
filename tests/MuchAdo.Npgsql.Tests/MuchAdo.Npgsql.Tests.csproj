@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="Microsoft.Data.SQLite" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="NUnit" />
     <PackageReference Include="NUnit3TestAdapter" />
@@ -25,11 +24,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\MuchAdo.MySql\MuchAdo.MySql.csproj" />
+    <ProjectReference Include="..\..\src\MuchAdo.Npgsql\MuchAdo.Npgsql.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" />
+    <PackageReference Update="Npgsql" VersionOverride="8.0.7" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
   </ItemGroup>
 

@@ -18,7 +18,6 @@
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.Data.SQLite" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" />
     <PackageReference Include="NUnit" />
     <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="System.Configuration.ConfigurationManager" />
@@ -27,6 +26,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\MuchAdo.Sqlite\MuchAdo.Sqlite.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net472' ">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
   </ItemGroup>
 
 </Project>
