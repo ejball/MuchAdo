@@ -1,10 +1,15 @@
 using System.Collections.ObjectModel;
+using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using MuchAdo.Sources;
 
 namespace MuchAdo;
 
 public abstract class SqlParamSource : SqlSource
 {
+	[SuppressMessage("Usage", "CA2225:Operator overloads have named alternates", Justification = "Use Sql.Param.")]
+	public static implicit operator SqlParamSource(DbParameter parameter) => Sql.Param(parameter);
+
 	public IEnumerable<SqlParam<object?>> Enumerate()
 	{
 		var target = new EnumerateParameterTarget();

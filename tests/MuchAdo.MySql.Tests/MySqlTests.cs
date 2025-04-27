@@ -69,8 +69,8 @@ internal sealed class MySqlTests
 			.CommandFormat($"create procedure {Sql.Name(sprocName)} (inout Value int) begin set Value = Value * Value; end")
 			.Execute();
 
-		var param = new MySqlParameter { DbType = DbType.Int32, Direction = ParameterDirection.InputOutput, Value = 11 };
-		connector.StoredProcedure(sprocName, Sql.NamedParam("Value", param)).Execute();
+		var param = new MySqlParameter("Value", MySqlDbType.Int32) { Direction = ParameterDirection.InputOutput, Value = 11 };
+		connector.StoredProcedure(sprocName, param).Execute();
 		param.Value.Should().Be(121);
 	}
 
