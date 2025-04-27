@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuchAdo.Ellipses.Tests", "t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuchAdo.MySql.Tests", "tests\MuchAdo.MySql.Tests\MuchAdo.MySql.Tests.csproj", "{4A6471A5-9682-80D1-F095-24EB607278BC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MuchAdo.Sqlite", "src\MuchAdo.Sqlite\MuchAdo.Sqlite.csproj", "{EC039409-0951-A158-20F6-37C34C7D013E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,6 +75,10 @@ Global
 		{4A6471A5-9682-80D1-F095-24EB607278BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A6471A5-9682-80D1-F095-24EB607278BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A6471A5-9682-80D1-F095-24EB607278BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC039409-0951-A158-20F6-37C34C7D013E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC039409-0951-A158-20F6-37C34C7D013E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC039409-0951-A158-20F6-37C34C7D013E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC039409-0951-A158-20F6-37C34C7D013E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
