@@ -1656,13 +1656,12 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			{
 				if (m_cachedIndex >= Parameters.Count)
 					throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters (missing '{name}').");
+
 				var dbParameter = Parameters[m_cachedIndex] as IDataParameter;
 				if (dbParameter is null || dbParameter.ParameterName != name)
 					throw new InvalidOperationException($"Cached commands must always be executed with the same number of parameters in the same order (found '{dbParameter?.ParameterName}', expected '{name}').");
 
 				connector.SetParameterValueCore(dbParameter, value);
-
-				type?.Apply(dbParameter);
 
 				m_cachedIndex++;
 			}
