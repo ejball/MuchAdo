@@ -8,7 +8,7 @@ using Microsoft.Data.Sqlite;
 #if MYSQL
 using MySqlConnector;
 #endif
-#if NGPSQL
+#if NPGSQL
 using Npgsql;
 #endif
 
@@ -51,7 +51,7 @@ public abstract class PreparedCachedBenchmark : IDisposable
 	}
 #endif
 
-#if NGPSQL
+#if NPGSQL
 	public class NpgsqlPreparedCachedBenchmark : PreparedCachedBenchmark
 	{
 		public NpgsqlPreparedCachedBenchmark()
