@@ -12,7 +12,7 @@ namespace MuchAdo;
 public class DbConnector : IDisposable, IAsyncDisposable
 {
 	/// <summary>
-	/// Creates a new DbConnector.
+	/// Creates a new connector.
 	/// </summary>
 	/// <param name="connection">The database connection.</param>
 	public DbConnector(IDbConnection connection)
@@ -21,7 +21,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
-	/// Creates a new DbConnector.
+	/// Creates a new connector.
 	/// </summary>
 	/// <param name="connection">The database connection.</param>
 	/// <param name="settings">The settings.</param>
@@ -74,82 +74,94 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// Creates a new command.
 	/// </summary>
 	/// <param name="text">The text of the command.</param>
-	public DbConnectorCommandBatch Command(string text) => new(this, CommandType.Text, text ?? throw new ArgumentNullException(nameof(text)));
+	public DbConnectorCommandBatch Command(string text) =>
+		new(this, CommandType.Text, text ?? throw new ArgumentNullException(nameof(text)));
 
 	/// <summary>
 	/// Creates a new command.
 	/// </summary>
 	/// <param name="text">The text of the command.</param>
 	/// <param name="parameters">The parameters of the command.</param>
-	public DbConnectorCommandBatch Command(string text, SqlParamSource parameters) => new(this, CommandType.Text, text ?? throw new ArgumentNullException(nameof(text)), parameters);
+	public DbConnectorCommandBatch Command(string text, SqlParamSource parameters) =>
+		new(this, CommandType.Text, text ?? throw new ArgumentNullException(nameof(text)), parameters ?? throw new ArgumentNullException(nameof(parameters)));
 
 	/// <summary>
 	/// Creates a new command.
 	/// </summary>
 	/// <param name="text">The text of the command.</param>
 	/// <param name="parameters">The parameters of the command.</param>
-	public DbConnectorCommandBatch Command(string text, params ReadOnlySpan<SqlParamSource> parameters) => new(this, CommandType.Text, text ?? throw new ArgumentNullException(nameof(text)), new SqlParamSources(parameters));
+	public DbConnectorCommandBatch Command(string text, params ReadOnlySpan<SqlParamSource> parameters) =>
+		new(this, CommandType.Text, text ?? throw new ArgumentNullException(nameof(text)), new SqlParamSources(parameters));
 
 	/// <summary>
 	/// Creates a new command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
-	public DbConnectorCommandBatch Command(SqlSource sql) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)));
+	public DbConnectorCommandBatch Command(SqlSource sql) =>
+		new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)));
 
 	/// <summary>
 	/// Creates a new command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
 	/// <param name="parameters">The parameters of the command.</param>
-	public DbConnectorCommandBatch Command(SqlSource sql, SqlParamSource parameters) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)), parameters);
+	public DbConnectorCommandBatch Command(SqlSource sql, SqlParamSource parameters) =>
+		new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)), parameters ?? throw new ArgumentNullException(nameof(parameters)));
 
 	/// <summary>
 	/// Creates a new command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
 	/// <param name="parameters">The parameters of the command.</param>
-	public DbConnectorCommandBatch Command(SqlSource sql, params ReadOnlySpan<SqlParamSource> parameters) => new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)), new SqlParamSources(parameters));
+	public DbConnectorCommandBatch Command(SqlSource sql, params ReadOnlySpan<SqlParamSource> parameters) =>
+		new(this, CommandType.Text, sql ?? throw new ArgumentNullException(nameof(sql)), new SqlParamSources(parameters));
 
 	/// <summary>
 	/// Creates a new command from a formatted SQL string.
 	/// </summary>
 	/// <param name="sql">The formatted SQL string.</param>
 	/// <remarks>Shorthand for <c>Command(Sql.Format(...))</c>.</remarks>
-	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql) => Command(Sql.Format(sql));
+	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql) =>
+		Command(Sql.Format(sql));
 
 	/// <summary>
 	/// Creates a new command from a formatted SQL string.
 	/// </summary>
 	/// <param name="sql">The formatted SQL string.</param>
 	/// <param name="parameters">The parameters of the command.</param>
-	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql, SqlParamSource parameters) => Command(Sql.Format(sql), parameters);
+	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql, SqlParamSource parameters) =>
+		Command(Sql.Format(sql), parameters);
 
 	/// <summary>
 	/// Creates a new command from a formatted SQL string.
 	/// </summary>
 	/// <param name="sql">The formatted SQL string.</param>
 	/// <param name="parameters">The parameters of the command.</param>
-	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql, params ReadOnlySpan<SqlParamSource> parameters) => Command(Sql.Format(sql), parameters);
+	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql, params ReadOnlySpan<SqlParamSource> parameters) =>
+		Command(Sql.Format(sql), parameters);
 
 	/// <summary>
 	/// Creates a new command to access a stored procedure.
 	/// </summary>
 	/// <param name="name">The name of the stored procedure.</param>
-	public DbConnectorCommandBatch StoredProcedure(string name) => new(this, CommandType.StoredProcedure, name ?? throw new ArgumentNullException(nameof(name)));
+	public DbConnectorCommandBatch StoredProcedure(string name) =>
+		new(this, CommandType.StoredProcedure, name ?? throw new ArgumentNullException(nameof(name)));
 
 	/// <summary>
 	/// Creates a new command to access a stored procedure.
 	/// </summary>
 	/// <param name="name">The name of the stored procedure.</param>
 	/// <param name="parameters">The parameters of the stored procedure.</param>
-	public DbConnectorCommandBatch StoredProcedure(string name, SqlParamSource parameters) => new(this, CommandType.StoredProcedure, name ?? throw new ArgumentNullException(nameof(name)), parameters);
+	public DbConnectorCommandBatch StoredProcedure(string name, SqlParamSource parameters) =>
+		new(this, CommandType.StoredProcedure, name ?? throw new ArgumentNullException(nameof(name)), parameters ?? throw new ArgumentNullException(nameof(parameters)));
 
 	/// <summary>
 	/// Creates a new command to access a stored procedure.
 	/// </summary>
 	/// <param name="name">The name of the stored procedure.</param>
 	/// <param name="parameters">The parameters of the stored procedure.</param>
-	public DbConnectorCommandBatch StoredProcedure(string name, params ReadOnlySpan<SqlParamSource> parameters) => new(this, CommandType.StoredProcedure, name ?? throw new ArgumentNullException(nameof(name)), new SqlParamSources(parameters));
+	public DbConnectorCommandBatch StoredProcedure(string name, params ReadOnlySpan<SqlParamSource> parameters) =>
+		new(this, CommandType.StoredProcedure, name ?? throw new ArgumentNullException(nameof(name)), new SqlParamSources(parameters));
 
 	/// <summary>
 	/// Begins a transaction.
@@ -206,23 +218,6 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		VerifyCanBeginTransaction();
 		await OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
 		m_transaction = await BeginTransactionCoreAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
-		return new DbTransactionDisposer(this);
-	}
-
-	/// <summary>
-	/// Attaches a transaction.
-	/// </summary>
-	/// <param name="transaction">The transaction to attach.</param>
-	/// <param name="noDispose">If true, the transaction is not disposed by the connector.</param>
-	/// <returns>An <see cref="IDisposable" /> that should be disposed when the transaction has been committed or should be rolled back.</returns>
-	public DbTransactionDisposer AttachTransaction(IDbTransaction transaction, bool noDispose = false)
-	{
-		if (!m_isConnectionOpen)
-			throw new InvalidOperationException("The connection must be open to attach a transaction; first call OpenTransaction or OpenTransactionAsync.");
-
-		VerifyCanBeginTransaction();
-		m_transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
-		m_noDisposeTransaction = noDispose;
 		return new DbTransactionDisposer(this);
 	}
 
@@ -399,6 +394,24 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	}
 
 	/// <summary>
+	/// Attaches a transaction.
+	/// </summary>
+	/// <param name="transaction">The transaction to attach.</param>
+	/// <param name="noDispose">If true, the transaction is not disposed by the connector.</param>
+	/// <returns>An <see cref="IDisposable" /> that should be disposed when the transaction has been committed or should be rolled back.</returns>
+	/// <remarks>The connection must be open to attach a transaction; first call <c>OpenTransaction</c> or <c>OpenTransactionAsync</c>.</remarks>
+	public DbTransactionDisposer AttachTransaction(IDbTransaction transaction, bool noDispose = false)
+	{
+		if (!m_isConnectionOpen)
+			throw new InvalidOperationException("The connection must be open to attach a transaction; first call OpenTransaction or OpenTransactionAsync.");
+
+		VerifyCanBeginTransaction();
+		m_transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
+		m_noDisposeTransaction = noDispose;
+		return new DbTransactionDisposer(this);
+	}
+
+	/// <summary>
 	/// Attaches a disposable to the connector, which is disposed when the connector is disposed.
 	/// </summary>
 	public void AttachDisposable(object disposable) => (m_disposables ??= []).Add(disposable);
@@ -431,26 +444,24 @@ public class DbConnector : IDisposable, IAsyncDisposable
 	/// Disposes the connector.
 	/// </summary>
 	/// <seealso cref="Dispose" />
-	public ValueTask DisposeAsync()
+	public async ValueTask DisposeAsync()
 	{
 		if (ConnectorPool is not null)
 		{
-			ConnectorPool.ReturnConnector(this);
-			ConnectorPool = null;
-			return default;
-		}
-
-		return m_isDisposed ? default : DoAsync();
-
-		async ValueTask DoAsync()
-		{
 			await DisposeTransactionAsync().ConfigureAwait(false);
-			await DisposeCachedCommandsAsync().ConfigureAwait(false);
-			if (!m_settings.NoDisposeConnection)
-				await DisposeConnectionCoreAsync().ConfigureAwait(false);
-			await DisposeDisposablesAsync().ConfigureAwait(false);
-			m_isDisposed = true;
+			ConnectorPool.ReturnConnector(this);
+			return;
 		}
+
+		if (m_isDisposed)
+			return;
+
+		await DisposeTransactionAsync().ConfigureAwait(false);
+		await DisposeCachedCommandsAsync().ConfigureAwait(false);
+		if (!m_settings.NoDisposeConnection)
+			await DisposeConnectionCoreAsync().ConfigureAwait(false);
+		await DisposeDisposablesAsync().ConfigureAwait(false);
+		m_isDisposed = true;
 	}
 
 	/// <summary>

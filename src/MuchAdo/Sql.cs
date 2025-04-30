@@ -153,8 +153,8 @@ public static class Sql
 	/// <summary>
 	/// Creates SQL for a comma-separated list of unnamed parameters with the specified values.
 	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored.</remarks>
-	public static SqlParamSource Params<T>(IEnumerable<T> values) => new ParamsSqlParamSource<T>(values.Memoize());
+	public static SqlParamSource Params<T>(IEnumerable<T> values) =>
+		new ParamsSqlParamSource<T>((values ?? throw new ArgumentNullException(nameof(values))).Memoize());
 
 	/// <summary>
 	/// Creates SQL from a raw string.
