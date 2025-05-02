@@ -9,6 +9,24 @@ namespace MuchAdo.Npgsql.Tests;
 internal sealed class NpgsqlTests
 {
 	[Test]
+	public void PrepareCacheTests()
+	{
+		var tableName = Sql.Name($"{nameof(PrepareCacheTests)}_{c_framework}");
+
+		using var connector = CreateConnector();
+		connector.CommandFormat($"drop table if exists {tableName}").Execute();
+		connector.CommandFormat($"create table {tableName} (ItemId serial primary key, Number integer not null)").Execute();
+
+		var param = Sql.Param(1);
+		var insertSql = Sql.Format($"insert into {tableName} (Number) values ({param});");
+		connector.Command(insertSql).Prepare().Cache().Execute().Should().Be(1);
+		param.Value = 2;
+		connector.Command(insertSql).Prepare().Cache().Execute().Should().Be(1);
+
+		connector.CommandFormat($"select Number from {tableName} order by ItemId;").Query<int>().Should().Equal(1, 2);
+	}
+
+	[Test]
 	public void UnnamedParameterTest()
 	{
 		var tableName = Sql.Name($"{nameof(UnnamedParameterTest)}_{c_framework}");

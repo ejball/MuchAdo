@@ -40,6 +40,14 @@ public class NpgsqlDbConnector : DbConnector
 
 	protected override IDataParameter CreateParameterCore<T>(string name, T value) => new NpgsqlParameter<T>(name, value);
 
+	protected override void SetParameterValueCore<T>(IDataParameter parameter, T value)
+	{
+		if (parameter is NpgsqlParameter<T> npgsqlParameter)
+			npgsqlParameter.TypedValue = value;
+		else
+			base.SetParameterValueCore(parameter, value);
+	}
+
 #if NETSTANDARD2_0
 	protected override ValueTask CloseConnectionCoreAsync() => new(Connection.CloseAsync());
 
