@@ -162,6 +162,20 @@ public static class Sql
 	public static SqlSource Raw(string text) => new RawSqlSource(text ?? throw new ArgumentNullException(nameof(text)));
 
 	/// <summary>
+	/// Creates SQL for an unnamed parameter with the specified value.
+	/// </summary>
+	/// <remarks>If the same object is used multiple times in the same command,
+	/// the same query parameter is used, if possible.</remarks>
+	public static SqlParam<T> ReusedParam<T>(T value) => new ReusedSqlParam<T>(value);
+
+	/// <summary>
+	/// Creates SQL for an unnamed parameter with the specified value.
+	/// </summary>
+	/// <remarks>If the same object is used multiple times in the same command,
+	/// the same query parameter is used, if possible.</remarks>
+	public static SqlParam<T> ReusedParam<T>(T value, SqlParamType? type) => new ReusedTypedSqlParam<T>(value, type);
+
+	/// <summary>
 	/// Creates SQL for a comma-separated list of SQL fragments, surrounded by parentheses.
 	/// </summary>
 	public static SqlSource Tuple(params IEnumerable<SqlSource> sqls) => Format($"({List(sqls)})");

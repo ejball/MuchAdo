@@ -1,6 +1,6 @@
 namespace MuchAdo.Sources;
 
-internal sealed class TypedSqlParam<T>(T value, SqlParamType? type) : SqlParam<T>(value)
+internal class TypedSqlParam<T>(T value, SqlParamType? type) : SqlParam<T>(value)
 {
 	public override SqlParamType? Type => type;
 }

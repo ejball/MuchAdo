@@ -35,24 +35,11 @@ internal sealed class DbConnectorCommandBuilder
 			parameters.SubmitParameters(m_paramTarget);
 	}
 
-	public void AppendParameterValue<T>(object? identity, T value, SqlParamType? type = null)
-	{
-		DoAppendParameter(identity, out var needsParameterNamed);
-		if (m_paramTarget is not null && needsParameterNamed is not null)
-			m_paramTarget.AcceptParameter(needsParameterNamed, value, type);
-	}
-
-	public void AppendParameterValue<T>(object? identity, T valueSource, DbDtoProperty<T> valueProperty)
-	{
-		DoAppendParameter(identity, out var needsParameterNamed);
-		if (m_paramTarget is not null && needsParameterNamed is not null)
-			valueProperty.SubmitParameter(m_paramTarget, needsParameterNamed, valueSource, type: null);
-	}
-
-	private void DoAppendParameter(object? identity, out string? needsParameterNamed)
+	public void AppendParameterValue<T>(T value, SqlParamType? type = null, object? identity = null)
 	{
 		ApplyPrefixes();
 
+		string? needsParameterNamed;
 		if (identity is null || m_placeholders is null || !m_placeholders.TryGetValue(identity, out var tuple))
 		{
 			if (Syntax.UnnamedParameterStrategy.NamedParameterNamePrefix is { } namedPrefix)
@@ -104,6 +91,9 @@ internal sealed class DbConnectorCommandBuilder
 			m_textLength += numberString.Length;
 #endif
 		}
+
+		if (m_paramTarget is not null && needsParameterNamed is not null)
+			m_paramTarget.AcceptParameter(needsParameterNamed, value, type);
 	}
 
 	private void ApplyPrefixes()

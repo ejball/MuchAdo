@@ -230,9 +230,10 @@ internal sealed class SqlSyntaxTests
 	{
 		var id = 42;
 		var name = "xyzzy";
+		var nameParam = Sql.Param(name);
 		var desc = "long description";
-		var descParam = Sql.Param(desc);
-		var (text, parameters) = Render(Sql.Format($"insert into widgets (Id, Name, Desc) values ({id}, {name}, {descParam}) on duplicate key update Name = {name}, Desc = {descParam}"));
+		var descParam = Sql.ReusedParam(desc);
+		var (text, parameters) = Render(Sql.Format($"insert into widgets (Id, Name, Desc) values ({id}, {nameParam}, {descParam}) on duplicate key update Name = {nameParam}, Desc = {descParam}"));
 		text.Should().Be("insert into widgets (Id, Name, Desc) values (@ado1, @ado2, @ado3) on duplicate key update Name = @ado4, Desc = @ado3");
 		parameters.EnumeratePairs().Should().Equal(("ado1", id), ("ado2", name), ("ado3", desc), ("ado4", name));
 	}

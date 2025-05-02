@@ -67,7 +67,7 @@ public abstract class SqlParamSource : SqlSource
 
 			if (string.IsNullOrEmpty(name))
 			{
-				builder.AppendParameterValue(identity: null, value, type);
+				builder.AppendParameterValue(value, type);
 			}
 			else
 			{
