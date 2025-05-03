@@ -2,8 +2,8 @@ namespace MuchAdo.MySql;
 
 public static class MySqlDbDataMapper
 {
-	public static DbDataMapper Default { get; } = new(DbDataMapper.Default.Settings.WithMySqlTypeMapperFactory());
+	public static DbDataMapper Default { get; } = DbDataMapper.Default.WithMySqlTypeMapperFactory();
 
-	public static DbDataMapperSettings WithMySqlTypeMapperFactory(this DbDataMapperSettings settings) =>
-		settings.WithTypeMapperFactory(new MySqlDbTypeMapperFactory());
+	public static DbDataMapper WithMySqlTypeMapperFactory(this DbDataMapper dataMapper) =>
+		dataMapper.WithTypeMapperFactories([.. dataMapper.TypeMapperFactories, new MySqlDbTypeMapperFactory()]);
 }

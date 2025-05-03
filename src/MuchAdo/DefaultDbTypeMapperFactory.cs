@@ -60,7 +60,7 @@ internal sealed class DefaultDbTypeMapperFactory : DbTypeMapperFactory
 
 		if (typeof(T).IsEnum)
 		{
-			if (dataMapper.Settings.AllowStringToEnum)
+			if (dataMapper.AllowStringToEnum)
 				return (DbTypeMapper<T>) (Activator.CreateInstance(typeof(FlexibleEnumMapper<>).MakeGenericType(typeof(T)), dataMapper)!);
 
 			var underlyingType = Enum.GetUnderlyingType(typeof(T));

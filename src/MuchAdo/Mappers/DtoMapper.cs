@@ -79,7 +79,7 @@ internal sealed class DtoMapper<T> : DbTypeMapper<T>
 				var fieldName = fieldNameSet.Names[index];
 				if (!m_propertiesByNormalizedFieldName!.TryGetValue(NormalizeFieldName(fieldName), out var property))
 				{
-					if (m_dataMapper.Settings.IgnoreUnusedFields)
+					if (m_dataMapper.IgnoreUnusedFields)
 						continue;
 					else
 						throw new InvalidOperationException($"Type does not have a property for '{fieldName}': {Type.FullName}");

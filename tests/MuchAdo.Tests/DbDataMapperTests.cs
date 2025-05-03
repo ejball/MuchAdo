@@ -627,7 +627,7 @@ internal sealed class DbDataMapperTests
 	{
 		var settings = new DbConnectorSettings
 		{
-			DataMapper = new DbDataMapper(DbDataMapper.Default.Settings.WithIgnoreUnusedFields(ignoreUnusedFields)),
+			DataMapper = DbDataMapper.Default.WithIgnoreUnusedFields(ignoreUnusedFields),
 		};
 
 		var connector = new DbConnector(new SqliteConnection("Data Source=:memory:"), settings);
