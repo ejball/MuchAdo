@@ -7,11 +7,17 @@ namespace MuchAdo;
 /// </summary>
 public readonly struct DbConnectorCommand
 {
+	/// <summary>
+	/// Creates a new instance.
+	/// </summary>
 	public DbConnectorCommand(CommandType type, string text, SqlParamSource parameters)
 		: this(type, (object) text, parameters)
 	{
 	}
 
+	/// <summary>
+	/// Creates a new instance.
+	/// </summary>
 	public DbConnectorCommand(CommandType type, SqlSource sql, SqlParamSource parameters)
 		: this(type, (object) sql, parameters)
 	{

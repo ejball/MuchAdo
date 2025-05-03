@@ -10,9 +10,9 @@ namespace MuchAdo;
 public sealed class DbDataMapper
 {
 	/// <summary>
-	/// The default data mapper allows the ADO.NET provider to convert values to the expected type.
+	/// The default data mapper.
 	/// </summary>
-	public static DbDataMapper Default { get; } = new(DbDataMapperSettings.Default);
+	public static DbDataMapper Default { get; } = new(DbDataMapperSettings.Empty.WithTypeMapperFactory(new DefaultDbTypeMapperFactory()));
 
 	/// <summary>
 	/// Creates a new data mapper with the specified settings.

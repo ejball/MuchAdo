@@ -15,7 +15,7 @@ public static class BulkInsertUtility
 		if (commandBatch.CommandCount != 1)
 			throw new ArgumentException("Command batch must contain exactly one command.", nameof(commandBatch));
 
-		var command = commandBatch.CurrentCommand;
+		var command = commandBatch.LastCommand;
 		var commandText = command.Text ?? command.Sql!.ToString(commandBatch.Connector.SqlSyntax);
 
 		var rowCount = 0;
@@ -38,7 +38,7 @@ public static class BulkInsertUtility
 		if (commandBatch.CommandCount != 1)
 			throw new ArgumentException("Command batch must contain exactly one command.", nameof(commandBatch));
 
-		var command = commandBatch.CurrentCommand;
+		var command = commandBatch.LastCommand;
 		var commandText = command.Text ?? command.Sql!.ToString(commandBatch.Connector.SqlSyntax);
 
 		var rowCount = 0;

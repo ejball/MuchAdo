@@ -446,14 +446,14 @@ internal sealed class DbConnectorTests
 	{
 		using var connector = CreateConnector();
 		var createCommand = connector.Command("create table Items (ItemId integer primary key, Name text not null);");
-		createCommand.CurrentCommand.Type.Should().Be(CommandType.Text);
+		createCommand.LastCommand.Type.Should().Be(CommandType.Text);
 		createCommand.Execute().Should().Be(0);
-		connector.Command("insert into Items (Name) values (@item1);", Sql.NamedParam("item1", "one")).CurrentCommand.Type.Should().Be(CommandType.Text);
+		connector.Command("insert into Items (Name) values (@item1);", Sql.NamedParam("item1", "one")).LastCommand.Type.Should().Be(CommandType.Text);
 
 		var storedProcedureCommand = connector.StoredProcedure("values (1);");
-		storedProcedureCommand.CurrentCommand.Type.Should().Be(CommandType.StoredProcedure);
+		storedProcedureCommand.LastCommand.Type.Should().Be(CommandType.StoredProcedure);
 		Invoking(storedProcedureCommand.Execute).Should().Throw<ArgumentException>("CommandType must be Text. (Parameter 'value')");
-		connector.StoredProcedure("values (@two);", Sql.NamedParam("two", 2)).CurrentCommand.Type.Should().Be(CommandType.StoredProcedure);
+		connector.StoredProcedure("values (@two);", Sql.NamedParam("two", 2)).LastCommand.Type.Should().Be(CommandType.StoredProcedure);
 	}
 
 	[Test]
@@ -500,7 +500,7 @@ internal sealed class DbConnectorTests
 	[TestCase(false)]
 	public void EnumQueryTests(bool flexible)
 	{
-		using var connector = CreateConnector(DbDataMapperSettings.Default.WithAllowStringToEnum(flexible));
+		using var connector = CreateConnector(DbDataMapper.Default.Settings.WithAllowStringToEnum(flexible));
 		connector.Command("create table Items (ItemId integer primary key, Name text null, Number integer null);").Execute();
 		connector.Command("insert into Items (Name, Number) values ('Ordinal', 4), ('ordinal', null), (null, 4), ('fail', null);").Execute();
 

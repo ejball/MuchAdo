@@ -3,14 +3,14 @@ using System.Data;
 namespace MuchAdo;
 
 /// <summary>
-/// Encapsulates a database command, or a batch of database commands.
+/// Encapsulates a database command or a batch of database commands.
 /// </summary>
 public sealed class DbConnectorCommandBatch
 {
 	/// <summary>
 	/// The timeout.
 	/// </summary>
-	/// <remarks>If not specified, the default timeout for the connection is used.</remarks>
+	/// <remarks>If not specified, the default timeout is used.</remarks>
 	public TimeSpan? Timeout { get; private set; }
 
 	/// <summary>
@@ -316,7 +316,7 @@ public sealed class DbConnectorCommandBatch
 	/// Creates the next command from parameterized SQL.
 	/// </summary>
 	/// <param name="sql">The parameterized SQL.</param>
-	/// <param name="parameters">The parameters of the command.</param>
+	/// <param name="parameters">Additional parameters.</param>
 	public DbConnectorCommandBatch Command(SqlSource sql, params ReadOnlySpan<SqlParamSource> parameters) => StartNextCommand(CommandType.Text, sql, new SqlParamSources(parameters));
 
 	/// <summary>
@@ -338,7 +338,7 @@ public sealed class DbConnectorCommandBatch
 	/// Creates the next command from a formatted SQL string.
 	/// </summary>
 	/// <param name="sql">The formatted SQL string.</param>
-	/// <param name="parameters">The parameters of the command.</param>
+	/// <param name="parameters">Additional parameters.</param>
 	public DbConnectorCommandBatch CommandFormat(SqlFormatStringHandler sql, params ReadOnlySpan<SqlParamSource> parameters) => Command(Sql.Format(sql), parameters);
 
 	/// <summary>
@@ -362,9 +362,9 @@ public sealed class DbConnectorCommandBatch
 	public DbConnectorCommandBatch StoredProcedure(string name, params ReadOnlySpan<SqlParamSource> parameters) => StartNextCommand(CommandType.StoredProcedure, name, new SqlParamSources(parameters));
 
 	/// <summary>
-	/// Gets the current command.
+	/// Gets the last command in the batch.
 	/// </summary>
-	public DbConnectorCommand CurrentCommand => new(m_commandType, m_textOrSql, m_paramSource ?? Sql.Empty);
+	public DbConnectorCommand LastCommand => new(m_commandType, m_textOrSql, m_paramSource ?? Sql.Empty);
 
 	/// <summary>
 	/// Gets the command at the specified index.
@@ -372,7 +372,7 @@ public sealed class DbConnectorCommandBatch
 	public DbConnectorCommand GetCommand(int index)
 	{
 		if (index == (m_batchedCommands?.Count ?? 0))
-			return CurrentCommand;
+			return LastCommand;
 
 		if (m_batchedCommands is null)
 			throw new ArgumentOutOfRangeException(nameof(index));
@@ -413,7 +413,7 @@ public sealed class DbConnectorCommandBatch
 	private DbConnectorCommandBatch StartNextCommand(CommandType commandType, object textOrSql, SqlParamSource? paramSource = null)
 	{
 		m_batchedCommands ??= [];
-		m_batchedCommands.Add(CurrentCommand);
+		m_batchedCommands.Add(LastCommand);
 
 		m_commandType = commandType;
 		m_textOrSql = textOrSql;

@@ -96,7 +96,7 @@ internal sealed class MySqlTests
 		using var connector = CreateConnector();
 
 		var lastCommandText = "";
-		connector.Executing += (_, e) => lastCommandText = e.CommandBatch.CurrentCommand.BuildText(connector.SqlSyntax);
+		connector.Executing += (_, e) => lastCommandText = e.CommandBatch.LastCommand.BuildText(connector.SqlSyntax);
 
 		connector
 			.CommandFormat($"drop table if exists {tableName}")

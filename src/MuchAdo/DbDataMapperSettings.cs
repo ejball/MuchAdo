@@ -5,16 +5,25 @@ namespace MuchAdo;
 /// </summary>
 public sealed class DbDataMapperSettings
 {
-	public static DbDataMapperSettings Default { get; } = new() { TypeMapperFactories = [new DefaultDbTypeMapperFactory()] };
+	/// <summary>
+	/// Empty settings.
+	/// </summary>
+	public static DbDataMapperSettings Empty { get; } = new();
 
 	/// <summary>
 	/// The type mapper factories used by this data mapper.
 	/// </summary>
 	public IReadOnlyList<DbTypeMapperFactory> TypeMapperFactories { get; private init; }
 
+	/// <summary>
+	/// Returns new settings with an additional type mapper factory.
+	/// </summary>
 	public DbDataMapperSettings WithTypeMapperFactory(DbTypeMapperFactory typeMapperFactory) =>
 		ReplaceTypeMapperFactories([.. TypeMapperFactories, typeMapperFactory]);
 
+	/// <summary>
+	/// Returns new settings with the specified type mapper factories.
+	/// </summary>
 	public DbDataMapperSettings ReplaceTypeMapperFactories(IReadOnlyList<DbTypeMapperFactory> value) =>
 		new(this) { TypeMapperFactories = value };
 
@@ -23,6 +32,9 @@ public sealed class DbDataMapperSettings
 	/// </summary>
 	public bool AllowStringToEnum { get; private init; }
 
+	/// <summary>
+	/// Returns new settings with the specified value for <see cref="AllowStringToEnum"/>.
+	/// </summary>
 	public DbDataMapperSettings WithAllowStringToEnum(bool value = true) =>
 		new(this) { AllowStringToEnum = value };
 
@@ -31,6 +43,9 @@ public sealed class DbDataMapperSettings
 	/// </summary>
 	public bool IgnoreUnusedFields { get; private init; }
 
+	/// <summary>
+	/// Returns new settings with the specified value for <see cref="IgnoreUnusedFields"/>.
+	/// </summary>
 	public DbDataMapperSettings WithIgnoreUnusedFields(bool value = true) =>
 		new(this) { IgnoreUnusedFields = value };
 

@@ -1212,6 +1212,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 
 	internal IEnumerable<T> Enumerate<T>(DbConnectorCommandBatch commandBatch, Func<DbConnectorRecord, T>? map)
 	{
+		OnExecuting(commandBatch);
 		using var commandScope = CreateCommand(commandBatch);
 		m_activeReader = ExecuteReaderCore();
 		using var readerScope = new DbActiveReaderDisposer(this);
@@ -1447,7 +1448,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		{
 			if (commandCount == 1)
 			{
-				var currentCommand = commandBatch.CurrentCommand;
+				var currentCommand = commandBatch.LastCommand;
 				var commandText = BuildCommand(currentCommand.TextOrSql, buildText: true);
 				m_activeCommandOrBatchCacheKey = commandText;
 
@@ -1489,7 +1490,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		{
 			if (commandCount == 1)
 			{
-				var currentCommand = commandBatch.CurrentCommand;
+				var currentCommand = commandBatch.LastCommand;
 				m_activeCommandOrBatch = CreateCommandCore(currentCommand.Type);
 			}
 			else
@@ -1500,7 +1501,6 @@ public class DbConnector : IDisposable, IAsyncDisposable
 			}
 		}
 
-		// TODO: set to default timeout if necessary when cached
 		if (timeout is not null)
 			SetTimeoutCore(timeout == Timeout.InfiniteTimeSpan ? 0 : (int) Math.Ceiling(timeout.Value.TotalSeconds));
 
