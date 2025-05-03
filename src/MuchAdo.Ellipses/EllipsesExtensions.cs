@@ -8,6 +8,9 @@ namespace MuchAdo.Ellipses;
 /// </summary>
 public static class EllipsesExtensions
 {
+	/// <summary>
+	/// Expands ellipses in the specified command batch.
+	/// </summary>
 	public static DbConnectorCommandBatch ExpandEllipses(this DbConnectorCommandBatch commandBatch)
 	{
 		for (var commandIndex = 0; commandIndex < commandBatch.CommandCount; commandIndex++)

@@ -3,6 +3,9 @@ using Microsoft.Data.Sqlite;
 
 namespace MuchAdo.Sqlite;
 
+/// <summary>
+/// A <see cref="DbConnector" /> optimized for Microsoft.Data.Sqlite.
+/// </summary>
 public class SqliteDbConnector : DbConnector
 {
 	public SqliteDbConnector(SqliteConnection connection)

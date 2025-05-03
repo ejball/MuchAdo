@@ -1,5 +1,8 @@
 namespace MuchAdo.Sqlite;
 
+/// <summary>
+/// Settings when creating a <see cref="SqliteDbConnector" />.
+/// </summary>
 public class SqliteDbConnectorSettings : DbConnectorSettings
 {
 	public SqliteDbConnectorSettings()

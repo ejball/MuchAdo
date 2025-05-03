@@ -3,6 +3,9 @@ using MySqlConnector;
 
 namespace MuchAdo.MySql;
 
+/// <summary>
+/// A <see cref="DbConnector" /> optimized for MySqlConnector.
+/// </summary>
 public class MySqlDbConnector : DbConnector
 {
 	public MySqlDbConnector(MySqlConnection connection)

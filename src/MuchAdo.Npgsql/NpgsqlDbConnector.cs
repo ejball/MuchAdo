@@ -3,6 +3,9 @@ using Npgsql;
 
 namespace MuchAdo.Npgsql;
 
+/// <summary>
+/// A <see cref="DbConnector" /> optimized for Npgsql.
+/// </summary>
 public class NpgsqlDbConnector : DbConnector
 {
 	public NpgsqlDbConnector(NpgsqlConnection connection)
