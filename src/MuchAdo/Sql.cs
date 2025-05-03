@@ -39,20 +39,23 @@ public static class Sql
 	/// </summary>
 	public static SqlSource Concat(params IEnumerable<SqlSource> sqls) => new ConcatSqlSource(sqls.Memoize());
 
+	/// <summary>
+	/// Returns named parameters for the properties of the specified DTO.
+	/// </summary>
 	public static SqlParamSource DtoNamedParams<T>(T dto) => new DtoNamedSqlParamSource<T>(dto);
 
 	/// <summary>
-	/// Returns a comma-separated list of named parameters for the properties of the specified DTO.
+	/// Returns a comma-separated list of named parameter placeholders for the properties of the specified DTO.
 	/// </summary>
 	public static DtoParamNamesSqlSource<T> DtoParamNames<T>() => new();
 
 	/// <summary>
-	/// Returns a comma-separated list of named parameters for the properties of the specified DTO.
+	/// Returns a comma-separated list of named parameter placeholders for the properties of the specified DTO.
 	/// </summary>
 	public static DtoParamNamesSqlSource<T> DtoParamNames<T>(T dto) => new();
 
 	/// <summary>
-	/// Returns a comma-separated list of unnamed parameters for the property values of the specified DTO.
+	/// Returns unnamed parameters for the property values of the specified DTO.
 	/// </summary>
 	public static DtoSqlParamSource<T> DtoParams<T>(T dto) => new(dto ?? throw new ArgumentNullException(nameof(dto)));
 
@@ -79,17 +82,31 @@ public static class Sql
 		new JoinSqlSource(separator ?? throw new ArgumentNullException(nameof(separator)), sqls.Memoize());
 
 	/// <summary>
-	/// Creates SQL for an unnamed parameter with the specified fragment of a LIKE pattern followed by a trailing <c>%</c>.
+	/// Creates an unnamed parameter set to a LIKE pattern ending with <c>%</c>.
 	/// </summary>
 	/// <remarks>This SQL fragment escapes <c>%</c> and <c>_</c> in the prefix with <c>\</c>. Depending on the database
 	/// and its settings, <c>escape '\'</c> may be needed after the parameter.</remarks>
 	public static SqlSource LikeParamStartsWith(string prefix) => new LikeParamSqlSource(escape => $"{escape(prefix)}%");
 
+	/// <summary>
+	/// Creates an unnamed parameter set to a LIKE pattern starting with <c>%</c>.
+	/// </summary>
+	/// <remarks>This SQL fragment escapes <c>%</c> and <c>_</c> in the suffix with <c>\</c>. Depending on the database
+	/// and its settings, <c>escape '\'</c> may be needed after the parameter.</remarks>
 	public static SqlSource LikeParamEndsWith(string suffix) => new LikeParamSqlSource(escape => $"%{escape(suffix)}");
 
+	/// <summary>
+	/// Creates an unnamed parameter set to a LIKE pattern starting and ending with <c>%</c>.
+	/// </summary>
+	/// <remarks>This SQL fragment escapes <c>%</c> and <c>_</c> in the substring with <c>\</c>. Depending on the database
+	/// and its settings, <c>escape '\'</c> may be needed after the parameter.</remarks>
 	public static SqlSource LikeParamContains(string substring) => new LikeParamSqlSource(escape => $"%{escape(substring)}%");
 
-	public static SqlSource LikeParamContains(Func<Func<string, string>, string> escaper) => new LikeParamSqlSource(escaper);
+	/// <summary>
+	/// Creates an unnamed parameter set to an arbitrary LIKE pattern.
+	/// </summary>
+	/// <remarks>Use the provided delegate to escape the portions of the LIKE pattern that need escaping.</remarks>
+	public static SqlSource LikeParam(Func<Func<string, string>, string> escaper) => new LikeParamSqlSource(escaper);
 
 	/// <summary>
 	/// Creates SQL for a comma-separated list of SQL fragments.
