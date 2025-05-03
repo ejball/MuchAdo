@@ -5,7 +5,16 @@ namespace MuchAdo;
 
 public abstract class SqlParamType
 {
+	public static SqlParamType Default { get; } = new DefaultSqlParamType();
+
 	public static SqlParamType Create(Action<DbParameter> action) => new ActionSqlParamType(action);
+
+	private sealed class DefaultSqlParamType : SqlParamType
+	{
+		public override void Apply(IDataParameter parameter)
+		{
+		}
+	}
 
 	private sealed class ActionSqlParamType(Action<DbParameter> action) : SqlParamType
 	{

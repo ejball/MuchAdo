@@ -65,9 +65,14 @@ public static class Sql
 	public static SqlSource Format(SqlFormatStringHandler stringHandler) => stringHandler.ToSqlSource();
 
 	/// <summary>
+	/// Creates SQL for a GROUP BY clause. If the SQL is empty, the GROUP BY clause is omitted.
+	/// </summary>
+	public static SqlSource GroupBy(SqlSource sql) => new GroupByClauseSqlSource(sql);
+
+	/// <summary>
 	/// Creates SQL for a GROUP BY clause. If the SQLs are empty, the GROUP BY clause is omitted.
 	/// </summary>
-	public static SqlSource GroupBy(params IEnumerable<SqlSource> sqls) => new GroupByClauseSqlSource(List(sqls));
+	public static SqlSource GroupBy(params IEnumerable<SqlSource> sqls) => GroupBy(List(sqls));
 
 	/// <summary>
 	/// Creates SQL for a HAVING clause. If the SQL is empty, the HAVING clause is omitted.
@@ -82,30 +87,31 @@ public static class Sql
 		new JoinSqlSource(separator ?? throw new ArgumentNullException(nameof(separator)), sqls.Memoize());
 
 	/// <summary>
-	/// Creates an unnamed parameter set to a LIKE pattern ending with <c>%</c>.
+	/// Creates SQL for an unnamed parameter set to a LIKE pattern ending with <c>%</c>.
 	/// </summary>
 	/// <remarks>This SQL fragment escapes <c>%</c> and <c>_</c> in the prefix with <c>\</c>. Depending on the database
 	/// and its settings, <c>escape '\'</c> may be needed after the parameter.</remarks>
 	public static SqlSource LikeParamStartsWith(string prefix) => new LikeParamSqlSource(escape => $"{escape(prefix)}%");
 
 	/// <summary>
-	/// Creates an unnamed parameter set to a LIKE pattern starting with <c>%</c>.
+	/// Creates SQL for an unnamed parameter set to a LIKE pattern starting with <c>%</c>.
 	/// </summary>
 	/// <remarks>This SQL fragment escapes <c>%</c> and <c>_</c> in the suffix with <c>\</c>. Depending on the database
 	/// and its settings, <c>escape '\'</c> may be needed after the parameter.</remarks>
 	public static SqlSource LikeParamEndsWith(string suffix) => new LikeParamSqlSource(escape => $"%{escape(suffix)}");
 
 	/// <summary>
-	/// Creates an unnamed parameter set to a LIKE pattern starting and ending with <c>%</c>.
+	/// Creates SQL for an unnamed parameter set to a LIKE pattern starting and ending with <c>%</c>.
 	/// </summary>
 	/// <remarks>This SQL fragment escapes <c>%</c> and <c>_</c> in the substring with <c>\</c>. Depending on the database
 	/// and its settings, <c>escape '\'</c> may be needed after the parameter.</remarks>
 	public static SqlSource LikeParamContains(string substring) => new LikeParamSqlSource(escape => $"%{escape(substring)}%");
 
 	/// <summary>
-	/// Creates an unnamed parameter set to an arbitrary LIKE pattern.
+	/// Creates SQL for an unnamed parameter set to an arbitrary LIKE pattern.
 	/// </summary>
-	/// <remarks>Use the provided delegate to escape the portions of the LIKE pattern that need escaping.</remarks>
+	/// <remarks>Use the provided delegate to escape the portions of the LIKE pattern that need escaping. Depending on the database
+	/// and its settings, <c>escape '\'</c> may be needed after the parameter.</remarks>
 	public static SqlSource LikeParam(Func<Func<string, string>, string> escaper) => new LikeParamSqlSource(escaper);
 
 	/// <summary>
@@ -120,23 +126,23 @@ public static class Sql
 	public static SqlSource Name(string identifier) => new NameSqlSource(identifier ?? throw new ArgumentNullException(nameof(identifier)));
 
 	/// <summary>
-	/// Creates SQL for a named parameter with the specified value.
+	/// Creates a named parameter with the specified value.
 	/// </summary>
 	public static SqlParam<T> NamedParam<T>(string name, T value) => new NamedSqlParam<T>(name, value);
 
 	/// <summary>
-	/// Creates SQL for a named parameter with the specified value.
+	/// Creates a named parameter with the specified value and type.
 	/// </summary>
-	public static SqlParam<T> NamedParam<T>(string name, T value, SqlParamType? type) => new NamedTypedSqlParam<T>(name, value, type);
+	public static SqlParam<T> NamedParam<T>(string name, T value, SqlParamType type) => new NamedTypedSqlParam<T>(name, value, type);
 
 	/// <summary>
-	/// Creates parameters from tuples.
+	/// Creates named parameters from tuples.
 	/// </summary>
 	public static SqlParamSource NamedParams<T>(params IEnumerable<(string Name, T Value)> parameters) =>
 		new TuplesSqlParamSource<T>(parameters.Memoize());
 
 	/// <summary>
-	/// Creates parameters from a dictionary.
+	/// Creates named parameters from a dictionary.
 	/// </summary>
 	public static SqlParamSource NamedParams<T>(IEnumerable<KeyValuePair<string, T>> parameters) =>
 		new DictionarySqlParamSource<T>(parameters.Memoize());
@@ -147,31 +153,35 @@ public static class Sql
 	public static SqlSource Or(params IEnumerable<SqlSource> sqls) => new OrOperatorSqlSource(sqls.Memoize());
 
 	/// <summary>
+	/// Creates SQL for an ORDER BY clause. If the SQL is empty, the ORDER BY clause is omitted.
+	/// </summary>
+	public static SqlSource OrderBy(SqlSource sql) => new OrderByClauseSqlSource(sql);
+
+	/// <summary>
 	/// Creates SQL for an ORDER BY clause. If the SQLs are empty, the ORDER BY clause is omitted.
 	/// </summary>
-	public static SqlSource OrderBy(params IEnumerable<SqlSource> sqls) => new OrderByClauseSqlSource(List(sqls));
+	public static SqlSource OrderBy(params IEnumerable<SqlSource> sqls) => OrderBy(List(sqls));
 
 	/// <summary>
-	/// Creates SQL for an unnamed parameter with the specified value.
+	/// Creates an unnamed parameter with the specified value.
 	/// </summary>
-	public static SqlParam<T> Param<T>(T value) => new SqlParam<T>(value);
+	public static SqlParam<T> Param<T>(T value) => new(value);
 
 	/// <summary>
-	/// Creates SQL for an unnamed parameter with the specified value.
+	/// Creates an unnamed parameter with the specified value and type.
 	/// </summary>
-	public static SqlParam<T> Param<T>(T value, SqlParamType? type) => new TypedSqlParam<T>(value, type);
+	public static SqlParam<T> Param<T>(T value, SqlParamType type) => new TypedSqlParam<T>(value, type);
 
 	/// <summary>
-	/// Creates SQL for a comma-separated list of unnamed parameters with the specified values.
-	/// </summary>
-	/// <remarks>Empty SQL fragments are ignored.</remarks>
-	public static SqlParamSource Params<T>(T value1, T value2, params ReadOnlySpan<T> values) => new ParamsSqlParamSource<T>([value1, value2, .. values]);
-
-	/// <summary>
-	/// Creates SQL for a comma-separated list of unnamed parameters with the specified values.
+	/// Creates unnamed parameters with the specified values.
 	/// </summary>
 	public static SqlParamSource Params<T>(IEnumerable<T> values) =>
 		new ParamsSqlParamSource<T>((values ?? throw new ArgumentNullException(nameof(values))).Memoize());
+
+	/// <summary>
+	/// Creates unnamed parameters with the specified values.
+	/// </summary>
+	public static SqlParamSource Params<T>(T value1, T value2, params ReadOnlySpan<T> values) => new ParamsSqlParamSource<T>([value1, value2, .. values]);
 
 	/// <summary>
 	/// Creates SQL from a raw string.
@@ -179,18 +189,16 @@ public static class Sql
 	public static SqlSource Raw(string text) => new RawSqlSource(text ?? throw new ArgumentNullException(nameof(text)));
 
 	/// <summary>
-	/// Creates SQL for an unnamed parameter with the specified value.
+	/// Creates an unnamed parameter with the specified value.
 	/// </summary>
-	/// <remarks>If the same object is used multiple times in the same command,
-	/// the same query parameter is used, if possible.</remarks>
+	/// <remarks>If the same object is used multiple times in the same command, the same parameter is used, if possible.</remarks>
 	public static SqlParam<T> ReusedParam<T>(T value) => new ReusedSqlParam<T>(value);
 
 	/// <summary>
-	/// Creates SQL for an unnamed parameter with the specified value.
+	/// Creates an unnamed parameter with the specified value.
 	/// </summary>
-	/// <remarks>If the same object is used multiple times in the same command,
-	/// the same query parameter is used, if possible.</remarks>
-	public static SqlParam<T> ReusedParam<T>(T value, SqlParamType? type) => new ReusedTypedSqlParam<T>(value, type);
+	/// <remarks>If the same object is used multiple times in the same command, the same parameter is used, if possible.</remarks>
+	public static SqlParam<T> ReusedParam<T>(T value, SqlParamType type) => new ReusedTypedSqlParam<T>(value, type);
 
 	/// <summary>
 	/// Creates SQL for a comma-separated list of SQL fragments, surrounded by parentheses.

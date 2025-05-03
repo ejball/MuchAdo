@@ -37,7 +37,7 @@ public static class EllipsesExtensions
 
 								foreach (var item in list)
 								{
-									replacements.Add(Sql.NamedParam<object?>($"{parameter.Name}_{itemCount}", item, parameter.Type));
+									replacements.Add(Sql.NamedParam<object?>($"{parameter.Name}_{itemCount}", item, parameter.Type ?? SqlParamType.Default));
 									itemCount++;
 								}
 
