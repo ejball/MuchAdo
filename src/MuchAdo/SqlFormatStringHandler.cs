@@ -3,6 +3,9 @@ using MuchAdo.Sources;
 
 namespace MuchAdo;
 
+/// <summary>
+/// Used by <see cref="Sql.Format" />.
+/// </summary>
 [InterpolatedStringHandler]
 public readonly ref struct SqlFormatStringHandler
 {

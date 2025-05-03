@@ -1,11 +1,23 @@
 namespace MuchAdo;
 
+/// <summary>
+/// A parameter with a value of the specified type. Use <see cref="Sql" /> to create.
+/// </summary>
 public class SqlParam<T> : SqlParamSource
 {
+	/// <summary>
+	/// The value of the parameter.
+	/// </summary>
 	public T Value { get; set; }
 
+	/// <summary>
+	/// The name of the parameter, or empty if it is unnamed.
+	/// </summary>
 	public virtual string Name => "";
 
+	/// <summary>
+	/// The type of the parameter, or null if it is not specified.
+	/// </summary>
 	public virtual SqlParamType? Type => null;
 
 	internal SqlParam(T value) => Value = value;
