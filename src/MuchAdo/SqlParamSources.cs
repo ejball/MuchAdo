@@ -3,7 +3,7 @@ using System.Collections;
 namespace MuchAdo;
 
 /// <summary>
-/// A list of sets of parameters.
+/// A list of parameter sources.
 /// </summary>
 public sealed class SqlParamSources : SqlParamSource, IList<SqlParamSource>, IReadOnlyList<SqlParamSource>
 {
@@ -13,12 +13,12 @@ public sealed class SqlParamSources : SqlParamSource, IList<SqlParamSource>, IRe
 	public SqlParamSources() => m_sources = [];
 
 	/// <summary>
-	/// Creates a list from the specified sets of parameters.
+	/// Creates a list from the specified parameter sources.
 	/// </summary>
 	public SqlParamSources(params ReadOnlySpan<SqlParamSource> items) => m_sources = [.. items];
 
 	/// <summary>
-	/// Creates a list from the specified sets of parameters.
+	/// Creates a list from the specified parameter sources.
 	/// </summary>
 	public SqlParamSources(IEnumerable<SqlParamSource> items) => m_sources = [.. items];
 

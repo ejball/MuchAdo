@@ -15,8 +15,14 @@ public abstract class SqlSource
 	public static SqlSource operator +(SqlSource a, SqlSource b) =>
 		new AddSqlSource(a ?? throw new ArgumentNullException(nameof(a)), b ?? throw new ArgumentNullException(nameof(b)));
 
+	/// <summary>
+	/// Renders the SQL source using ANSI syntax.
+	/// </summary>
 	public override string ToString() => ToString(SqlSyntax.Ansi);
 
+	/// <summary>
+	/// Renders the SQL source using the specified syntax.
+	/// </summary>
 	public string ToString(SqlSyntax syntax)
 	{
 		var commandBuilder = new DbConnectorCommandBuilder(syntax, buildText: true, paramTarget: null);

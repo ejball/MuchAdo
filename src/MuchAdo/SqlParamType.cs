@@ -3,23 +3,23 @@ using System.Data.Common;
 
 namespace MuchAdo;
 
+/// <summary>
+/// Encapsulates a parameter type.
+/// </summary>
 public abstract class SqlParamType
 {
-	public static SqlParamType Default { get; } = new DefaultSqlParamType();
-
+	/// <summary>
+	/// Creates a parameter type that calls the specified delegate on the database parameter.
+	/// </summary>
 	public static SqlParamType Create(Action<DbParameter> action) => new ActionSqlParamType(action);
 
-	private sealed class DefaultSqlParamType : SqlParamType
-	{
-		public override void Apply(IDataParameter parameter)
-		{
-		}
-	}
+	/// <summary>
+	/// Applies the parameter type to the specified database parameter.
+	/// </summary>
+	public abstract void Apply(IDataParameter parameter);
 
 	private sealed class ActionSqlParamType(Action<DbParameter> action) : SqlParamType
 	{
 		public override void Apply(IDataParameter parameter) => action((DbParameter) parameter);
 	}
-
-	public abstract void Apply(IDataParameter parameter);
 }
