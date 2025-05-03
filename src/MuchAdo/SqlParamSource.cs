@@ -73,7 +73,7 @@ public abstract class SqlParamSource : SqlSource
 			{
 				builder.AppendText(builder.Syntax.NamedParameterPrefix);
 				builder.AppendText(name);
-				builder.SubmitParameters(type is null ? Sql.NamedParam(name, value) : Sql.NamedParam(name, value, type));
+				builder.SubmitParameters(Sql.NamedParam(name, value, type));
 			}
 		}
 

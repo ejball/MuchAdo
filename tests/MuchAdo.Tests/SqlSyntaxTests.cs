@@ -521,7 +521,6 @@ internal sealed class SqlSyntaxTests
 	{
 		public SqlParamSources Params { get; } = new();
 
-		public void AcceptParameter<T>(string name, T value, SqlParamType? type) =>
-			Params.Add(type is null ? Sql.NamedParam(name, value) : Sql.NamedParam(name, value, type));
+		public void AcceptParameter<T>(string name, T value, SqlParamType? type) => Params.Add(Sql.NamedParam(name, value, type));
 	}
 }

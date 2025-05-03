@@ -133,7 +133,8 @@ public static class Sql
 	/// <summary>
 	/// Creates a named parameter with the specified value and type.
 	/// </summary>
-	public static SqlParam<T> NamedParam<T>(string name, T value, SqlParamType type) => new NamedTypedSqlParam<T>(name, value, type);
+	public static SqlParam<T> NamedParam<T>(string name, T value, SqlParamType? type) =>
+		type is null ? new NamedSqlParam<T>(name, value) : new NamedTypedSqlParam<T>(name, value, type);
 
 	/// <summary>
 	/// Creates named parameters from tuples.
@@ -170,7 +171,7 @@ public static class Sql
 	/// <summary>
 	/// Creates an unnamed parameter with the specified value and type.
 	/// </summary>
-	public static SqlParam<T> Param<T>(T value, SqlParamType type) => new TypedSqlParam<T>(value, type);
+	public static SqlParam<T> Param<T>(T value, SqlParamType? type) => type is null ? new SqlParam<T>(value) : new TypedSqlParam<T>(value, type);
 
 	/// <summary>
 	/// Creates unnamed parameters with the specified values.
@@ -198,7 +199,8 @@ public static class Sql
 	/// Creates an unnamed parameter with the specified value.
 	/// </summary>
 	/// <remarks>If the same object is used multiple times in the same command, the same parameter is used, if possible.</remarks>
-	public static SqlParam<T> ReusedParam<T>(T value, SqlParamType type) => new ReusedTypedSqlParam<T>(value, type);
+	public static SqlParam<T> ReusedParam<T>(T value, SqlParamType? type) =>
+		type is null ? new ReusedSqlParam<T>(value) : new ReusedTypedSqlParam<T>(value, type);
 
 	/// <summary>
 	/// Creates SQL for a comma-separated list of SQL fragments, surrounded by parentheses.
