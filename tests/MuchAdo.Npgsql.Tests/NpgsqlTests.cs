@@ -8,6 +8,12 @@ namespace MuchAdo.Npgsql.Tests;
 [TestFixture]
 internal sealed class NpgsqlTests
 {
+	[OneTimeSetUp]
+	public void OneTimeSetUp()
+	{
+		AppContext.SetSwitch("Npgsql.EnableSqlRewriting", false);
+	}
+
 	[Test]
 	public void PrepareCacheTests()
 	{

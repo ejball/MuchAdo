@@ -6,7 +6,7 @@ using MuchAdo;
 namespace Benchmarks;
 
 [MemoryDiagnoser]
-public sealed class DataMapperBenchmark : IDisposable
+public class DataMapperBenchmark : IDisposable
 {
 	public DataMapperBenchmark()
 	{

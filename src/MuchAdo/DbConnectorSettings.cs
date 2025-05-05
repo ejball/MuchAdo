@@ -35,9 +35,9 @@ public class DbConnectorSettings
 	public bool CacheCommands { get; init; }
 
 	/// <summary>
-	/// If true, cached commands and command batches are prepared by default.
+	/// If true, commands and command batches are prepared by default.
 	/// </summary>
-	public bool PrepareCachedCommands { get; init; }
+	public bool PrepareCommands { get; init; }
 
 	/// <summary>
 	/// If true, does not dispose the connection when the connector is disposed.

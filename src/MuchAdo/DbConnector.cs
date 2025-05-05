@@ -1430,7 +1430,7 @@ public class DbConnector : IDisposable, IAsyncDisposable
 		}
 	}
 
-	private bool ShouldPrepare(DbConnectorCommandBatch commandBatch) => commandBatch.IsPrepared ?? (m_settings.PrepareCachedCommands && ShouldCache(commandBatch));
+	private bool ShouldPrepare(DbConnectorCommandBatch commandBatch) => commandBatch.IsPrepared ?? m_settings.PrepareCommands;
 
 	private bool ShouldCache(DbConnectorCommandBatch commandBatch) => commandBatch.IsCached ?? m_settings.CacheCommands;
 
